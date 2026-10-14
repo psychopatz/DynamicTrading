@@ -1,77 +1,78 @@
-# DTCommon Radio OS — Architecture and Security Contract
+# PsychopatzCore Radio OS — Cross-Mod Integration and Authorization Contract
 
-## Product definition
+**Canonical platform ownership:** `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_CONTRACT.md`.
+This file covers consumer boundaries specific to Hoomans and DynamicTrading.
+Previous DTCommon-owned Radio OS architecture was **superseded** on 2026-10-15.
 
-One phone-like, clickable radio/device interface with Home, Contacts, Contact Detail, Call/Conversation, Trader Scanner and Settings. The shell resembles the actual vanilla handheld radio used, with Project Zomboid-like matte pixel-art elements. NPC names/portraits, frequencies, signal/battery, actions, lists and labels are **rendered dynamically**. No second shop/stock/basket screen is painted onto a walkie. Selecting Trade transfers into the established V2 trade-mode inventory window, never forks commerce settlement.
+## Platform versus feature
 
-The shared UI framework is usable with either integration installed separately or both together. DTCommon itself must not require ProjectHoomans or the DTAbstract mod and should not independently bypass the access rules of either integration.
+**PsychopatzCore** owns the radio device itself: six walkie shell skins and UI textures, manifest/device registry, rendering and clipping, usable radio inspection, reusable Home/Settings/Contacts shell, app and contact-provider registries, widgets/button states, navigation, input/focus/zoom, cached subtexture rendering, generic portrait slot, localization and extension API.
 
-## Ownership
+**Core never hard-requires Project Hoomans, MarketSense, DTCommon, DTAbstract, DTHoomans or a specific NPC/merchant system.** Core may expose "Contacts" as a generic app but does not contain gameplay knowledge or grant permission to call/trade. Providers register bounded contacts/actions into Core. A future third-party mod must be able to register its own radio app with only a Core dependency.
 
-| Module | Owns | Does not own |
-|---|---|---|
-| DTCommon | RadioOS UI renderer/widgets, atlas/skin registry, reusable app/router/control model, common normalized contact/action capabilities, client request coordination, trader snapshot/commerce contract, central server authorization dispatch | NPC engine, Hoomans social memories, vanilla device implementation, separate quote/payment logic |
-| DTAbstract | Abstract provider, real two-way device identification, remote trader discovery, remote eligibility/session source; contact without spawned NPC body when server permits | UI implementation fork, unauthenticated trading, invented physical NPC |
-| DTHoomans | Physical/NPC provider, merchant identity lookup, Hoomans context/conversation entry, live NPC proximity and role validation integration, NPC portrait/conversation adapter | Duplicate Radio OS, alternate quote/settlement or guard merchant privilege |
-| ProjectHoomans | NPC presence/state, conversation, authorization and native portrait/identity, existing inventory trade window | DTAbstract remote access policy |
-| PsychopatzCore | Shared generic radio actions, inventory, currency, UI helpers/portrait renderer where appropriate | DT-specific app navigation/trader settlement |
-| MarketSense | Intrinsic item semantics/value | Per-radio trader price policy |
+**Project Hoomans** owns who a player knows, discovered NPCs/settlements/factions, identity and portrait data, actual communication and conversation effects. Extend current Hoomans WorldDiscovery `RadioScan`, `RadioAmbient` and `CallContact` contracts via a Core contact provider. Do NOT mistake their discovery transitions for full speech. If a genuine voice/chat action is not supported by existing Hoomans APIs, show it as unavailable until implemented in Hoomans, not in Core.
 
-**Independent modular load:** DTCommon alone loads the shared assets/classes safely but should not expose unsupported trader/call actions. DTHoomans alone (with DTCommon and ProjectHoomans) and DTAbstract alone (with DTCommon and MarketSense) register adapters at runtime. Both present => common UI with distinct contacts/entry rules. No PNC reference in an unconditional DTCommon import.
+**DTCommon** registers trader app/interface and connects a Core radio contact to the **existing** Dynamic Trading V2 commerce path; retains MarketSense pricing, stock, quotes, snapshot routing, basket, settlement and multiplayer authorization. No custom Radio OS graphics, no second merchant/shop window, and absolutely no DT-specific code in Core.
 
-## Two verified acquisition/access modes (not client-selected authority)
+**DTAbstract** implements remote radio trader discovery and access; can contact/trade with an abstract/virtual trader even without a spawned NPC *only when server-side eligibility and device/session checks pass*. **DTHoomans** implements physical merchant adapter; an in-person trade requires a valid, nearby interactable actual merchant NPC and proper Hoomans rules. The same Core contacts presentation may show NPCs but cannot bypass physical-trade distance simply because radio was opened. Preserve guard referral.
 
-- **physical_npc / DTHoomans**: player interacts with the actual identified merchant NPC via existing Hoomans context or successful conversation choice. Server confirms actor/player, authoritative NPC-to-trader mapping, trader role, current loaded/live/interactable NPC presence, proximity (existing service uses <=6 tiles squared radius 36), trader READY state and other Hoomans interaction rules at *snapshot and commit* time. Guards may refer to the merchant but must not offer trade. Walking away closes/invalidates a physical session; never convert it silently to remote abstract access.
-- **abstract_radio / DTAbstract**: player operates an actual supported radio transceiver or explicitly permitted abstract access mechanism. Server checks real radio ownership/selected device and powered/two-way status as needed by gameplay contract, corresponding abstract trader capability and READY state; trader may have no spawned world NPC. No dependency on PNC.Registry. Do not require a physical body merely because legacy records have a p/l ID; conversely do not interpret a==1 as proof of radio authorization.
-- A radio contact with a physical Hoomans NPC must **not** bypass Hoomans proximity rules simply because the same shell UI can show that contact. Remote voice features for Hoomans are future scope unless separately authorized; face-to-face Hoomans NPC dialogue can use common contacts/presentation widgets without requiring a radio shell.
-- In hybrid installs, choose the provider by *server-resolved validated origin/session*, not by the client UI's displayed tab or request.mode. Explicit allow/deny, no automatic escalation from physical to abstract.
+Hoomans radio contacts and Hoomans in-person trading are different operations: a remote contact/discovery entry does not by itself authorize in-person merchant trading. Future truly remote NPC conversation features require separate explicit Hoomans authority, not automatic access to existing local dialogue.
 
-## Proposed normal form (design contract; adjust to actual existing APIs)
+## Extension API goals (proposals, verify against existing Core)
 
-Local presentation record:
-{ contactID, providerID, label, kind, portraitDescriptor?, status?, capabilities={canTalk,canTrade,canScan}, disabledReason? }
-IDs are stable/capped strings. Never send rich server records or unbounded ModData to the client. Portrait descriptor refers to a **validated** existing resolver; fallback is a blank/silhouette screen for abstract contacts without NPC identity.
+```lua
+-- Names and callbacks are illustrative, not currently implemented:
+PsychopatzCore.RadioOS.RegisterApp({
+    id = "dynamictrading:traders",
+    ownerModID = "DTCommon",
+    icon = "icon_trader",
+    isAvailable = function(context) return ... end,
+    open = function(context, navigator) ... end,
+})
+PsychopatzCore.RadioOS.RegisterContactProvider({
+    id = "projecthoomans:npc_contacts",
+    ownerModID = "ProjectHoomans",
+    list = function(context, page) return ... end,
+    resolve = function(context, contactID) return ... end,
+    invoke = function(context, contactID, actionID) return ... end,
+})
+```
 
-Request intent:
-{ requestID, contactID?, traderID?, action, deviceRef?, conversationToken? }
-Bound all lengths and validate every field. The server resolves authoritative actor/device/NPC/trader and grants a short-lived scoped session or rechecks directly on every important operation. A session token is an unguessable server-issued capability **only if the native runtime provides a sound generation/verification method**; otherwise server-side keyed session state and bounded opaque request handles. Never take access mode, NPC position, isAuthorized, prices, wallet or inventory claims from the client as authoritative.
+Registration should allow plugin removal/unload, deterministic ordering, a bounded contact model, provider-owned status and action capabilities. A Core contact entry may contain a generic optional portrait descriptor but must not carry PNC records, merchant stock or large ModData. Namespaced IDs prevent contacts from multiple mods colliding. Core widgets display actual provider facts rather than generating artificial signal/battery/contact permissions.
 
-Server session (concept):
-{ playerKey, providerID, traderID?, npcID?, deviceID?, issuedAt, expiresAt, actions, accessRevision }
-Scope includes actor, contact/trader, source, allowed actions, expiry and revocation. Disconnect, proximity/radio loss, despawn/unavailable trader, NPC role change, close and stale stock must fail closed. No serialized long-term session table.
+## Server authority / sessions
 
-## UI/asset contract
+Core radio device inspection is a shared utility and UI precondition. **Every consequential action is validated by the owning server service.** The client may request a contact/scan/call/trade; it may never self-assert authorization, NPC proximity, radio power, trader access, mode, prices or inventory state.
 
-Six committed 42.20 PNGs currently live under DTAbstract/42.20/media/ui/dtabstract/radio:
-1. shells/DTA_Walkie_Shells.png — 1024x1024, six 256x432 cells, LCD alpha cutouts.
-2. ui/DTA_Walkie_UI_Core.png — 1024x1024, 25 generic chrome sprites.
-3. ui/DTA_Walkie_Buttons.png — 1024x512, 36 button state backgrounds.
-4. ui/DTA_Walkie_Icons.png — 512x512, 32 pictograms.
-5. ui/DTA_Walkie_Indicators.png — 512x256, 25 indicator sprites.
-6. ui/DTA_Walkie_Overlays.png — 512x512, 8 translucent effects.
+- **Hoomans** checks learned contact/discovery state, actor permissions, NPC identity, and actual supported call/dialogue constraints.
+- **DTAbstract** checks player radio (using Core's real device validation where appropriate), authorized remote trader, READY state and scoped session/request; no physical NPC required.
+- **DTHoomans** checks actual NPC merchant identity, role, presence/live interactability and distance for in-person trade, including snapshot and settlement; guard is referral-only.
+- **DTCommon** checks these authorization results at RequestTrader/snapshot and ExecuteTradeBasket/commit; replay/stale credentials, forged IDs or changing from physical to abstract must not bypass access. Present code allows `record.a==1` via `TraderService.validateAccess` without independent actual-device validation, so audit and add regression coverage.
 
-All are confirmed in the repository, but shell graphics are compact/color-reduced, and **native runtime/art acceptance is pending**. Manifest with six item IDs/rects and temporary preview are also under DTAbstract/UI. The other three radio families (HAM/manpack/receive-only) do NOT have finished production atlases; do not block the six-walkie MVP over this.
+Do not invent unguessable tokens if native primitives aren't verified. Use bounded server-maintained sessions or independently revalidate, with expiry/disconnect/revocation, and fail closed. Existing DTCommon Client.OpenTrader -> PNC.InventoryWindow.OpenTrade (when installed) or DTCommon fallback remains the trade handoff; no new transaction code is part of the Radio OS.
 
-**Mandatory migration:** relocate shared renderer, six atlases, manifest and build-time sources/workflows to DTCommon ownership, e.g. DTCommon/42.20/media/lua/client/DTCommon/RadioOS and media/ui/dtcommon/radio. Update texture paths, localization, build scripts, CI, tests and dev preview; preserve compatibility with existing DTAbstract APIs as thin non-asset shims if needed. Move files rather than create runtime copies; only delete old location after successful smoke/native asset load. Image file name DTA_* may remain for migration compatibility, but actual DTCommon paths/registries must be authoritative.
+## Atlas ownership migration
 
-Shell source 256x432 has only ~72–83x55–61 usable screen pixels. **This is a real UX limitation.** Explicitly validate zoom, game font height, at least two navigable rows, clipping, portrait legibility and interaction hitboxes. If necessary enlarge/paginate an OS LCD presentation or revise shell artwork/manifest together; do not render long unreadable text or off-screen controls. Nine-slice where supported/validated and nearest filtering where visually appropriate. Cache texture handles and precomputed UVs, no frame-by-frame image decoding/noise.
+The following **six actual production PNGs**, current manifest and optional preview are in the DynamicTrading repo under `DTAbstract/42.20/media/`, but their final owner will be Core:
+- `shells/DTA_Walkie_Shells.png`: 1024×1024 / 6 radio bodies
+- `ui/DTA_Walkie_UI_Core.png`: 1024×1024 / 25 UI sprites
+- `ui/DTA_Walkie_Buttons.png`: 1024×512 / 36 button states
+- `ui/DTA_Walkie_Icons.png`: 512×512 / 32 icons
+- `ui/DTA_Walkie_Indicators.png`: 512×256 / 25 states
+- `ui/DTA_Walkie_Overlays.png`: 512×512 / 8 subtle effects
 
-Render LCD backing, clipped app text/portrait/status, optional effects, shell faceplate, then physical button states/focus. All screen hitboxes share screen clip. Transparent sprite overlays named mask are decorative, not GPU clipping. Buttons use separate atlas background, icon and localized label; disabled states must prevent actual activation.
+Migrate **binaries, builder scripts, CI asset generation, manifest, tests and renderer** to `PsychopatzCore/42.20/media/ui/psychopatz/radio` and `PsychopatzCore/UI/Radio/OS` (actual naming after Core source audit). Verify PNG hashes/alpha, correct atlas lookups and Core-only game load before removing original DTAbstract assets. Never make a runtime `require` from Core into DTAbstract, or duplicate texture loads long-term. Existing DTA names may remain during compatibility transition; Core path is authoritative.
 
-## Feature contracts / behavior
+Walkie LCD holes span roughly 72–83×55–61 source pixels. This is insufficient for a large portrait + several text lines at native size; require actual B42 zoom/readability tests, screen clipping and compact app layouts. Assets are **art-ready for the first walkie prototype** but not native-accepted production UI. HAM/manpack and receive-only skins are not yet produced; support them by later registering device-family manifests, never falsely claim complete artwork.
 
-- Home: app tiles/list and selectable softkeys, Back/Close, cursor/keyboard/mouse/controller if feasible, consistent navigation. Translation keys for user-visible labels and reasons.
-- Contacts: populated only from an authorized provider, with bounded list/paging, stable ordering, and safe empty/loading/unavailable states. Never blindly enumerate PNC world registry in DTCommon or leak remote NPC identities.
-- Call/Chitchat: mode-specific provider capability. DTHoomans reuses actual PNC conversation API if nearby and legally interactable, and existing PNC/psychopatz portrait renderer as opt-in plugin. DTAbstract without physical NPC uses a contact identity/portrait placeholder; DO NOT invent LLM/semantic dialogue in DTCommon or falsely imply a real NPC call exists. Graceful capability-disabled state until concrete API is verified.
-- Scanner: only server-eligible abstract remote traders from DTAbstract, and local physical merchants from DTHoomans when proximity confirms eligibility. Status/data are bounded and refreshed intentionally; not each redraw.
-- Trade: call DTCommon.Client.OpenTrader with its existing mode/traderID and npcID where applicable after authorization, preserving Project Hoomans PNC.InventoryWindow.OpenTrade when installed and DTCommon fallback as documented. Do not create new basket/quote/inventory UI inside radio.
-- Device: identify all six vanilla WalkieTalkie1..5 and WalkieTalkieMakeShift by actual item type/instance, validate inventory/equipment and DeviceData API where available, no magic Base.WalkieTalkie detection. Map selected device to skin; real battery/signal only, unknown if unavailable. Explore HAM/manpack/receive-only separately; no fictitious two-way radio for receive-only.
-- Error/loading: explicit localizable non-crashing messages for unavailable mod provider, disconnected radio, invalid NPC/merchant, stale session, trader moved, unavailable currency/snapshot. Opening UI is not a trade approval.
+## App behavior
 
-## Authentication and commerce guarantees
+- Core Home/Settings and generic Contacts viewer work with zero providers (honest empty/inert state).
+- Hoomans contact provider lists only known/authorized entities; can use a nearby NPC's verified portrait through Core portrait panel; an unspawned abstract contact uses a neutral identity fallback unless its source supplies a valid descriptor.
+- Call/Chitchat action delegates to a *real supported* provider call/dialogue API; a WorldDiscovery `call_contact` result that updates phase is not automatically an NPC speech session.
+- Trader Scanner is a **Dynamic Trading app** registered in Core; bounded source-authenticated trader list, status and access. Clicking Trade opens existing V2 trade UI separately; radio screen never paints buy/sell grids or stock.
+- Status, battery, signal and frequency display measured game data (or "unknown"). Do not fabricate 4-bar reception for abstract sessions.
 
-All snapshots, scanning results exposing trader state, call/interaction outcomes and purchase/sale submissions must enforce authoritative player/trader/mode access, independently of the UI. Audit DTCommon.Server RequestTrader and TraderService validateAccess (a==1 currently allows unconditional access), and DTHoomans merchant conversation/guard referral before changing them. Do not break the existing stock and settlement code or leak trader snapshots to clients unable to access the trader. Bound request IDs, dedupe/expiry, prevent forged context/session reuse across players/traders/actions. Keep SP and dedicated MP behavior equivalent.
+## Performance and acceptance
 
-## Performance
-
-No recurring world-wide OnTick scans. Use event-driven open/close and explicit throttled refresh, per-window input/portrait updates, bounded caches, snapshot diff/cached list rows, short-lived sessions, no per-frame Lua big allocations. Budget and profile frame time for 1, 10 and 100 NPC/trader records where a suitable harness can simulate this; distinguish true native results from synthetic benchmarks.
+No per-frame texture reload, full NPC/world scan or ModData chatter. Cache atlas handles, crop UVs and presentation list rows; use event-driven refresh and bounded pagination. Test Core standalone; Core+Hoomans; Core+DTAbstract/DTCommon; Core+DTHoomans/DTCommon/Hoomans; hybrid; future dummy plugin. Offline Lua/mocked GUI is not native Build42 SP/MP evidence. Check split-screen/player index and correct device selection, six skins, softkeys, portrait frame cost, race/stale sessions, old commerce regressions and native server denial. The roadmap defines gated verification.

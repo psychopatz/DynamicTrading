@@ -1,28 +1,32 @@
-# DTCommon Radio OS — Luna/Codex Copyable /goal
+# Cross-Repository PsychopatzCore Radio OS — Pasteable Luna /goal
 
-Paste the following into Codex CLI/Luna while positioned in the **current DynamicTrading V2** checkout with permitted access to its installed dependencies. This is a separate goal from the existing root GOAL_PROMPT.md (basic trading).
+**Starting location:** any Codex CLI working directory with access to checkouts of `psychopatzCore`, `ProjectHoomans`, and `DynamicTrading` (plus installed dependent mods); discover repository locations before editing. Unlike the previous goal, the **shared Radio OS belongs in PsychopatzCore, not DTCommon or DTAbstract**.
 
----
-
+```text
 /goal
 
-Build the actual, interactive DTCommon Radio OS / common NPC communication interface **unattended** using the six already-produced walkie-talkie atlases and existing Dynamic Trading V2. Shared UI ownership is DTCommon, not DTAbstract. BOTH DTAbstract and DTHoomans must be able to use the same UI/widgets. DTAbstract contacts abstract/remote traders without requiring a spawned NPC when server-authorized; DTHoomans must verify a nearby real merchant NPC and existing Hoomans conversation permissions for physical trading. They share exactly one existing V2 trade UI, trader stock, MarketSense prices and authoritative DTCommon settlement path. Calls/Contacts/Scanner should feel like a clickable device OS with Home/Back, reusable button states, dynamically populated NPC portraits/status/text, and future modular app extension. No baked-in dynamic data, no additional trade shop screen in radio art.
+Build a real reusable, clickable Project Zomboid radio operating system in **PsychopatzCore**, for use by Project Hoomans, Dynamic Trading V2 and future independent Psychopatz mods. Work unattended and continue automatically through all safe ordered milestones R0–R9.
 
-Read in this order:
-1. Docs/radio_os/DT_RADIO_OS_AGENT_RUNBOOK.md
-2. Docs/radio_os/DT_RADIO_OS_CONTRACT.md
-3. Docs/radio_os/DT_RADIO_OS_ROADMAP.md
-4. Docs/radio_os/DT_RADIO_OS_PROGRESS.md
-5. Docs/DTABSTRACT_WALKIE_ASSET_CONTRACT.md and existing DTABSTRACT_RADIO_OS_PREVIEW.md as reference only where relevant.
+Read in order:
+1. psychopatzCore/Docs/radio_os/CORE_RADIO_OS_CONTRACT.md
+2. DynamicTrading/Docs/radio_os/DT_RADIO_OS_AGENT_RUNBOOK.md
+3. DynamicTrading/Docs/radio_os/DT_RADIO_OS_CONTRACT.md
+4. DynamicTrading/Docs/radio_os/DT_RADIO_OS_ROADMAP.md
+5. DynamicTrading/Docs/radio_os/DT_RADIO_OS_PROGRESS.md
 
-Follow R0–R9 strictly, beginning with R0 and its Next Chunk. Freshly audit the real worktree, dependencies, vanilla Build42 radio/UI methods and in-repo tests before making changes. The atlas/source currently resides in DTAbstract, so R1 must migrate the common production assets, manifest, previews/build workflows and loading into DTCommon, keeping compatibility and not duplicating textures. Confirm six walkie PNGs and true LCD alpha holes. HAM, manpack and receive-only art is **out of initial production scope**.
+Audit the latest working trees, current Base game Build42 APIs and integration code first. Extend PsychopatzCore's existing RadioDeviceState, RadioActions, RadioSignalHost and PortraitPanel; do not implement a parallel vanilla radio host. Move all six prepared walkie atlases, manifest, builders and preview from DynamicTrading/DTAbstract to PsychopatzCore-owned UI/radio paths. Preserve alpha screen holes and update all paths/CI/tests and consumers safely. Core must load alone without Hoomans, MarketSense or DynamicTrading.
 
-Implement a reusable DTCommon RadioOSWindow, widget/skin registry, app navigation, screen clipping, text/icons/softkeys, and provider contracts; DTAbstract and DTHoomans only adapt entry points, contacts, authorization and optional NPC portrait/conversation. DTCommon must load safely without PNC or DTAbstract. Use ProjectHoomans existing NPC/portrait/dialogue interface only when installed; do not build a new LLM or NPC brain. Honor physical merchant/guard distinctions, nearby NPC presence for physical trades, and genuinely remote access for authorized abstract trades. Never trust client-side mode/device/NPC/trader claims: revalidate each discovery/snapshot/trade with server-side authority; review current TraderService.validateAccess and its a==1 capability. Preserve the existing commerce APIs, guard referral, item instance identity, currency rollback and basket semantics; no legacy manual pricing.
+Build Core's reusable device/skin/renderer architecture, responsive readable LCD with clipped dynamic portraits/text, button hover/pressed/disabled states, mouse/keyboard/physical softkeys, Home, Settings, Contacts, Contact Detail, generic action/call screen and a clean versioned app/contact-provider registration API. A third-party mod should be able to register a radio app or contacts without importing DynamicTrading or ProjectHoomans. No NPC names, stock screens or portrait baked into texture assets.
 
-The six-shell LCD source rectangles are very small. Validate actual Build42 legibility, screen clipping, zoom and hitboxes rather than forcing unreadable Home/Contacts/Scanner/Call rows. A UI preview isn't proof of real contact/call/trade; disabled capabilities must visibly say unavailable instead of pretending to work. Keep sprites static/cached, updates event-driven/throttled, no world scans per tick, no large ModData memory histories or per-frame texture loads. Keep SP and MP behavior equivalent.
+Integrate Hoomans by registering its real NPC/faction/settlement contacts through Core; reuse the existing server-authoritative WorldDiscovery radio_scan/call_contact paths and NPC identity/portrait/conversation services as actually supported. Distinguish contact discovery from true chitchat: never pretend a discovery response is live NPC dialogue. Preserve existing in-person talk paths.
 
-You are authorized to execute all routine safe development steps unattended: read/modify in-scope code, run offline/unit/native tests in isolated fixtures, update goal docs, commit and fast-forward push verified chunks. Preserve unrelated work, installed mods, live saves and user data; no force push or reset. Continue after each chunk automatically instead of asking repeated permission. Ask only for a genuine destructive/user-data risk, unresolved user-authored merge conflict, unavailable indispensable dependency, or unresolvable product decision; keep other safe work moving.
+Integrate DynamicTrading only as plugins: DTCommon registers the trader app and opens the existing V2 trade UI; DTAbstract supplies server-authorized remote trader discovery/access that can work without a spawned NPC; DTHoomans requires an actual near, interactable NPC merchant and verified role for in-person trading. Hoomans radio contacts must not bypass physical merchant proximity. Guards remain referral-only. MarketSense still owns valuation and DTCommon still owns stock, quotes and settlement. Do not add any separate trade screen/transaction/economy inside Core.
 
-At every checkpoint update Docs/radio_os/DT_RADIO_OS_PROGRESS.md with current phase, evidence, commits/push, remaining risks and exact next chunk. Run relevant existing trading regression tests and new Lua mock tests; test standalone/common, Abstract-only, Hoomans-only, hybrid, six devices, native SP, native dedicated MP, access spoofing, reconnect and performance. Label evidence honestly: source / asset / Lua smoke / native SP / native MP / profiler. No native verification => milestone remains open and not production ready. Do not modify the separate trading GOAL_PROMPT.md or pursue unrelated economic features.
+Server-validate every sensitive action (radio and provider eligibility, known contacts, NPC role/proximity, abstract trader right, request/session/replay and snapshots/settlement). Do not trust client-provided access mode, trade/contact IDs, prices or NPC positions. Specifically audit TraderService.validateAccess's record.a==1 behavior. Preserve the existing trade and Hoomans API/rollback paths.
 
-Proceed with R0 now, then R1 and beyond automatically until the R0–R9 acceptance gates are satisfied or a real safety blocker occurs.
+Keep efficient texture caches, event-driven/paginated contacts, no per-frame global scans or heavy ModData, localized messages, and truthful unknown signal/battery states. Native-test six devices, screen legibility/zoom, portraits/clipping, load combinations, Core-only and dummy-plugin use, actual singleplayer/dedicated MP, forbidden remote access, normal physical NPC interaction and V2 trade regressions. HAM/manpack/receive-only shell atlases are future asset work, not ready.
+
+Execute the R0 Next Chunk immediately, then R1 through R9 unattended. Run in-repo smoke/native/asset tests, update DynamicTrading/Docs/radio_os/DT_RADIO_OS_PROGRESS.md after every meaningful chunk, commit and fast-forward push validated changes into EACH OWNING repository. Preserve unrelated user edits, real saves and installs. No force pushes/resets or destructive user-data changes. Ask only if an actual dangerous/user-conflict/missing indispensable dependency blocks the affected task; keep independent safe work moving. Differentiate source, offline Lua, image, native SP, native MP and profiler evidence. Do not claim complete unless all required gates pass. Do not modify the separate DynamicTrading/GOAL_PROMPT.md trading goal.
+
+Begin R0 now.
+```

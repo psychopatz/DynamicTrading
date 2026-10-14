@@ -1,39 +1,27 @@
-# DTCommon Radio OS — Progress Ledger
+# Reusable PsychopatzCore Radio OS — Progress Ledger
 
-**Planning baseline:** 2026-10-15, DynamicTrading main at 3f8ec67540c43e2f67cf9ee8acbe002e3886a48b (re-audit immediately on agent start).
-**Current phase:** R0 — fresh implementation audit/test baseline, **not begun** by Luna.
-**Next chunk:** R0 — inspect working tree, current test harness and dependency contracts; run in-repo baseline and verify six alpha/atlas PNGs; document actual B42 rendering APIs and short reproducible access tests, then continue directly into R1.
+**Planning update:** 2026-10-15
+**Baseline at planning:** DynamicTrading `da480d5ef91e18bbbcdfe80c79e5523356e13cca`; PsychopatzCore `ff7ce885eed29fa5f42b1a5223e39144982c8049`. Actual HEAD may advance; recheck.
+**Current phase:** R0 fresh cross-repo audit — **not started by Luna**.
+**Next chunk:** R0: inspect current statuses/HEAD of Core, Hoomans and DynamicTrading; source-audit existing RadioDeviceState/RadioActions/PortraitPanel and Hoomans contacts; verify six DTAbstract PNGs/manifest; run initial cross-repo regression and capture failings, then continue to R1 moving assets and UI ownership into Core.
 
-## Implemented before this goal
+## Already present (source/asset-level)
 
-- Six walkie PNG atlases in DTAbstract media: Shells (6 variants), UI Core (25), Buttons (36), Icons (32), Indicators (25), Overlays (8). Current shell is a compact/color-reduced version of approved art.
-- Lua manifest defines six Base.WalkieTalkie1–5 and Base.WalkieTalkieMakeShift skins, rects/button hotzones. DTA_RadioOSPreview.lua opens an opt-in client preview: Home / Contacts / Scanner placeholder; no real contact/call/trade.
-- Current DTCommon client already has OpenTrader and RequestSnapshot, with handoff to existing PNC.InventoryWindow.OpenTrade when available and DTCommon fallback otherwise. Common TraderService owns basket settlement.
-- DTHoomans has ContextHub merchant context and Project Hoomans conversation outcome/trader referral support.
+- Core already supplies radio device state, generic vanilla-radio action host and generic portrait panel. These will be extended, not duplicated.
+- ProjectHoomans has WorldDiscovery `radio_scan`, `radio_ambient` and `call_contact` actions as discovery mechanics, plus separate NPC conversation systems. Integration as a Core radio contact provider is **not** yet implemented.
+- DynamicTrading/DTAbstract has six committed walkie PNG atlases (Shells=6 devices, Core=25 UI sprites, Buttons=36, Icons=32, Indicators=25, Overlays=8); alpha transparency locally checked in earlier asset builds. The art is color-reduced and tiny LCD openings remain a UX risk.
+- DTAbstract holds a disabled-by-default walkie preview with Home/Contacts/Scanner placeholders and the six-skin manifest. It is **not** a live contact/trade OS.
+- DTCommon already owns trader service/trade window, including current Project Hoomans trade UI handoff; DTHoomans already has merchant/guard conversational context. Preserve these.
 
-## Verified for planning
+## Updated architecture and outstanding work
 
-- GitHub tree shows all six PNGs at main baseline. Prior independent build workflows passed for assets. **No native B42 radio UI proof recorded**.
-- Module dependency declarations: DTCommon requires PsychopatzCore,MarketSense; DTHoomans requires DTCommon,ProjectHoomans; DTAbstract requires DTCommon,MarketSense.
-- Current preview and atlas manifests/assets are incorrectly owned by DTAbstract for a cross-module UI.
-- Physical trader access in DTCommon checks nearby PNC body when record.a != 1; record.a == 1 bypasses the nearby test. It does not by itself prove physical radio ownership. Must audit authorization at all snapshot/commit paths before rollout.
+- **Core owns entire reusable radio device/OS/contacts UI/atlas system. DTCommon does not own Radio OS**. Core may not depend on DynamicTrading or PNC; consumers register their own apps/providers.
+- Existing previous Dynamic Trading plan incorrectly instructed Luna to migrate assets to DTCommon. That plan is superseded; R1 destination is psychopatzCore.
+- No production Core-owned atlas, app/contact-provider API, working Hoomans contact integration, trader scanner, authentication hardening or radio call/chat integration yet.
+- TraderService's `record.a==1` present access behavior requires server-side radio/remote validation to prevent unauthorized trader snapshots and settlement.
+- No native B42 SP/MP Radio OS testing evidenced; all gates remain open. HAM/manpack assets are not available; defer those families.
+- Small source LCD screen rectangles ~72–83×55–61 may need native zoom/layout changes.
 
-## Missing / known risks
+## Progress hygiene
 
-- No DTCommon-owned Radio OS, no actual contact provider registry, no device resolver, no authenticated server-side radio session.
-- Existing DTAbstract hasRadio() checks non-canonical Base.WalkieTalkie and one HamRadio1 type.
-- Small physical LCD cutouts (~72–83 x 55–61 at authoring scale) may not support readable rich UI/portrait without presentation redesign and measured scale testing.
-- Hoomans portrait/social/call API integration and abstract no-body handling untested.
-- Six production atlases available for walkies only. HAM/manpack/receiver shell families are **not** ready and should be separately scoped after MVP.
-- Native SP, dedicated MP, screenshots, keyboard/focus, performance, radio gating, forged requests and load combination tests: **not run for this goal**.
-
-## Invariants / don't regress
-
-- Existing Dynamic Trading V2 trade window and its basket/quote/settlement logic remain authoritative.
-- Abstract trader without physical NPC can trade only after server-resolved remote access; Hoomans trader must be near a valid merchant NPC for physical interaction.
-- DTHoomans guard referral remains referral, not trade.
-- Do not replace root GOAL_PROMPT.md (MarketSense basic trading MVP). Radio OS uses RADIO_OS_GOAL_PROMPT.md.
-
-## Progress writing instructions to Luna
-
-Update only current phase, implemented, verification, risks and next chunk after each commit. Include exact test commands/evidence and native/CI distinction; do not append full tool transcripts or claim native success from Lua mock tests. Advance to next chunk automatically until gates are complete or real safety blockers remain.
+After each successful chunk record current phase, actual verification/test class and commands, exact commits/push result in each owning repo, blockers and next safe chunk. Do not inflate this file with command transcripts or claim native success from offline mocks. Keep DynamicTrading `GOAL_PROMPT.md` for the separate trading MVP untouched. Continue automatically after each coherent safe commit.
