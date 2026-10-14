@@ -381,15 +381,33 @@ local function sendTraderDebugList(player, notice)
     })
 end
 
+-- Player teleports use the shared PsychopatzCore implementation so multiplayer
+-- authority, destination validation, and the debug gate stay identical to
+-- every other Psychopatz debug tool. A server cannot move a remote player's
+-- client by writing its own copy of the player, which is what the previous
+-- local setX/setY/setZ fallback did.
+local function resolveTeleport()
+    if PsychopatzCore and PsychopatzCore.Teleport then
+        return PsychopatzCore.Teleport
+    end
+    local loaded, teleport = pcall(
+        require, "PsychopatzCore/World/PsychopatzTeleport")
+    if loaded and type(teleport) == "table" then return teleport end
+    return nil
+end
+
 local function teleportToTrader(player, traderID)
     local record
     local npcID
     local handler
     local internal
     local npc
+    local teleport
     local x
     local y
     local z
+    local ok
+    local reason
     if not canUseDebug(player) then return false, "debug_denied" end
     traderID = tostring(traderID or "")
     record = Service and Service.GetRecord(traderID) or nil
@@ -411,13 +429,13 @@ local function teleportToTrader(player, traderID)
     x = tonumber(npc.x) or 0
     y = tonumber(npc.y) or 0
     z = tonumber(npc.z) or 0
-    if player.setX and player.setY and player.setZ then
-        player:setX(x + 1.5)
-        player:setY(y + 1.5)
-        player:setZ(z)
-        return true
+    teleport = resolveTeleport()
+    if not teleport or type(teleport.ToCoordinates) ~= "function" then
+        return false, "teleport_unavailable"
     end
-    return false, "teleport_unavailable"
+    ok, reason = teleport.ToCoordinates(player, x + 1.5, y + 1.5, z)
+    if ok then return true end
+    return false, reason or "teleport_unavailable"
 end
 
 local function spawnTrader(player, args, onComplete, onAccepted)

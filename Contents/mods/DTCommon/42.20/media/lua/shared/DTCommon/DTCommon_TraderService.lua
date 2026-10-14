@@ -4,9 +4,24 @@ local Service = DTCommon.TraderService or {}
 DTCommon.TraderService = Service
 
 local Inventory = require "PsychopatzCore/Inventory/PsychopatzInventory"
+require "PsychopatzCore/Economy/PsychopatzCurrency"
 local Storage = DTCommon.Storage
 local Stock = DTCommon.TraderStock
 local Support = DTCommon.TraderSupport
+
+local function currencyCount(physical)
+    if physical and type(physical.countCurrency) == "function" then
+        return physical:countCurrency()
+    end
+    return physical and physical:count(DTCommon.MONEY_FULL_TYPE) or 0
+end
+
+local function removeCurrency(physical, amount)
+    if physical and type(physical.removeCurrency) == "function" then
+        return physical:removeCurrency(amount)
+    end
+    return physical:remove(DTCommon.MONEY_FULL_TYPE, amount)
+end
 
 local function authority()
     return Storage and Storage.IsAuthority and Storage.IsAuthority() == true
@@ -111,11 +126,10 @@ function Service.ExecuteTrade(player, request)
         if stock:count(fullType) < quantity then
             return failure(traderID, operation, "insufficient_stock")
         end
-        if physical:count(DTCommon.MONEY_FULL_TYPE) < total then
+        if currencyCount(physical) < total then
             return failure(traderID, operation, "insufficient_money")
         end
-        local removedMoney, removeReason = physical:remove(
-            DTCommon.MONEY_FULL_TYPE, total)
+        local removedMoney, removeReason = removeCurrency(physical, total)
         if not removedMoney then return failure(traderID, operation, removeReason) end
         local moved, moveReason = Inventory.transfer(
             stock, physical, fullType, quantity)
@@ -271,7 +285,7 @@ function Service.ExecuteTradeBasket(player, request)
                 * row.quantity
     end
     local netTotal = buyTotal - sellTotal
-    if netTotal > 0 and physical:count(DTCommon.MONEY_FULL_TYPE) < netTotal then
+    if netTotal > 0 and currencyCount(physical) < netTotal then
         return failure(traderID, "BASKET", "insufficient_money")
     end
     if netTotal < 0
@@ -291,8 +305,7 @@ function Service.ExecuteTradeBasket(player, request)
         movedToStock[#movedToStock + 1] = row
     end
     if netTotal > 0 then
-        removedMoney, reason = physical:remove(
-            DTCommon.MONEY_FULL_TYPE, netTotal)
+        removedMoney, reason = removeCurrency(physical, netTotal)
         if not removedMoney then
             rollbackTransfers(stock, physical, movedToStock, "to_player")
             return failure(traderID, "BASKET", reason)
@@ -330,7 +343,7 @@ function Service.ExecuteTradeBasket(player, request)
     local saved, saveReason = Storage.SaveInventory(record, stock)
     if not saved then
         if netTotal < 0 then
-            physical:remove(DTCommon.MONEY_FULL_TYPE, math.abs(netTotal))
+            removeCurrency(physical, math.abs(netTotal))
         end
         rollbackTransfers(stock, physical, movedToStock, "to_player")
         rollbackTransfers(stock, physical, movedToPlayer, "to_stock")
