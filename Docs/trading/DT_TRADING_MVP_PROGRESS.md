@@ -4,7 +4,7 @@
 
 ## Current state
 
-T0 is complete. The first T1/T3 implementation slices and the T4 server/UI bridge are in the working tree. The MVP is **not ready**: T5 stock seeding and T6 native SP/MP acceptance remain open.
+T0 is complete. T1/T3 implementation slices, the T4 server/UI bridge, and the T5 MarketSense seed are committed. The MVP is **not ready**: native SP/MP player settlement and T6 acceptance remain open.
 
 ## Checked-out inputs
 
@@ -38,23 +38,30 @@ Validated 2026-10-14 after a safe fetch of `origin/main`; all four repositories 
 - Basket smoke covers mixed buy/sell netting, same-type items with different concrete quotes, duplicate replay, stale revision, favorite rejection, later transfer failure, and save failure. Core reversible/currency tests pass.
 - No client-supplied prices are trusted and no Legacy registry is used.
 
-## T4 — partial
+## T4 — functional host coverage; native UI evidence open
 
 - Hoomans trade endpoint consumes authoritative `sellRows`, hides unavailable sell prices, preserves item identities, rejects counted stacks in trade rows, and submits only the identities selected from an aggregate row.
-- Hoomans trade/storage/transaction focused tests pass. The standalone UI smoke remains harness-limited because it has no native `ISUI/ISPanel` module.
+- Hoomans trade/storage/transaction focused tests pass, including aggregate-row identity trimming. The standalone UI smoke remains harness-limited because it has no native `ISUI/ISPanel` module.
 - Real UI screenshot and end-to-end SP/MP player evidence are not claimed.
 
-## T5 — next
+## T5 — implemented; native seed smoke passes
 
-Replace mandatory reliance on the small `DTCommon.DEFAULT_STOCK` seed with a bounded deterministic seed sourced from MarketSense’s public known-item and availability APIs. Keep optional debug fixtures, persist compact Core stock, and do not add a catalog-wide scan on every window refresh.
+- Trader creation now seeds at most 8 compact Core records from MarketSense’s public known-item and availability APIs. Configured defaults are only preferred fixture types after the same availability and quote validation; they do not provide prices.
+- Non-`Base` installed candidates are preferred when available, so eligible Workshop items do not require DT registration. Currency and unavailable/invalid-price entries are excluded.
+- A force-rebuild retry occurs only when the public catalog is empty during first-time creation; snapshots never rebuild or rescan the catalog.
+- Host seed smoke and the real native seed fixture pass (9 assertions, zero actionable errors). Restart retention of a created trader’s persisted stock still needs a dedicated native restart check.
+
+## Next Chunk
+
+T6 — use the disposable real PZ facilities to attempt the native SP player trade loop and a restart-persistence check, then measure the seed/snapshot/commit boundaries. If the player/MP path is unavailable in the harness, record the exact gate as native-unverified and keep the focused host evidence separate.
 
 ## T6 — open
 
-The native server boot and native MarketSense adapter fixtures pass with activation order `PsychopatzCore → MarketSense → DTCommon → DTAbstract → ProjectHoomans → DTHoomans` and zero actionable errors. This proves loading and quote-boundary behavior only. Native SP player settlement, native MP settlement/reconnect/replay, save/reload trade conservation, and measured snapshot/commit performance remain unverified.
+The native server boot, MarketSense adapter, and bounded seed fixtures pass with activation order `PsychopatzCore → MarketSense → DTCommon → DTAbstract → ProjectHoomans → DTHoomans` and zero actionable errors. This proves loading, quote-boundary, and first-time seed behavior only. Native SP player settlement, native MP settlement/reconnect/replay, save/reload trade conservation, and measured snapshot/commit performance remain unverified.
 
 ## Remaining defects and evidence limits
 
-- The full DynamicTrading suite still has one unrelated/pre-existing `dt_caravan_contract_smoke.lua` text-contract failure (`groupSize = GROUP_SIZE`); focused V2 tests pass.
+- The full DynamicTrading suite still has one unrelated/pre-existing `dt_caravan_contract_smoke.lua` text-contract failure (`groupSize = GROUP_SIZE`); focused V2 and seed tests pass.
 - Native runs report optional missing `AnimSets/actiongroups` directories for several staged mods, but the harness reports zero actionable errors and a clean server exit.
 - Test-only `package.preload` lines are intentionally rejected by `pz_verify` as PZ sandbox violations; changed production files have zero Kahlua errors.
 

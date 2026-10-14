@@ -5,6 +5,7 @@ local Stock = DTCommon.TraderStock
 local Inventory = require "PsychopatzCore/Inventory/PsychopatzInventory"
 local Storage = DTCommon.Storage
 local Support = DTCommon.TraderSupport
+local INITIAL_STOCK_LIMIT = 8
 
 local function unavailable(fullType, reason)
     return {
@@ -130,19 +131,125 @@ function Stock.EncodeItem(fullType, quantity)
     return Inventory.encodeItem(item, quantity)
 end
 
+local function seedQuantity(value)
+    if Support and type(Support.PositiveInteger) == "function" then
+        return Support.PositiveInteger(value, 1, 1000)
+    end
+    value = tonumber(value)
+    if not value or value < 1 then return 1 end
+    return math.min(1000, math.floor(value))
+end
+
+local function moduleName(fullType)
+    local separator = string.find(tostring(fullType or ""), ".", 1, true)
+    return separator and string.sub(fullType, 1, separator - 1) or ""
+end
+
+local function hasEntries(value)
+    if type(value) ~= "table" then return false end
+    for _ in pairs(value) do return true end
+    return false
+end
+
+local function seedCandidates()
+    local api = rawget(_G, "MarketSense")
+    local known
+    local defaults = {}
+    local candidates = {}
+    local ok
+    local value
+    if type(api) ~= "table"
+        or type(api.GetAllKnownItems) ~= "function"
+        or type(api.GetItemAvailability) ~= "function"
+    then
+        return candidates
+    end
+    if type(api.EnsureRuntimeRegistryLoaded) == "function" then
+        pcall(api.EnsureRuntimeRegistryLoaded, false)
+    end
+    ok, known = pcall(api.GetAllKnownItems)
+    if not ok or type(known) ~= "table" then return candidates end
+    -- A fresh server can expose lazy definition pricing before the persisted
+    -- known-item registry has been built.  Rebuild once at trader creation,
+    -- never from a snapshot/window refresh, so the seed remains catalog-backed.
+    if not hasEntries(known)
+        and type(api.EnsureRuntimeRegistryLoaded) == "function"
+    then
+        pcall(api.EnsureRuntimeRegistryLoaded, true)
+        ok, known = pcall(api.GetAllKnownItems)
+        if not ok or type(known) ~= "table" then return candidates end
+    end
+    for _, value in ipairs(DTCommon.DEFAULT_STOCK or {}) do
+        if type(value) == "table" and value.fullType then
+            defaults[tostring(value.fullType)] = seedQuantity(value.quantity)
+        end
+    end
+    for key, entry in pairs(known) do
+        local fullType = type(entry) == "table"
+            and (entry.fullType or entry.item or key) or key
+        fullType = tostring(fullType or "")
+        if fullType ~= "" and not isCurrency(fullType) then
+            local available
+            local availableOK
+            local detailsQuote
+            availableOK, available = pcall(api.GetItemAvailability, fullType)
+            if availableOK and type(available) == "table"
+                and available.status == "obtainable"
+            then
+                detailsQuote = Stock.Price(fullType)
+                if detailsQuote.ok then
+                    candidates[#candidates + 1] = {
+                        fullType = fullType,
+                        quantity = defaults[fullType] or 1,
+                        workshop = moduleName(fullType) ~= "Base",
+                        fixture = defaults[fullType] ~= nil,
+                    }
+                end
+            end
+        end
+    end
+    table.sort(candidates, function(left, right)
+        return left.fullType < right.fullType
+    end)
+    return candidates
+end
+
 function Stock.New()
     local store = Inventory.createVirtualInventory({
         authority = "server",
         maxWeight = 500,
     })
-    local defaults = DTCommon.DEFAULT_STOCK or {}
+    local candidates = seedCandidates()
+    local selected = {}
+    local selectedByType = {}
+    local function addCandidate(candidate)
+        if #selected >= INITIAL_STOCK_LIMIT
+            or selectedByType[candidate.fullType]
+        then
+            return
+        end
+        selected[#selected + 1] = candidate
+        selectedByType[candidate.fullType] = true
+    end
     local index
-    local entry
+    local candidate
     local record
-    for index = 1, #defaults do
-        entry = defaults[index]
-        record = Stock.EncodeItem(
-            entry.fullType, Support.PositiveInteger(entry.quantity, 1, 1000))
+    -- Keep configured fixture types when they are valid MarketSense catalog
+    -- entries, but never let them bypass availability or quote validation.
+    for index = 1, #candidates do
+        candidate = candidates[index]
+        if candidate.fixture then addCandidate(candidate) end
+    end
+    -- Prefer at least one non-Base installed item when the catalog provides
+    -- one, so a fresh trader does not require manual Workshop registration.
+    for index = 1, #candidates do
+        candidate = candidates[index]
+        if candidate.workshop then addCandidate(candidate) end
+    end
+    for index = 1, #candidates do addCandidate(candidates[index]) end
+    for index = 1, #selected do
+        candidate = selected[index]
+        record = Stock.EncodeItem(candidate.fullType, seedQuantity(candidate.quantity))
         if record then store:add(record) end
     end
     return store
