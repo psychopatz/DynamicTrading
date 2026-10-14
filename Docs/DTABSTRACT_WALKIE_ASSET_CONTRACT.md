@@ -30,7 +30,7 @@ The `.png` filenames above are *planned atlas outputs*, **not included** in this
 - Each screen cutout in the **shell art** must have alpha 0 all the way to the bezel's inner edge. Draw a colored LCD backing in the same viewport before compositing portrait/UI.
 - No NPC names, dialogue, portraits, fixed app icons, user strings, or trader listings inside shell artwork; those belong in live OS widgets.
 - UI buttons contain state-only backgrounds. Draw label and icon separately at runtime.
-- Do not distort the shell: a 256×432 source body should be shown at 256×432 × uniform scale. At 1.0×, the US Army screen is 152×121 pixels; carefully paginate longer OS views.
+- Do not distort the shell: a 256×432 source body should be shown at 256×432 × uniform scale. At 1.0×, the production US Army screen cutout is **72×55** pixels; use a larger uniform radio UI scale or very compact/paginated content. Do not distort the shell to make it fit.
 - Keep text/portrait inside the screen viewport. Clip portrait rendering; alpha=0 cutout alone does **not** clip overflow from a too-large portrait.
 
 ## Asset sourcing limitation
@@ -68,3 +68,32 @@ Source references for rendering APIs:
 - https://projectzomboid.com/modding/zombie/ui/UIElement.html
 - https://projectzomboid.com/modding/zombie/core/textures/Texture.html
 - https://demiurgequantified.github.io/ProjectZomboidLuaDocs/classMainOptions-members.html
+
+
+## First atlas authoring pass (2026-10-14)
+
+The six-shell production atlas has been composed locally from a 1448×1086
+approved concept sheet into a 1024×1024 transparent PNG. The authoring script
+`tools/build_dtabstract_walkie_shells.py` reproduces layout from that reference.
+The calculated screen rectangles and front button hotspots **replace**
+the earlier illustrative coordinates in the Lua manifest.
+
+All six screen rectangles were checked to contain only alpha=0 pixels; the
+separate alignment preview verified the visible shell/button locations.
+
+**Publication status:** this source commit does not include the binary PNG or
+the original input concept art. The asset must be transferred separately to
+`Contents/mods/DTAbstract/42.20/media/ui/dtabstract/radio/shells/DTA_Walkie_Shells.png`
+before enabling the skin in-game. Never claim the artwork is installed just
+because manifest tests pass.
+
+To reproduce from the original approved concept sheet:
+
+```sh
+python tools/build_dtabstract_walkie_shells.py --source path/to/approved_concept.png --layout /tmp/walkie-atlas-layout.json
+```
+
+The manifest shell rectangles are unchanged at 256×432 each.
+The display cutouts now range from roughly 72–83 px wide and 55–61 px tall,
+so the portrait must be bounded/cropped carefully. Future art with larger
+LCD holes must regenerate both atlas and manifest together.
