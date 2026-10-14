@@ -4,7 +4,8 @@
 
 ## Read order
 
-1. `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_UI_STABILIZATION.md` — **mandatory current U0–U7 priority and acceptance gates**.
+1. `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_COMPOSITOR_SCALE.md` — **NEW CURRENT C0–C6 goal**.
+2. `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_UI_STABILIZATION.md` — **mandatory current U0–U7 priority and acceptance gates**.
 3. `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_CONTRACT.md` — canonical platform ownership.
 3. `DynamicTrading/Docs/radio_os/DT_RADIO_OS_AGENT_RUNBOOK.md` — unattended execution rules.
 4. `DynamicTrading/Docs/radio_os/DT_RADIO_OS_CONTRACT.md` — cross-mod integration and security contract.
@@ -36,9 +37,9 @@ Treat actual checked-out source, verified dependencies and native game observati
 
 ## Unattended execution loop
 
-**Current priority:** R0–R7 have already been implemented at source/offline-Lua level. The user's real in-game screenshot reveals that R2/R3 native UI acceptance failed. Complete the Core **U0–U7 stabilization plan** in order before adding further features or claiming R8/R9 readiness.
+**Current priority (newest screenshots):** Core U0–U4 gained actual source/offline implementation, but real-game screenshots still show low-fidelity shell, LCD backing/cutout mismatch and hard-to-find/restricted scaling. Complete **C0–C6** from the new Core compositor contract first. Maintain U0–U7 as earlier compatibility/native gates and do NOT redo working UI or trader providers.
 
-Repeat until current U0–U7 acceptance gates pass or a genuine blocker:
+Repeat until C0–C6 and remaining U native gates pass or a genuine blocker:
 ```text
 read Next Chunk -> inspect statuses/HEAD in each affected repository
 -> reproduce / prove one contract -> implement smallest coherent owner-local patch
@@ -70,3 +71,12 @@ Keep `Docs/radio_os/DT_RADIO_OS_PROGRESS.md` compact: current phase, implemented
 - **U4:** mouse-clickable LCD list/app rows with consistent hardware/keyboard actions.
 - U5–U7 continue portrait, integration and normal-game native acceptance; never falsely claim native success. Don't regenerate assets or modify transaction code just to solve layout defects.
 - Explicitly exclude the PZ Headless Harness from all plans, commands and testing. Update this runbook/progress if a stale instruction conflicts.
+
+## New compositor/scale corrective priority — 2026-10-15
+
+- Follow `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_COMPOSITOR_SCALE.md` and the current ledger's C0 Next Chunk. This supersedes stale U0-first and native-handoff-only instructions above.
+- **Current code already draws `screen_bg_<theme>`**; do not assume total absence of background. Compare alpha hole vs matte footprint, actual render stages/UV sampling and portrait clipping first. Synthetic offline alpha-composite tests should verify a continuous opaque monitor without filling intentionally transparent exterior body pixels.
+- The shipped walkie shell has a reduced 341×341 master, stretched to a 1024×1024 atlas. Fidelity was lost earlier than runtime; investigate genuine approved full-res art without replacing with a new inconsistent asset. Continue renderer work even if the master is unavailable.
+- `_Geometry` and `_Input` already have scale/drag implementations. Focus on user-discoverable +/-/reset/fit controls and viewport-based limits for 720p/1080p/1440p/4K, keeping geometry saved and scaled clickable bounds in sync.
+- Only Core owns the compositor/asset/window. Run DT/Hoomans regressions to guard compatibility; do not rewrite server trade or NPC conversations.
+- PZ Headless Harness remains **absolutely prohibited**. Keep evidence honest; user normal-game screenshots are native *observations*, not comprehensive functional passes.

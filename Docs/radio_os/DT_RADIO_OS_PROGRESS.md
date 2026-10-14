@@ -3,7 +3,29 @@
 **Planning update:** 2026-10-15
 **Baseline at planning:** DynamicTrading `da480d5ef91e18bbbcdfe80c79e5523356e13cca`; PsychopatzCore `ff7ce885eed29fa5f42b1a5223e39144982c8049`. Rechecked before implementation; unrelated worktree changes were preserved.
 
-## Immediate priority update — failed in-game UI acceptance (2026-10-15)
+## NEW next chunk — C0: LCD alpha, source fidelity and adaptive scale (2026-10-15)
+
+**Current task for Luna: C0** per `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_COMPOSITOR_SCALE.md`, followed by **C1–C6 unattended**. This supersedes previous instruction at the bottom to wait for native U5–U7 checks. Preserve U0–U4 already implemented and tested offline.
+
+**Latest Git main at this audit:** Core `87d16a3117c3dba689627c6a3167313bb0b8590e`, DynamicTrading `1fd47cac048502a838fbfbcf1c79a12dce4facd7`, Hoomans `c96cadda1570f59810552f9d3fc55d5c957ba670`. Recheck HEAD/worktree before editing.
+
+**New real-game screenshot evidence:** US Army radio can be moved to a new position and Home/Contacts render more coherently, but shell looks extremely coarse, opaque display backing does not visibly fill the apparent window, the LCD looks cut out from the world, cropping/alpha seams are visible, and a user-visible size/zoom control remains absent. This is **failed native visual acceptance**; do not mark rendering/persistence complete merely from code/mocks. Screenshots do not independently reveal whether an actual backplate is missing or its bounds are too small.
+
+**Source-confirmed observations:**
+- Core `Renderer.lua::drawScreen` **already tries** to draw a themed `screen_bg_<theme>` sprite before dynamic UI, then shell in `render()`; real issue must be isolated with per-skin alpha coverage, texture opacity and lifecycle tests.
+- US Army safe LCD manifest viewport is `{107,247,72,55}` at 256×432 shell coordinates. Visible aperture vs recorded safe content viewport may differ; test rather than assume.
+- `tools/radio_os/build_dtabstract_walkie_shells_compact.py` enlarges a **341×341 downsampled compact source to 1024×1024**. It cannot restore original high-frequency art. The alternative high-resolution builder expects a missing/not-bundled 1448×1086 approved concept source; recover an authentic master only if available.
+- `RadioOSWindow_Input.lua` and `_Geometry.lua` now include dragging, corner resizing, persistence and `applyScale`; `RadioOSDevice.lua` still defaults to scale ≤1.75 and the Open path clamps to 0.75–2.25. Make user zoom discoverable and max viewport-aware instead of claiming resizing doesn't exist.
+
+**Execute next:** Add C0 source and alpha-mask comparison for six skins; compare intended hole, overlay screen viewports and BG opacity; add deterministic Python synthetic compositing smoke and optional native debug tint/outline probe (off by default). Then C1 sandwich, C2 genuine asset fidelity investigation, C3 zoom/fit controls, C4 alignment tests, C5 legibility/portrait and C6 normal-game acceptance. **Core owns these changes**; DT Common/Hoomans keep business logic.
+
+**No PZ Headless Harness**: prohibited. Offline Lua/Pillow/contract tests and normal Project Zomboid SP/MP only. If no GUI access, finish and commit all safe offline work and prepare one consolidated user-run screenshot/console.txt test, leaving native unverified.
+
+**Expected checkpoint format:** current C#, changed files by owning repo, exact offline tests, atlas/alpha pixel evidence, actual native screenshots/profiler if any, commit SHAs/push status, known missing high-res source, next C#.
+
+---
+
+## Earlier priority update — failed in-game UI acceptance (2026-10-15)
 
 **Current next phase: U0 → U1 UI stabilization, not native R8 sign-off and not redoing R0–R7.** Source baseline at user report: Core `832a7e750bed35f42478416f5ed86a8dea141f1f`; DynamicTrading `017d739333d95b19ba927a54be6788daece705ff`; ProjectHoomans `c96cadda1570f59810552f9d3fc55d5c957ba670`. Recheck current HEAD before Luna edits.
 
@@ -67,6 +89,6 @@ R0–R7 were implemented and tested at source/asset/offline-Lua levels, **but na
 - DynamicTrading full-suite execution remains non-green for pre-existing/configuration cases: `dt_caravan_contract_smoke.lua` lacks `groupSize = GROUP_SIZE`; the Hoomans bridge fixture path is absent; `tests/test_DTA_RadioOSPreview.lua` has its existing invocation assertion; and `test_config` exits without output. Focused Radio OS tests pass.
 - Native Build 42 UI load, six-device visual/manual acceptance, dedicated MP/reconnect, walk-away/device-off, portrait rendering, and profiler measurements remain open. No headless harness was used.
 
-## Next chunk
+## Next chunk (superseded by C0)
 
-Run the concise native SP/MP acceptance handoff when normal Project Zomboid gameplay is available, attach screenshots and relevant `console.txt` evidence, then close U5–U7 only from real native results. Keep the legacy DTAbstract preview fallback until Core-only and combined native consumers are verified; do not claim readiness before the native gates pass.
+Prior normal-game native handoff was pending. **Use the NEW next chunk at the top: begin C0 immediately** and continue to C6, then revisit U5–U7 and R8/R9 verification without claiming native success from mocks.

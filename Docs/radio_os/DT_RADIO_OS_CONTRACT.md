@@ -90,3 +90,9 @@ The existing Core OS and mod providers are implemented at source/offline-test le
 - Use actual prepared icon/button/chrome sprites, dynamic localization and measured layout; the 72–83×55–61-pixel LCD cannot display three arbitrary rows below a two-line header. UI page contents and contact portraits must be genuinely clipped; direct click and hardware navigation must agree.
 - DT/Hoomans providers should remain stable. Trader app uses existing V2 window and authorized DTCommon server service; Hoomans contacts use authorized discovery/conversation. Do not rebuild business logic to make visuals look finished.
 - The **PZ Headless Harness is forbidden** because it is broken. Offline Lua/atlas/unit suites and normal Project Zomboid Build 42 SP/MP with user screenshots and console.txt are the accepted evidence paths. If normal game access is missing, native acceptance is *pending*, not passed.
+
+## 2026-10-15 latest visual acceptance blocker (C0–C6)
+
+New normal-game screenshots demonstrate low-detail/cropped six-shell artwork, apparent monitor bleed-through and inadequate discoverable scaling **after** Core's U0–U4 source improvements. The canonical corrective plan is `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_COMPOSITOR_SCALE.md`. UI composition, alpha-hole/backing rect geometry, source fidelity, visible +/-/fit zoom and pixel-snapped viewport/hitboxes must be corrected in Core. This does not transfer ownership to DynamicTrading.
+
+Core currently attempts `screen_bg_<theme>`, so transparency is a *measured cause to identify*, not proof no background was drawn. The 341×341 compact source is confirmed from the builder as a lossy source for the 1024×1024 shell. No arbitrary art substitutions. Consumer apps and server-authorized V2 trade paths remain unchanged. **PZ Headless Harness prohibited**; require normal game for native acceptance.

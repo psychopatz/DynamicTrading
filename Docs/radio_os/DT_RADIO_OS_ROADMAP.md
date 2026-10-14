@@ -1,8 +1,32 @@
 # PsychopatzCore Radio OS — Roadmap with Mandatory UI Stabilization
 
-**Owner:** PsychopatzCore for platform/UI and reusable assets; ProjectHoomans for contacts/conversations; DynamicTrading for trader/scanner and server commerce. This roadmap preserves original R0–R9 as historical full-feature milestones. **New priority on 2026-10-15 is U0–U7 UI stabilization.** R0–R7 are recorded as implemented at source/offline test level, but screenshot proves R2/R3 UI acceptance failed. Do not restart old R0–R7 from scratch. Work unattended in small verified commits, keep this repo's progress ledger current, and defer new non-UI features until U0–U4 are stabilized.
+**Owner:** PsychopatzCore for platform/UI and reusable assets; ProjectHoomans for contacts/conversations; DynamicTrading for trader/scanner and server commerce. This roadmap preserves original R0–R9 as historical full-feature milestones. **Latest priority on 2026-10-15 is C0–C6 compositor/scaling stabilization, following U0–U4 source work.** R0–R7 are recorded as implemented at source/offline test level, but screenshot proves R2/R3 UI acceptance failed. Do not restart old R0–R7 from scratch. Work unattended in small verified commits, keep this repo's progress ledger current, and defer new non-UI features until C0–C6 have available offline evidence and real-game visual acceptance.
 
-## Current priority — UI Stabilization U0–U7 (read first)
+## Current highest-priority gate — Compositor and adaptive scale (C0–C6)
+
+**New native screenshot evidence (October 15, 2026) supersedes earlier UI acceptance expectations.** The Core radio is now draggable and shows app icons in source, but its in-game shell remains visually low-resolution, cropped/misaligned around the open LCD, seemingly transparent through the monitor, and lacks discoverable zoom suitable for small/large displays. Execute **C0–C6** before adding communication or economy features.
+
+Read `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_COMPOSITOR_SCALE.md` as the **current source-of-truth**; U0–U7 below remains the earlier UI acceptance and integration contract.
+
+| Step | Expected artifact / gate |
+|---|---|
+| **C0 (NEXT)** | Audit exact shell alpha-hole coverage versus manifest LCD/backing coverage, UVs, stencil and ISUI layer order. Reproduce via alpha and draw-command smoke tests; debug-only colored compositor probe |
+| C1 | Explicit opaque LCD matte + themed backing + clipped content/portrait + overlays + front shell + keys. Per-skin aperture/backplate metadata; prevent world-visible holes without filling deliberate exterior transparency |
+| C2 | Trace and recover genuine approved high-resolution art if available; current compact shell source was reduced to **341×341** and then enlarged to 1024×1024. Verify pixel filter/UV/edges; report absence of authentic master rather than inventing one |
+| C3 | Discoverable zoom +/−/reset/fit, visible resize grip, auto-scale using actual screen size, saved manual override, pixel-snapped canonical transform; no fixed 1.75/2.25 cap for all displays |
+| C4 | Offline synthetic RGBA sandwich test for six radio variants plus native debug probe; confirm correct screen pixels opaque, exterior transparent, no shell/hitbox drift |
+| C5 | Compact native-font-aware paginated screens, clipped portrait and existing asset widgets; provider real capabilities only |
+| C6 | Native normal-game SP/MP/screenshots/logs and performance evidence; Core-only and combined integrations, abstract/physical merchant access and V2 trade regression intact |
+
+**No PZ Headless Harness under any circumstances** (broken). Offline Lua/Pillow tests are allowed; native acceptance only from normal Project Zomboid sessions, possibly user-run. An offline pass cannot mark native C6 passed. This is renderer/UX work **owned by PsychopatzCore**; DT/Hoomans feature/provider code changes only if a real regression requires them.
+
+### Progress precedence
+
+Old R0–R7 work is recorded as completed at source/offline level, and U0–U4 gained code in Core commits `c59286a`, `87d16a3`. Do **not** restart those phases: update the U native acceptance gates after C0–C6. No R8/R9 production-ready claim until composite display, scaling, native SP/MP and security checks pass.
+
+---
+
+## Earlier priority — UI Stabilization U0–U7 (preserved)
 
 Canonical detailed acceptance plan: `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_UI_STABILIZATION.md`.
 
