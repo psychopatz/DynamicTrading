@@ -56,6 +56,16 @@ end
 local function onFillWorldObjectContextMenu(playerNum, context, _, test)
     if test or not DTAbstract.Enabled or not context then return end
     addRadioOption(playerNum, context)
+    -- Opt-in UI-only preview: no remote access, trading, or power bypass.
+    -- Deliberately accessible as a development tool without a radio item.
+    if DTAbstract.EnableRadioOSPreview == true
+        and DTAbstract.RadioOS and DTAbstract.RadioOS.OpenPreview
+    then
+        context:addOption("[Radio OS] Preview (development)", nil,
+            function()
+                DTAbstract.RadioOS.OpenPreview(playerNum, "Base.WalkieTalkie5")
+            end)
+    end
 end
 
 if Events and Events.OnFillWorldObjectContextMenu
