@@ -4,15 +4,15 @@
 
 ## Current state
 
-T0 is complete. T1/T3 implementation slices, the T4 server/UI bridge, and the T5 MarketSense seed are committed. Project Hoomans trade-result/footer feedback is fixed in `ded1acb9`, trade refresh/invalidation is fixed in `57137295`, and state-safe quote-aware trade rows are fixed in `034b6abb`. The MVP is **not ready**: native SP/MP player settlement and T6 acceptance remain open.
+T0 is complete. T1/T3 implementation slices, the T4 server/UI bridge, the T5 MarketSense seed, and the DTCommon trade-audit instrumentation are committed. Project Hoomans trade-result/footer feedback is fixed in `ded1acb9`, trade refresh/invalidation is fixed in `57137295`, and state-safe quote-aware trade rows are fixed in `034b6abb`. The MVP is **not ready**: native SP/MP player settlement, audit runtime evidence, and T6 acceptance remain open.
 
 ## Checked-out inputs
 
-Validated 2026-10-14 after a safe fetch of `origin/main`; existing uncommitted DynamicTrading/PsychopatzCore work was preserved. Project Hoomans UI changes were committed and pushed separately.
+Validated 2026-10-14 after a safe fetch of `origin/main`; existing local work was preserved. Project Hoomans UI changes were committed and pushed separately. DTCommon audit commit `c9e90216` was pushed.
 
 | Repository | HEAD | Evidence scope |
 |---|---|---|
-| DynamicTrading | `a2663b89` | current V2 rewrite |
+| DynamicTrading | `c9e90216` | current V2 rewrite plus toggleable trade audit |
 | MarketSense | `32a73836a2bf7de52cb36d75bd1f368ffbd445a5` | public definition/instance pricing APIs |
 | ProjectHoomans | `034b6abb` | trade-mode window, result feedback, state-safe quote-aware inventory rows, and refresh invalidation |
 | PsychopatzCore | `7609e992bcca` | inventory/currency primitives |
@@ -55,7 +55,7 @@ Validated 2026-10-14 after a safe fetch of `origin/main`; existing uncommitted D
 
 ## Next Chunk
 
-T6 — user-run manual native SP/MP player trade loop, restart/replay checks, and measured seed/snapshot/commit boundaries; no headless harness.
+T6 — user-run manual native SP/MP player trade loop, audit ON/OFF comparison, restart/replay checks, and measured seed/snapshot/commit boundaries; no headless harness.
 
 ## T6 — open
 
@@ -69,11 +69,20 @@ The native server boot, MarketSense adapter, bounded seed, and write/reload fixt
 - Focused `pnc_inventory_trade_smoke.lua` and `pnc_inventory_open_perf_smoke.lua` pass. Changed production files report zero Kahlua errors.
 - User manual native UI verification confirms the state-safe grouping and refresh behavior; manual native SP/MP verification of settlement, replay/restart, and measured hitch reduction is still required. No headless runtime harness was used.
 
+## Current checkpoint — dedicated DTCommon trade audit
+
+- Added the persisted runtime-mutable `DTCommon.TradeAudit` setting through PsychopatzCore Debug Settings. It is configured `true`; the previously enabled Project Hoomans audits are configured `false`.
+- Added bounded MarketSense definition/instance price traces, state fields, balance-audit stages, BUY/SELL margin math, unavailable reasons, and snapshot scan counts. Disabled capture avoids audit payload construction and MarketSense `withAudit` work.
+- Added DTCommon profiler timers for price, MarketSense valuation, quote, stock/player snapshots, and basket execution, plus a bounded profiler diagnostic snapshot provider.
+- Static evidence: `luac -p`, `pz_verify --kahlua`, token-bloat scan, and `git diff --check` pass. Commit `c9e90216` is pushed to `origin/main`.
+- Runtime evidence is not yet claimed: the current profiler reports `restart_required` and the game process is disconnected. Restart PZ or use the profiler's Apply Settings Live action before the manual audit run.
+
 ## Remaining defects and evidence limits
 
 - The full DynamicTrading suite still has one unrelated/pre-existing `dt_caravan_contract_smoke.lua` text-contract failure (`groupSize = GROUP_SIZE`); focused V2 and seed tests pass.
 - Native runs report optional missing `AnimSets/actiongroups` directories for several staged mods, but the harness reports zero actionable errors and a clean server exit.
 - Test-only `package.preload` lines are intentionally rejected by `pz_verify` as PZ sandbox violations; changed production files have zero Kahlua errors.
 - Full reproducible native SP/MP settlement, reconnect/replay, stale/rejection, save/reload, and performance evidence remain unverified beyond the user-confirmed UI transaction path.
+- Dedicated DTCommon audit output and performance attribution remain unverified in a fresh native runtime until the pending restart/configuration is applied.
 
 **Completion status: NOT COMPLETE.**
