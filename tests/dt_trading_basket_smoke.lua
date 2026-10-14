@@ -65,6 +65,12 @@ function physical:restoreRemoved(details)
     return details and details.restore and details.restore() == true
 end
 function physical:getWeight() return 1 end
+function physical:weightOf() return 1 end
+function physical:canAdd(_, quantity, _, adjustment)
+    local available = 100 - self:getWeight() + (adjustment or 0)
+    if quantity > available then return false, "destination_capacity" end
+    return true
+end
 function physical:iterate()
     local index = 0
     return function()
@@ -79,6 +85,11 @@ local stock = {
     maxWeight = 100,
 }
 function stock:count(fullType) return self.counts[fullType] or 0 end
+function stock:query(fullType)
+    local count = self:count(fullType)
+    if count < 1 then return {} end
+    return { { [2] = count, [6] = 1 } }
+end
 
 local function removeByIdentity(list, wanted)
     for index = #list, 1, -1 do
@@ -154,6 +165,8 @@ inventoryAPI = {
 
 package.preload["PsychopatzCore/Inventory/PsychopatzInventory"] =
     function() return inventoryAPI end
+package.preload["PsychopatzCore/Inventory/PsychopatzInventoryConstants"] =
+    function() return { QUANTITY = 2 } end
 package.preload["PsychopatzCore/Economy/PsychopatzCurrency"] =
     function() return {} end
 
@@ -368,6 +381,99 @@ T.equal(stock:count("Base.Katana"), 3,
 T.equal(#physical:query({ predicate = function(item)
     return item:getID() == "katana-save"
 end }), 1, "save failure restores sold identity")
+
+local noMoneyBeforeCurrency = physical.currency
+physical.currency = 0
+local noMoney = Service.ExecuteTradeBasket(player, {
+    requestID = "basket-no-money",
+    traderID = "trader-kestrel",
+    observedStockVersion = 3,
+    buyRows = { { fullType = "Base.Bandage", quantity = 1 } },
+    sellRows = {},
+})
+T.equal(noMoney.reason, "insufficient_money", "insufficient funds rejected")
+T.equal(physical.currency, 0, "insufficient funds do not mutate currency")
+physical.currency = noMoneyBeforeCurrency
+
+local beforeBudgetReject = record.b
+record.b = 0
+local noBudget = Service.ExecuteTradeBasket(player, {
+    requestID = "basket-no-budget",
+    traderID = "trader-kestrel",
+    observedStockVersion = 3,
+    buyRows = {},
+    sellRows = {
+        { fullType = "Base.Katana", quantity = 1,
+            itemIDs = { "katana-save" } },
+    },
+})
+T.equal(noBudget.reason, "trader_budget_exhausted", "budget rejection")
+T.equal(record.b, 0, "budget rejection leaves budget unchanged")
+T.equal(#physical:query({ predicate = function(item)
+    return item:getID() == "katana-save"
+end }), 1, "budget rejection leaves item unchanged")
+record.b = beforeBudgetReject
+
+local staleQuote = Service.ExecuteTradeBasket(player, {
+    requestID = "basket-stale-quote",
+    traderID = "trader-kestrel",
+    observedStockVersion = 3,
+    observedQuoteRevision = 2,
+    buyRows = { { fullType = "Base.Bandage", quantity = 1 } },
+    sellRows = {},
+})
+T.equal(staleQuote.reason, "stale_quote", "stale quote is rejected")
+
+physical.items[#physical.items + 1] = makeItem(
+    "katana-stack", "Base.Katana", { count = 5 })
+local stacked = Service.ExecuteTradeBasket(player, {
+    requestID = "basket-stacked",
+    traderID = "trader-kestrel",
+    observedStockVersion = 3,
+    buyRows = {},
+    sellRows = {
+        { fullType = "Base.Katana", quantity = 1,
+            itemIDs = { "katana-stack" } },
+    },
+})
+T.equal(stacked.reason, "partial_stack_unsupported", "counted stack rejected")
+T.equal(#physical:query({ predicate = function(item)
+    return item:getID() == "katana-stack"
+end }), 1, "counted stack remains in inventory")
+
+physical.items[#physical.items + 1] = makeItem(
+    "katana-equipped", "Base.Katana", { equipped = true })
+local equipped = Service.ExecuteTradeBasket(player, {
+    requestID = "basket-equipped",
+    traderID = "trader-kestrel",
+    observedStockVersion = 3,
+    buyRows = {},
+    sellRows = {
+        { fullType = "Base.Katana", quantity = 1,
+            itemIDs = { "katana-equipped" } },
+    },
+})
+T.equal(equipped.reason, "equipped", "equipped item rejected")
+
+physical.items[#physical.items + 1] = makeItem("katana-capacity", "Base.Katana")
+physical.canAdd = function(_, quantity)
+    return false, "destination_capacity"
+end
+local capacity = Service.ExecuteTradeBasket(player, {
+    requestID = "basket-capacity",
+    traderID = "trader-kestrel",
+    observedStockVersion = 3,
+    buyRows = { { fullType = "Base.Bandage", quantity = 1 } },
+    sellRows = {},
+})
+T.equal(capacity.reason, "destination_capacity",
+    "destination capacity rejected before settlement")
+T.equal(record.v, 3, "capacity rejection leaves version unchanged")
+physical.canAdd = function(_, quantity, _, adjustment)
+    local available = 100 - physical:getWeight() + (adjustment or 0)
+    if quantity > available then return false, "destination_capacity" end
+    return true
+end
 
 T.truthy(snapshotCount > 0, "accepted trade refreshes snapshot")
 T.finish("dt_trading_basket")

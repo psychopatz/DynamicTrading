@@ -10,6 +10,11 @@ local stock = {
     end,
     getWeight = function() return 0 end,
 }
+function stock:query(fullType)
+    local count = self:count(fullType)
+    if count < 1 then return {} end
+    return { { [2] = count, [6] = 1 } }
+end
 local restorationCalls = 0
 local physical = {
     countCurrency = function() return 100 end,
@@ -30,6 +35,8 @@ local physical = {
         return details.restore() == true
     end,
 }
+function physical:weightOf() return 1 end
+function physical:canAdd() return true end
 
 local inventoryAPI = {
     wrapPhysicalInventory = function() return physical end,
@@ -43,6 +50,8 @@ local inventoryAPI = {
 
 package.preload["PsychopatzCore/Inventory/PsychopatzInventory"] =
     function() return inventoryAPI end
+package.preload["PsychopatzCore/Inventory/PsychopatzInventoryConstants"] =
+    function() return { QUANTITY = 2 } end
 package.preload["PsychopatzCore/Economy/PsychopatzCurrency"] =
     function() return {} end
 

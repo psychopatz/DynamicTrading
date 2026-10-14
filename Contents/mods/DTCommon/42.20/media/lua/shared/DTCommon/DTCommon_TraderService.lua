@@ -4,6 +4,7 @@ local Service = DTCommon.TraderService or {}
 DTCommon.TraderService = Service
 
 local Inventory = require "PsychopatzCore/Inventory/PsychopatzInventory"
+local C = require "PsychopatzCore/Inventory/PsychopatzInventoryConstants"
 require "PsychopatzCore/Economy/PsychopatzCurrency"
 local Storage = DTCommon.Storage
 local Stock = DTCommon.TraderStock
@@ -451,6 +452,45 @@ local function transferBuy(stock, physical, selection)
     )
 end
 
+local function validateBuyCapacity(physical, stock, player,
+    buySelections, sellSelections)
+    local releasedWeight = 0
+    local plannedWeight = 0
+    if #buySelections < 1 then return true end
+    if type(physical.canAdd) ~= "function"
+        or type(physical.weightOf) ~= "function"
+        or type(stock.query) ~= "function"
+    then
+        return false, "destination_capacity_unavailable"
+    end
+    for index = 1, #sellSelections do
+        releasedWeight = releasedWeight
+            + math.max(0, number(physical:weightOf(
+                sellSelections[index].item), 0))
+    end
+    for index = 1, #buySelections do
+        local selection = buySelections[index]
+        local records = stock:query(selection.fullType)
+        local remaining = selection.quantity
+        if #records < 1 then return false, "insufficient_stock" end
+        for recordIndex = #records, 1, -1 do
+            if remaining <= 0 then break end
+            local record = records[recordIndex]
+            local available = integer(record[C.QUANTITY], 1)
+            local take = math.min(remaining, math.max(1, available))
+            local adjustment = releasedWeight - plannedWeight
+            local ok, reason = physical:canAdd(
+                record, take, player, adjustment)
+            if not ok then return false, reason or "destination_capacity" end
+            plannedWeight = plannedWeight
+                + math.max(0, number(physical:weightOf(record), 0)) * take
+            remaining = remaining - take
+        end
+        if remaining > 0 then return false, "insufficient_stock" end
+    end
+    return true
+end
+
 function Service.Snapshot(traderID, player)
     local record = Service.GetRecord(traderID)
     local store
@@ -612,6 +652,11 @@ function Service.ExecuteTradeBasket(player, request)
         and integer(record.b, 0) < math.abs(netTotal)
     then
         return failure(traderID, "BASKET", "trader_budget_exhausted")
+    end
+    local capacityOK, capacityReason = validateBuyCapacity(
+        physical, stock, player, buySelections, sellSelections)
+    if not capacityOK then
+        return failure(traderID, "BASKET", capacityReason)
     end
 
     for rowIndex = 1, #sellRows do
