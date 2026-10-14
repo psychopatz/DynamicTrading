@@ -3,9 +3,23 @@
 **Planning update:** 2026-10-15
 **Baseline at planning:** DynamicTrading `da480d5ef91e18bbbcdfe80c79e5523356e13cca`; PsychopatzCore `ff7ce885eed29fa5f42b1a5223e39144982c8049`. Rechecked before implementation; unrelated worktree changes were preserved.
 
-## Current status
+## Immediate priority update — failed in-game UI acceptance (2026-10-15)
 
-R0–R7 are implemented and verified at source, asset, and offline-Lua levels. Native singleplayer, dedicated multiplayer, and profiler acceptance remain open for user-run in-game verification. R9 cleanup/readiness is therefore not complete; this ledger does not claim production readiness.
+**Current next phase: U0 → U1 UI stabilization, not native R8 sign-off and not redoing R0–R7.** Source baseline at user report: Core `832a7e750bed35f42478416f5ed86a8dea141f1f`; DynamicTrading `017d739333d95b19ba927a54be6788daece705ff`; ProjectHoomans `c96cadda1570f59810552f9d3fc55d5c957ba670`. Recheck current HEAD before Luna edits.
+
+**User-provided in-game evidence:** US Army walkie radio OS visibly renders but overlays the vanilla radio controls, cannot be dragged or dynamically resized, loses usual Core geometry/scale persistence, LCD shows crowded/overflowing text and **registered app icons are not rendered**. This is not a successful native functional acceptance; previous R2/R3 UI-gate completion claims are reopened.
+
+**Source-confirmed causes:** Core `PsychopatzRadioOSWindow.lua` derives from bare `ISPanel` rather than integrating existing window geometry helpers; `_Input.lua` consumes non-control clicks but does not drag/resize; `_Pages.lua::drawHome` draws only labels and attempts three rows on the tiny LCD; the separate app registry has icon IDs that are not drawn in Home. Mouse-clickable LCD rows, clipped child portraits and provider pagination also require test coverage. Preserve the six atlases and existing provider/commerce APIs.
+
+**Mandatory plan:** `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_UI_STABILIZATION.md` defines U0–U7. U0 = fresh source re-audit + FAIL-FIRST offline tests; U1 = frameless dragging/scale/geometry persistence; U2 = measured LCD content/paging/clipping; U3 = actual atlas icons/widgets/states; U4 = clickable on-screen controls; U5 = portrait/call UI; U6 = integration regression; U7 = normal-game SP/MP/profiler acceptance. Complete U0–U4 before more feature expansion. Keep native assertions pending until user screenshots/console logs or real desktop game runs prove them.
+
+**Testing rule:** DO NOT install, launch, query, fix, or rely on the **PZ Headless Harness** (broken). Run ordinary Lua/unit/atlas tests unattended. Native means a normal Project Zomboid game session, not a harness/mock. If agent lacks desktop access, provide a single short manual checklist and continue independent safe work without repetitive permission prompts.
+
+**Next chunk for Luna:** U0. Inspect clean worktrees/current source and Core `PsychopatzWindow_{Geometry,Responsive,Persistence,Controls}.lua`; write failing/guardrail geometry, input, icon-render and viewport tests; then proceed directly to U1. After each validated chunk record tests/evidence, affected SHAs, whether pushed, known blockers and next U#.
+
+## Historical implementation status (source/offline only)
+
+R0–R7 were implemented and tested at source/asset/offline-Lua levels, **but native UI testing revealed serious failures**. Their functional GUI acceptance is reopened as U0–U7. Native SP/MP/profiler pass is not established; R9 readiness is blocked.
 
 ## Commits
 
@@ -48,4 +62,4 @@ R0–R7 are implemented and verified at source, asset, and offline-Lua levels. N
 
 ## Next chunk
 
-Record the exact commits, then incorporate user-run native SP/MP/profiler evidence. Keep the legacy DTAbstract preview fallback until Core-only and combined native consumers are verified; do not claim readiness before R8 passes.
+**Superseded by immediate priority above.** Begin **U0**, then implement U1–U4 and continue U5–U7 as safely possible. Use normal PZ for native acceptance, not the PZ Headless Harness. Preserve compatibility and don't claim readiness before native UI and integration passes.

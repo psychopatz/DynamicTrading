@@ -4,12 +4,13 @@
 
 ## Read order
 
-1. `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_CONTRACT.md` — canonical **platform ownership**.
-2. `DynamicTrading/Docs/radio_os/DT_RADIO_OS_AGENT_RUNBOOK.md` — unattended execution rules.
-3. `DynamicTrading/Docs/radio_os/DT_RADIO_OS_CONTRACT.md` — cross-mod integration and security contract.
-4. `DynamicTrading/Docs/radio_os/DT_RADIO_OS_ROADMAP.md` — R0–R9 ordered milestones.
-5. `DynamicTrading/Docs/radio_os/DT_RADIO_OS_PROGRESS.md` — Next Chunk, latest results.
-6. `DynamicTrading/RADIO_OS_GOAL_PROMPT.md` — pasteable start prompt.
+1. `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_UI_STABILIZATION.md` — **mandatory current U0–U7 priority and acceptance gates**.
+3. `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_CONTRACT.md` — canonical platform ownership.
+3. `DynamicTrading/Docs/radio_os/DT_RADIO_OS_AGENT_RUNBOOK.md` — unattended execution rules.
+4. `DynamicTrading/Docs/radio_os/DT_RADIO_OS_CONTRACT.md` — cross-mod integration and security contract.
+5. `DynamicTrading/Docs/radio_os/DT_RADIO_OS_ROADMAP.md` — R0–R9 ordered milestones.
+6. `DynamicTrading/Docs/radio_os/DT_RADIO_OS_PROGRESS.md` — Next Chunk, latest results.
+7. `DynamicTrading/RADIO_OS_GOAL_PROMPT.md` — pasteable start prompt.
 
 Treat actual checked-out source, verified dependencies and native game observations as higher priority than historical documentation. Core API proposals in these docs are NOT already-implemented APIs.
 
@@ -31,15 +32,17 @@ Treat actual checked-out source, verified dependencies and native game observati
 - Core already has `PsychopatzCore.RadioDeviceState` with `GetPlayerDevices` / `FindActivePlayerDevice` / `IsActive`, `PsychopatzCore.RadioActions`, `PsychopatzRadioSignalHost` and generic `PsychopatzPortraitPanel`. Reuse and upgrade these. Do not build another competing `ISRadioWindow` patch.
 - Hoomans `WorldDiscovery.HandleAction` has `radio_scan`, `radio_ambient`, `call_contact` and `WorldDiscovery.CallContact`. Re-audit client/server wiring; a *discovery phase update* is not automatically NPC chit-chat. Hoomans decides real calls/dialogue capabilities and what a player is allowed to know.
 - DTCommon `Client.OpenTrader` already forwards to PNC trade-mode window when present; trader settlement is in `TraderService`. `validateAccess` currently passes for `record.a == 1` without actual device validation; close access gaps without breaking current pricing or physical trade.
-- Six production walkie atlases (6 shells; 25 UI Core; 36 buttons; 32 icons; 25 indicators; 8 effects) currently live in DTAbstract/42.20/media/ui/dtabstract/radio. They are verified GitHub files, **not yet Core assets or native-tested**. Shell version is color-reduced and LCD holes are small. HAM/manpack variants are not ready.
+- Six production walkie atlases (6 shells; 25 UI Core; 36 buttons; 32 icons; 25 indicators; 8 effects) **have been migrated to PsychopatzCore**. Current window/renderer and SDK exist there; screenshots show its drag, resize, LCD and sprite-widget usability are deficient. Native SP/MP acceptance remains unpassed. Shell art is color-reduced and LCD holes are small. HAM/manpack variants are deferred.
 
 ## Unattended execution loop
 
-Repeat until R0–R9 acceptance gates pass, or a genuine blocker:
+**Current priority:** R0–R7 have already been implemented at source/offline-Lua level. The user's real in-game screenshot reveals that R2/R3 native UI acceptance failed. Complete the Core **U0–U7 stabilization plan** in order before adding further features or claiming R8/R9 readiness.
+
+Repeat until current U0–U7 acceptance gates pass or a genuine blocker:
 ```text
 read Next Chunk -> inspect statuses/HEAD in each affected repository
 -> reproduce / prove one contract -> implement smallest coherent owner-local patch
--> focused Lua tests + dependency regressions + native tests where available
+-> focused Lua/geometry/atlas tests + dependency regressions + normal-game native tests when available
 -> git diff --check -> concise progress evidence -> commit each repo safely
 -> fast-forward push when credentials allow -> continue next safe chunk
 ```
@@ -47,8 +50,8 @@ read Next Chunk -> inspect statuses/HEAD in each affected repository
 - Do not repeatedly ask permission for ordinary in-scope inspection, edits, safe tests, isolated fixtures, new goal/docs/tests, commits or fast-forward pushes. This goal authorizes those safe tasks.
 - Preserve unrelated edits, live saves, installed mods, user settings, branches, and external data. Never `git reset --hard`, clean unknown files, force push, or discard conflicts. Check each repo's status, upstream and current HEAD, and re-read impacted files before editing.
 - Cross-repo migration: first publish validated Core assets/API; migrate/adapt Hoomans and Dynamic Trading consumers; only remove old DTAbstract assets when all relevant load combinations and compatibility tests pass. Changes land in **owning repositories**, not vendored copies.
-- Do not install unrelated tools or change user-owned PZ worlds. Native tests use isolated disposable saves/profiles; headless harness may assist only after actual capability verification.
-- Do not claim runtime success from mock Lua, PNG geometry or source inspection. Log separately: source audit, asset validation, Lua smoke, native Build 42 SP, dedicated MP, profiler.
+- Do not install unrelated tools or change user-owned PZ worlds. Native tests use **normal Project Zomboid Build 42** on isolated/disposable saves, with screenshots, console.txt and profiler evidence supplied by the user if the agent cannot operate the game. **The PZ Headless Harness is broken and expressly prohibited: do NOT install, repair, configure, start, investigate, or use it; do not count it as a native testing path.**
+- Do not claim runtime success from mock Lua, PNG geometry or source inspection. Log separately: source audit, asset validation, Lua smoke, **normal-game** Build 42 SP, dedicated MP, profiler. If native execution is unavailable, finish safe offline work, then supply **one** targeted manual test checklist and leave native pass gates open; do not repeatedly interrupt safe work for screenshots.
 - No new price registry, manual item values, stock economy, duplicate conversation brain, simulated "real call" for a provider that lacks one, or second trade basket UI.
 - Only stop for genuine irreversible/user-data hazard, uncertain merge conflict, indispensable missing dependency or unresolved product requirement. If one integration is blocked, continue independent Core work.
 
@@ -57,3 +60,13 @@ read Next Chunk -> inspect statuses/HEAD in each affected repository
 Core-alone, Core+Hoomans, Core+DTCommon+DTAbstract, Core+DTCommon+DTHoomans+Hoomans, hybrid and dummy third-party app all load. Six devices render with correctly working physical buttons, clipped text/portrait, localized Home/Contacts/Call/Scanner and extensible apps. Hoomans owns real authorized contacts/discovery/dialogue; abstract trader may trade without spawned NPC with authoritative radio access; physical merchant trade requires actual nearby correct-role NPC. Current V2 trade UI/economy untouched. Native SP and dedicated MP authority/security/performance gates evidenced. Unverified native tests remain open gates.
 
 Keep `Docs/radio_os/DT_RADIO_OS_PROGRESS.md` compact: current phase, implemented, evidence/tests/SHAs, risks, exact next chunk. The existing root `GOAL_PROMPT.md` belongs to a separate trading MVP; do NOT overwrite it.
+
+## Immediate stabilization instructions (2026-10-15)
+
+- Start **U0** using the current Core window/input/renderer rather than rebuilding the framework. Follow `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_UI_STABILIZATION.md` through U7.
+- **U1:** frameless shell dragging, uniform ratio resize, saved position/scale and proportional hitbox relayout using existing `PsychopatzWindow` geometry helpers where safe.
+- **U2:** native-font-aware compact LCD layout, paging and real clipping.
+- **U3:** actually render prepared icon/button/chrome atlas art, not merely labels and green rectangles.
+- **U4:** mouse-clickable LCD list/app rows with consistent hardware/keyboard actions.
+- U5–U7 continue portrait, integration and normal-game native acceptance; never falsely claim native success. Don't regenerate assets or modify transaction code just to solve layout defects.
+- Explicitly exclude the PZ Headless Harness from all plans, commands and testing. Update this runbook/progress if a stale instruction conflicts.

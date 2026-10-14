@@ -1,8 +1,31 @@
-# PsychopatzCore Radio OS — Multi-Repo Roadmap (R0–R9)
+# PsychopatzCore Radio OS — Roadmap with Mandatory UI Stabilization
 
-**Owner:** PsychopatzCore for platform and reusable assets; ProjectHoomans for contacts/conversations; DynamicTrading for trader/scanner and server commerce. This roadmap supersedes the previous DTCommon RadioOS implementation order. Work unattended in small safe validated commits across the owning repos. Do not stop between chunks merely because a suite passed. Maintain a single concise progress ledger in this repo.
+**Owner:** PsychopatzCore for platform/UI and reusable assets; ProjectHoomans for contacts/conversations; DynamicTrading for trader/scanner and server commerce. This roadmap preserves original R0–R9 as historical full-feature milestones. **New priority on 2026-10-15 is U0–U7 UI stabilization.** R0–R7 are recorded as implemented at source/offline test level, but screenshot proves R2/R3 UI acceptance failed. Do not restart old R0–R7 from scratch. Work unattended in small verified commits, keep this repo's progress ledger current, and defer new non-UI features until U0–U4 are stabilized.
 
-## R0 — Fresh multi-repo audit and baselines (NEXT)
+## Current priority — UI Stabilization U0–U7 (read first)
+
+Canonical detailed acceptance plan: `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_UI_STABILIZATION.md`.
+
+| Phase | Work | Acceptance (offline + normal-game native separately) |
+|---|---|---|
+| **U0 — NEXT** | Fresh audit / regression reproduction of unmovable shell, hardcoded scales, overflow, unused app.icon, nonclickable LCD | Source traces and FAIL-FIRST tests; no gameplay edits before diagnosis |
+| U1 | Drag shell without pressing buttons, uniform aspect-ratio resize, screen clamping and saved geometry/scale | Offline geometry/input tests + user/native move/resize/reopen evidence |
+| U2 | Font-measured viewport, paging, clipping and responsive rows at realistic LCD scale | No text, sprite or portrait bleeds from LCD; long names and localization handled |
+| U3 | Draw real icon atlas, UI chrome and button hover/pressed/disabled state art | Command-level sprite assertions plus actual visible icon/button screenshot |
+| U4 | Mouse-clickable app/contact/action rows and synchronized physical/keyboard focus | Resize doesn't shift hitboxes; click/Back/scroll/paging and list refresh work |
+| U5 | Portrait child clip/lifecycle, honest provider call UI | Real allowed identities work, unsupported dialogue remains disabled |
+| U6 | Core/Hoomans/DT integration and security regression | V2 trade screen unchanged; abstract vs physical merchant permissions preserved |
+| U7 | **Normal Project Zomboid** SP/MP acceptance and bounded profiling | Six skins, resolutions, movement/persistence, icons/input/portrait and MP access tested with screenshots/logs; unmet native gates remain pending |
+
+**Do not use the PZ Headless Harness.** It is explicitly broken, and is not an allowed diagnostic, launch, repair or test mechanism. Offline Lua, static atlas validation and **normal user-run game sessions** are allowed. The agent should implement and commit safe offline U0–U7 work unattended, prepare one consolidated user testing checklist if it cannot use the game's desktop, and **never label native passes from mocks**. Read the existing Core window geometry/persistence helpers before attempting a base-class change; keep the radio visually frameless.
+
+### Gate precedence
+
+R0–R7 = earlier implementation work completed at source/offline level; R2/R3 native UI acceptance is reopened by U0–U4. R8/R9 and any production-ready label are **blocked** until the relevant U milestones pass actual native SP/MP acceptance. Do not confuse feature completion with usable UI.
+
+---
+
+## R0 — Fresh multi-repo audit and baselines (historical)
 
 Inspect git status/HEAD and current checkout of PsychopatzCore, ProjectHoomans, DynamicTrading, MarketSense, and test harnesses. Verify all six source PNGs and alpha holes against manifest, native B42 `drawSubTexture`/clipping/hit-test API, dependency and mod load order. Inspect Core `RadioDeviceState`, `RadioActions`, `RadioSignalHost`, `PortraitPanel`; Hoomans `WorldDiscovery.CallContact/RadioScan`, conversation UI; DTCommon `OpenTrader`, `RequestTrader`, `validateAccess`, DTHoomans NPC map and DTAbstract broken `Base.WalkieTalkie` detection. Baseline existing tests and add defensive reproductions. **Gate:** actual ownership/dependency map and test evidence, no speculative implementation.
 
@@ -44,4 +67,4 @@ Remove obsolete DTAbstract preview/art copies **only after** verified migration 
 
 ## Per-chunk checkpoint
 
-Report R#, owning repo(s), exact files/behavior, test commands and evidence class (source/asset/Lua/native SP/native MP/profiler), commit SHA + push status, remaining blockers, precise Next Chunk. Continue automatically without repeated consent for safe work.
+Report U# (or historical R#), owning repo(s), exact files/behavior, test commands and evidence class (source/asset/Lua/normal-game native SP/native MP/profiler), commit SHA + push status, remaining blockers, precise Next Chunk. Continue automatically without repeated consent for safe work.

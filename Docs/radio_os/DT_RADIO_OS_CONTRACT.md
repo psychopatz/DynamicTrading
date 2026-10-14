@@ -76,3 +76,12 @@ Walkie LCD holes span roughly 72–83×55–61 source pixels. This is insufficie
 ## Performance and acceptance
 
 No per-frame texture reload, full NPC/world scan or ModData chatter. Cache atlas handles, crop UVs and presentation list rows; use event-driven refresh and bounded pagination. Test Core standalone; Core+Hoomans; Core+DTAbstract/DTCommon; Core+DTHoomans/DTCommon/Hoomans; hybrid; future dummy plugin. Offline Lua/mocked GUI is not native Build42 SP/MP evidence. Check split-screen/player index and correct device selection, six skins, softkeys, portrait frame cost, race/stale sessions, old commerce regressions and native server denial. The roadmap defines gated verification.
+
+## Mandatory current presentation-quality gate (2026-10-15)
+
+The existing Core OS and mod providers are implemented at source/offline-test level. A user-supplied native screenshot of the US Army radio shows the UI overlapping the vanilla radio panel, a rigid shell with no drag/resize, extremely cramped LCD text and missing atlas app icons. This is **failed native UI acceptance** despite earlier R0–R7 progress. Fix in PsychopatzCore under [`CORE_RADIO_OS_UI_STABILIZATION.md`](https://github.com/psychopatz/psychopatzCore/blob/main/Docs/radio_os/CORE_RADIO_OS_UI_STABILIZATION.md) (U0–U7), before adding new trading/LLM/chat functionality.
+
+- Core should reuse its window geometry, UI settings, responsive and clipping helpers where compatible with a **frameless diegetic shell**. Support constrained drag, constant-aspect resize and saved per-player position/scale, with LCD/button hitboxes transformed together.
+- Use actual prepared icon/button/chrome sprites, dynamic localization and measured layout; the 72–83×55–61-pixel LCD cannot display three arbitrary rows below a two-line header. UI page contents and contact portraits must be genuinely clipped; direct click and hardware navigation must agree.
+- DT/Hoomans providers should remain stable. Trader app uses existing V2 window and authorized DTCommon server service; Hoomans contacts use authorized discovery/conversation. Do not rebuild business logic to make visuals look finished.
+- The **PZ Headless Harness is forbidden** because it is broken. Offline Lua/atlas/unit suites and normal Project Zomboid Build 42 SP/MP with user screenshots and console.txt are the accepted evidence paths. If normal game access is missing, native acceptance is *pending*, not passed.
