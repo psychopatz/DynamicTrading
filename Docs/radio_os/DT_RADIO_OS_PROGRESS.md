@@ -88,6 +88,32 @@ pending and must be verified in normal Build 42 gameplay.
   console.txt, and profiler evidence. Keep native SP/MP/profiler claims
   separate from offline evidence.
 
+## C6 offline integration checkpoint — 2026-10-15
+
+The pushed Core was exercised without modifying any consumer ownership:
+
+- Core radio regression set passed: radio manifest, OS window, OS registry,
+  OS action, the new Pillow compositor smoke, deterministic compact-shell
+  rebuild, and the existing Core radio action/device/frequency/image/custom
+  radio smokes. Expected offline translation-manager diagnostics were observed
+  where the game file-reader API is unavailable.
+- DynamicTrading focused checks passed: `dt_radio_os_app_smoke.lua`,
+  `dt_radio_os_physical_provider_smoke.lua`, `test_DTA_Walkie_Manifest.lua`
+  with the shipped manifest path, and `test_DTA_RadioOSPreview.lua` with its
+  explicit module/manifest paths. The full `python3 tests/run_tests.py
+  --verbose` result is 12/13; the one failure is the pre-existing
+  `dt_caravan_contract_smoke.lua` assertion requiring `groupSize = GROUP_SIZE`.
+- ProjectHoomans `python3 tests/run_tests.py radio` is 5/5. Direct
+  `pnc_radio_os_provider_smoke.lua`,
+  `pnc_radio_discovery_presentation_smoke.lua`, and
+  `pnc_radio_relay_commands_smoke.lua` also pass. No Hoomans or DT gameplay,
+  provider, settlement, inventory, or trader code was altered.
+
+DynamicTrading documentation remains pushed at `2ba5e756`; Core remains pushed
+at `6c20a47`; Hoomans and MarketSense worktrees remain clean and unchanged.
+Native Build 42 SP/MP visual acceptance and profiler evidence are still open:
+these Lua/Pillow checks are offline evidence, not native evidence.
+
 **Planning update:** 2026-10-15
 **Baseline at planning:** DynamicTrading `da480d5ef91e18bbbcdfe80c79e5523356e13cca`; PsychopatzCore `ff7ce885eed29fa5f42b1a5223e39144982c8049`. Rechecked before implementation; unrelated worktree changes were preserved.
 
