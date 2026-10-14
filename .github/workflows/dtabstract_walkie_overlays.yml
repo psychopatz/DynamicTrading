@@ -1,0 +1,48 @@
+name: Build DTAbstract Radio Overlays
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/build_dtabstract_walkie_overlays.py'
+      - '.github/workflows/dtabstract_walkie_overlays.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dtabstract-walkie-overlays
+  cancel-in-progress: false
+
+jobs:
+  generate-overlays:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install asset builder
+        run: python -m pip install 'Pillow==12.3.0'
+      - name: Build and validate transparent Overlays atlas
+        run: |
+          python tools/build_dtabstract_walkie_overlays.py \
+            --output Contents/mods/DTAbstract/42.20/media/ui/dtabstract/radio/ui/DTA_Walkie_Overlays.png
+      - name: Commit built production texture
+        shell: bash
+        run: |
+          set -eu
+          git add -- Contents/mods/DTAbstract/42.20/media/ui/dtabstract/radio/ui/DTA_Walkie_Overlays.png
+          if git diff --cached --quiet; then
+            echo "Walkie Overlays PNG already matches source"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore(dt-abstract): generate Walkie Overlays PNG'
+          git pull --rebase origin main
+          git push origin HEAD:main
