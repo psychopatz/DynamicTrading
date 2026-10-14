@@ -1,8 +1,34 @@
 # PsychopatzCore Radio OS — Roadmap with Mandatory UI Stabilization
 
-**Owner:** PsychopatzCore for platform/UI and reusable assets; ProjectHoomans for contacts/conversations; DynamicTrading for trader/scanner and server commerce. This roadmap preserves original R0–R9 as historical full-feature milestones. **Latest priority on 2026-10-15 is C0–C6 compositor/scaling stabilization, following U0–U4 source work.** R0–R7 are recorded as implemented at source/offline test level, but screenshot proves R2/R3 UI acceptance failed. Do not restart old R0–R7 from scratch. Work unattended in small verified commits, keep this repo's progress ledger current, and defer new non-UI features until C0–C6 have available offline evidence and real-game visual acceptance.
+**Owner:** PsychopatzCore for platform/UI and reusable assets; ProjectHoomans for contacts/conversations; DynamicTrading for trader/scanner and server commerce. This roadmap preserves original R0–R9 as historical full-feature milestones. **Latest priority on 2026-10-15 is A0–A8 per-device walkie/HAM/manpack asset production; C0–C4 compositor/scaling groundwork exists at source/offline level.** R0–R7 are recorded as implemented at source/offline test level, but screenshot proves R2/R3 UI acceptance failed. Do not restart old R0–R7 from scratch. Work unattended in small verified commits, keep this repo's progress ledger current, and defer unrelated commerce/communication features while developing A0–A8 and completing remaining normal-game compositor acceptance.
 
-## Current highest-priority gate — Compositor and adaptive scale (C0–C6)
+## NEXT: Asset-family refactor A0–A8 (2026-10-15)
+
+**Canonical contract:** `psychopatzCore/Docs/radio_os/CORE_RADIO_DEVICE_ASSETS.md`. Priority has shifted from low-resolution unified shell source to **individual, genuinely high-detail model shells for walkie, HAM and manpack**, with shared UI widget atlases and per-model condition variants. Existing C0–C4 LCD compositing/alpha/zoom work is committed and MUST be reused. Native C5/C6 acceptance is still pending.
+
+| Phase | Immediate responsibility |
+|---|---|
+| **A0 — NEXT** | Audit all device fullTypes/capabilities/actual vanilla visuals, existing high-res source provenance, Core render/registry compatibility |
+| A1 | Per-model skin schema, separate transparent shell path, coordinate transform, variable controls, legacy v1 compatibility |
+| A2 | Authoring/export workflow, alpha aperture/opaque LCD smoke, sharpness/UV/caching/per-device geometry validation |
+| A3 | First **US Army walkie** high-resolution transparent pilot and visual approval gate |
+| A4 | Remaining five walkies, one independent model/source at a time |
+| A5 | **HAM radio family** models and placed-device considerations, not postponed |
+| A6 | **Manpack radio** model(s) with separate chassis proportions/controls |
+| A7 | Optional cosmetic pristine/scratched/worn/damaged overlays, compact deterministic selection and fallback |
+| A8 | Normal Project Zomboid SP/MP UI/art validation, Hoomans/DT regressions and safe retirement of low-res legacy shells |
+
+This is a **documentation-only planning update**. No new shell PNG has yet been produced or replaced. Do not claim HAM/manpack art done or source fidelity recovered. A3+ actual production skins require approved/authentic source art; safe A0–A2 technical groundwork can proceed unattended. The bundled six-shell PNG remains a compatibility fallback until replacement skins pass tests.
+
+**PZ Headless Harness is prohibited.** Only offline Lua/Pillow and normal Project Zomboid are allowed evidence paths. No native success should be inferred from synthetic compositing or registered manifest IDs.
+
+### Relationship to earlier goals
+
+C0–C4 compositor/backplate/zoom/UV fixes: code already committed at source/offline level; do not restart or regress them. C5/C6 and U/R native/MP/profiler gates still apply to each replacement. A0–A8 adds the **asset/model families** that earlier scope deferred; continue preserving shared Core OS and V2 commerce.
+
+---
+
+## Earlier compositor gate — preserve its implemented work (C0–C6)
 
 **New native screenshot evidence (October 15, 2026) supersedes earlier UI acceptance expectations.** The Core radio is now draggable and shows app icons in source, but its in-game shell remains visually low-resolution, cropped/misaligned around the open LCD, seemingly transparent through the monitor, and lacks discoverable zoom suitable for small/large displays. Execute **C0–C6** before adding communication or economy features.
 

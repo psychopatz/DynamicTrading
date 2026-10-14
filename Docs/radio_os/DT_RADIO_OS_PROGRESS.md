@@ -1,5 +1,21 @@
 # Reusable PsychopatzCore Radio OS — Progress Ledger
 
+## NEW current work — A0 device-family asset architecture (2026-10-15)
+
+**Next task: A0** from `psychopatzCore/Docs/radio_os/CORE_RADIO_DEVICE_ASSETS.md`, followed by A1–A2 technical refactor before **A3 US Army pilot artwork**. The user approved decoupling shell artwork **by individual radio model and by family**, specifically all walkie variants PLUS HAM and manpack. Shared UI widget atlases, Radio OS app/contacts API, Core-owned renderer, Hoomans NPC provider and DTCommon V2 commerce stay unchanged.
+
+**Repository source audit at planning:** Core main `13d8aefbd23b17b41cac5f5e7cebe48a5e61626e` (latest UV gutter fix); DynamicTrading main `0672ddb3ee3494977049f326d6776eb56440f3b4`; Hoomans `c96cadda1570f59810552f9d3fc55d5c957ba670`. Recheck immediately on start. No asset or code changes are part of this goal-document commit.
+
+**Existing implemented baseline:** Core has LCD matte/backdrop sandwich, measured six walkie apertures, responsive zoom and smokes, with recent 1px UV gutter repair. Legacy shell art still comes from **341×341** reduced source enlarged into a 1024×1024 six-shell atlas, which irreversibly lost detail. Renderer/zoom improvements do NOT manufacture missing source fidelity. Normal-game native acceptance remains open.
+
+**Planned target:** individual high-detail transparent master and PNG per model, per-model aperture/backdrop/content and variable-control mappings, optional pristine/scratched/worn/damaged overlays derived from valid item condition where appropriate, shared five UI atlases. Six walkies (current manifest IDs) plus **HAM** candidates (`HamRadio1`, `HamRadio2`, `HamRadioMakeShift`) and **manpack** candidate (`ManPackRadio`) are mandatory; confirm exact Base fullTypes, capabilities, graphics, portable/placed behavior from actual installed Build42 before implementation. Do NOT reuse three-key walkie schema for HAM/manpack.
+
+**Proposed per-chunk gates:** A0 evidence table -> A1 v2 schema compatibility -> A2 isolated art pipeline and alpha/quality tests -> A3 US Army image-approval checkpoint -> A4 individual remaining walkies -> A5 HAM -> A6 manpack -> A7 variants -> A8 native SP/MP and legacy cleanup. Missing authentic high-resolution source must be reported as an art blocker; never claim upscaling the compact sheet is a high-detail replacement. No shell art has been changed by this documentation update.
+
+**Absolute prohibition:** PZ Headless Harness. Offline Lua/Pillow tests and normal game testing only, native results pending until actual evidence. Commit each validated owner-local change safely; no overwriting saved games or unrelated files, no force pushing. Maintain existing DT/Hoomans security/trade regressions; do not build a second trade UI.
+
+---
+
 ## C0–C3/C4 offline stabilization checkpoint — 2026-10-15
 
 Core-owned compositor and adaptive-scale work is implemented and pushed in

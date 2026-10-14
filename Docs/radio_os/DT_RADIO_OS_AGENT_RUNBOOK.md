@@ -2,6 +2,14 @@
 
 **Goal:** a mod-agnostic, real, clickable radio/contacts OS **owned by PsychopatzCore**, consumed by Project Hoomans and Dynamic Trading V2, extensible by future mods. This replaces the obsolete plan assigning the entire Radio OS to DTCommon.
 
+## Current reading priority — device-family asset refactor
+
+**Read first:** `psychopatzCore/Docs/radio_os/CORE_RADIO_DEVICE_ASSETS.md`. It defines **A0–A8** as the next asset-architecture and art-production work: independent full-resolution transparent shells and versioned geometry for **walkie, HAM and manpack**, with optional pristine/scratched/worn/damaged appearance layers. This replaces any old instruction to put all shells in one compact 341×341 master or to defer HAM/manpack indefinitely.
+
+Read next: `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_COMPOSITOR_SCALE.md` for the **already implemented** LCD sandwich, alpha coverage, zoom and UV-gutter fixes; then the normal cross-module runbook/roadmap. C0–C4 source/offline work has been committed; preserve it rather than restarting. Normal-game native acceptance remains pending.
+
+**No PZ Headless Harness**, ever. No new image assets or gameplay changes were made by this planning update.
+
 ## Read order
 
 1. `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_COMPOSITOR_SCALE.md` — **NEW CURRENT C0–C6 goal**.
@@ -33,7 +41,7 @@ Treat actual checked-out source, verified dependencies and native game observati
 - Core already has `PsychopatzCore.RadioDeviceState` with `GetPlayerDevices` / `FindActivePlayerDevice` / `IsActive`, `PsychopatzCore.RadioActions`, `PsychopatzRadioSignalHost` and generic `PsychopatzPortraitPanel`. Reuse and upgrade these. Do not build another competing `ISRadioWindow` patch.
 - Hoomans `WorldDiscovery.HandleAction` has `radio_scan`, `radio_ambient`, `call_contact` and `WorldDiscovery.CallContact`. Re-audit client/server wiring; a *discovery phase update* is not automatically NPC chit-chat. Hoomans decides real calls/dialogue capabilities and what a player is allowed to know.
 - DTCommon `Client.OpenTrader` already forwards to PNC trade-mode window when present; trader settlement is in `TraderService`. `validateAccess` currently passes for `record.a == 1` without actual device validation; close access gaps without breaking current pricing or physical trade.
-- Six production walkie atlases (6 shells; 25 UI Core; 36 buttons; 32 icons; 25 indicators; 8 effects) **have been migrated to PsychopatzCore**. Current window/renderer and SDK exist there; screenshots show its drag, resize, LCD and sprite-widget usability are deficient. Native SP/MP acceptance remains unpassed. Shell art is color-reduced and LCD holes are small. HAM/manpack variants are deferred.
+- Core already owns six **legacy** walkie shell sprites plus five shared UI atlases. Compositor and zoom improvements are committed. The **new A0–A8 asset project** requires individual source assets for six walkies plus verified HAM and manpack models; HAM/manpack are no longer deferred from the asset-production scope. The low-resolution shell atlas remains as compatibility fallback until each real high-resolution skin passes visual/native checks.
 
 ## Unattended execution loop
 
@@ -80,3 +88,12 @@ Keep `Docs/radio_os/DT_RADIO_OS_PROGRESS.md` compact: current phase, implemented
 - `_Geometry` and `_Input` already have scale/drag implementations. Focus on user-discoverable +/-/reset/fit controls and viewport-based limits for 720p/1080p/1440p/4K, keeping geometry saved and scaled clickable bounds in sync.
 - Only Core owns the compositor/asset/window. Run DT/Hoomans regressions to guard compatibility; do not rewrite server trade or NPC conversations.
 - PZ Headless Harness remains **absolutely prohibited**. Keep evidence honest; user normal-game screenshots are native *observations*, not comprehensive functional passes.
+
+
+## Updated asset-production workflow — 2026-10-15
+
+- Next engineering chunk: **A0** source/Build42 item audit and provenance, then **A1** per-model skin schema/variable hardware controls and **A2** per-model transparent PNG authoring/alpha-test pipeline. Core-only; no consumer repo UI/commerce fork.
+- Production sequence: **A3 US Army walkie pilot for approval**, A4 other walkies one-by-one, **A5 HAM**, **A6 manpack**, A7 cosmetic condition overlays/runtime selection, A8 normal-game validation and safe legacy retirement.
+- Each device has its own editable high-resolution master and full transparent shell PNG, screen aperture and content geometry. Models may have different proportions and controls. Shared UI atlases stay shared; do not duplicate apps or icon sets per radio.
+- **Art approval boundary:** do not silently substitute new artwork or upscale legacy compact source as a "high-res" replacement. Do safe audits, manifest/test refactor and artist-ready specs unattended; require reviewed/approved source imagery before production skin substitution. Preserve legacy fallback and previous compositor/zoom code.
+- Source status verified at plan time: `psychopatzCore/main` `13d8aef`, `DynamicTrading/main` `0672ddb`, Hoomans `c96cadda` (refresh HEAD). A0–A8 plan is in Core-owned `Docs/radio_os/CORE_RADIO_DEVICE_ASSETS.md`.
