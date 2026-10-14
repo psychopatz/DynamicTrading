@@ -110,9 +110,29 @@ The pushed Core was exercised without modifying any consumer ownership:
   provider, settlement, inventory, or trader code was altered.
 
 DynamicTrading documentation remains pushed at `2ba5e756`; Core remains pushed
-at `6c20a47`; Hoomans and MarketSense worktrees remain clean and unchanged.
+at `13d8aef`; Hoomans and MarketSense worktrees remain clean and unchanged.
 Native Build 42 SP/MP visual acceptance and profiler evidence are still open:
 these Lua/Pillow checks are offline evidence, not native evidence.
+
+## C2 UV-gutter follow-up — 2026-10-15
+
+The C2 atlas audit found a one-pixel alpha fringe in the compact shell atlas's
+inter-row gutter at y=464. Core commit `13d8aef`
+(`fix(radio-os): isolate shell atlas UV gutters`) clears only the atlas gutter
+in the existing production builder and regenerated PNG. Pixel comparison
+against the previous Core atlas reports exactly 108 changed pixels, all on row
+464; no shell-cell, content viewport, or LCD aperture pixel changed.
+
+The rebuilt artifact and checked-in artifact are deterministic and share
+SHA-256 `8aa544733b2256ddec0182cc3ecbdd7562bc1c30b94b8e050704e5644843557b`.
+The six-shell Pillow compositor smoke now also checks transparent themed LCD
+background alpha and all shell UV gutters. Core manifest/window smokes still
+pass. The normal-game texture-filter result remains unverified until a regular
+Build 42 session; no global texture-filter setting was changed.
+
+Core `13d8aef` is pushed to `origin/main`. The historical DTAbstract copy is
+left untouched because Core is the production asset owner; DynamicTrading
+does not load the Core shell atlas through a second renderer.
 
 **Planning update:** 2026-10-15
 **Baseline at planning:** DynamicTrading `da480d5ef91e18bbbcdfe80c79e5523356e13cca`; PsychopatzCore `ff7ce885eed29fa5f42b1a5223e39144982c8049`. Rechecked before implementation; unrelated worktree changes were preserved.
@@ -181,13 +201,40 @@ R0–R7 were implemented and tested at source/asset/offline-Lua levels, **but na
 - **Native SP/MP:** user-run in-game acceptance checklist provided; screenshots/logs are still pending. Offline mocks are not native evidence.
 - **Profiler:** user-run combined radio/contact/trader workload is still pending.
 
-## User-run native acceptance checklist
+## Consolidated user-run native acceptance checklist (pending)
 
-1. In a fresh singleplayer test save, enable PsychopatzCore alone and test `Base.WalkieTalkie1` through `Base.WalkieTalkie5` plus `Base.WalkieTalkieMakeShift`. Turn each device on, set volume above zero, unmute the microphone, open native `Device Options`, and open `Radio OS`. Verify the shell, readable LCD, controls, Home, Settings, Contacts, back navigation, and close/reopen behavior.
-2. Enable ProjectHoomans with Core. Tune an active radio to `69000` and wait for discovery, or use the authorized Hoomans map Discovery debug action to reveal all signals. Open Radio OS → Contacts, verify names/status/portraits, and confirm `call_contact` reports a request without fabricating a conversation.
-3. Enable DTCommon/DTAbstract/DTHoomans. Test a READY abstract trader while farther than the physical range; Radio OS → Traders must hand off to the existing V2 trade UI. Test a live nearby Hoomans trader; it must appear and hand off in range, then disappear or be denied when the player moves away or disables the radio. Guards/referral-only contacts must not trade.
-4. Repeat the Core, Hoomans, and trading flows on a dedicated multiplayer server with the same mod set, including reconnect and two independent players.
-5. With the Core profiler GUI connected, capture a workload that opens Contacts and Traders, moves through rows, performs a trade, moves out of range, and reconnects. Preserve screenshots or bounded profiler summaries plus the relevant `console.txt` error scan.
+Run this only in a normal Project Zomboid Build 42 desktop session with a fresh,
+disposable save. Do not use the PZ Headless Harness or treat offline mocks as
+native evidence.
+
+1. **Six-shell baseline:** with PsychopatzCore alone, test `Base.WalkieTalkie1`
+   through `Base.WalkieTalkie5` and `Base.WalkieTalkieMakeShift`. Open each from
+   native Device Options → Radio OS and verify the complete shell, opaque LCD,
+   readable content, buttons, LEDs, Home, Contacts, Settings, back navigation,
+   close/reopen behavior, and no game-world bleed through the aperture.
+2. **Responsive geometry:** at 720p, 1080p, 1440p, and 4K where available,
+   capture screenshots before/after Zoom In, Zoom Out, Reset Zoom, and Fit to
+   Screen. Verify constant aspect ratio, aligned shell/LCD/portrait/buttons and
+   hitboxes, bounded clipping, drag/resize behavior, and position/zoom persistence
+   after close/reopen and resolution changes.
+3. **Pages and Hoomans:** exercise Home, Contacts, Settings, Trader Scanner, and
+   Contact Detail with long lists and pagination. With ProjectHoomans enabled,
+   verify real authorized NPC names/status/portraits stay inside the LCD and that
+   `call_contact` queues the existing request without fabricating dialogue.
+4. **Trading ownership:** with DTCommon/DTAbstract/DTHoomans enabled, verify
+   remote trader eligibility and the Radio OS Trader Scanner hand off to the
+   existing V2 trading UI. Verify physical merchant interaction and proximity
+   denial while moving out of range; do not open a second trading window or alter
+   authoritative settlement/inventory behavior.
+5. **Multiplayer:** repeat the Core, Hoomans, and trading flows on a normal
+   dedicated server with the same mod set using two independent players. Test
+   reconnect, radio/device off, walking away, and portrait/contact refresh.
+6. **Evidence:** preserve timestamped screenshots, the relevant normal-game
+   `console.txt` scan (including RadioOS and ExceptionLogger errors), and a
+   bounded PsychopatzCore profiler summary covering Contacts, Trader Scanner,
+   row navigation, trade handoff, range exit, and reconnect. Record SP, MP, and
+   profiler results separately; all native acceptance remains open until these
+   artifacts exist.
 
 ## U0–U4 — Radio OS UI stabilization slice (2026-10-15)
 
