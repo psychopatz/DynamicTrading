@@ -31,6 +31,14 @@ R0–R7 are implemented and verified at source, asset, and offline-Lua levels. N
 - **Native SP/MP:** user-run in-game acceptance checklist provided; screenshots/logs are still pending. Offline mocks are not native evidence.
 - **Profiler:** user-run combined radio/contact/trader workload is still pending.
 
+## User-run native acceptance checklist
+
+1. In a fresh singleplayer test save, enable PsychopatzCore alone and test `Base.WalkieTalkie1` through `Base.WalkieTalkie5` plus `Base.WalkieTalkieMakeShift`. Turn each device on, set volume above zero, unmute the microphone, open native `Device Options`, and open `Radio OS`. Verify the shell, readable LCD, controls, Home, Settings, Contacts, back navigation, and close/reopen behavior.
+2. Enable ProjectHoomans with Core. Tune an active radio to `69000` and wait for discovery, or use the authorized Hoomans map Discovery debug action to reveal all signals. Open Radio OS → Contacts, verify names/status/portraits, and confirm `call_contact` reports a request without fabricating a conversation.
+3. Enable DTCommon/DTAbstract/DTHoomans. Test a READY abstract trader while farther than the physical range; Radio OS → Traders must hand off to the existing V2 trade UI. Test a live nearby Hoomans trader; it must appear and hand off in range, then disappear or be denied when the player moves away or disables the radio. Guards/referral-only contacts must not trade.
+4. Repeat the Core, Hoomans, and trading flows on a dedicated multiplayer server with the same mod set, including reconnect and two independent players.
+5. With the Core profiler GUI connected, capture a workload that opens Contacts and Traders, moves through rows, performs a trade, moves out of range, and reconnects. Preserve screenshots or bounded profiler summaries plus the relevant `console.txt` error scan.
+
 ## Known limitations / baseline failures
 
 - Core composition smoke currently fails its pre-existing profiler bootstrap load-order assertion (`tests/psychopatz_core_composition_smoke.lua:80`); the new radio OS is client-only and does not modify shared composition order.
