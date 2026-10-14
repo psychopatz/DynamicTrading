@@ -4,7 +4,7 @@
 
 ## Current state
 
-T0 is complete. T1/T3 implementation slices, the T4 server/UI bridge, and the T5 MarketSense seed are committed. Project Hoomans trade-result/footer feedback is fixed and pushed as `ded1acb9`. The MVP is **not ready**: native SP/MP player settlement and T6 acceptance remain open.
+T0 is complete. T1/T3 implementation slices, the T4 server/UI bridge, and the T5 MarketSense seed are committed. Project Hoomans trade-result/footer feedback is fixed in `ded1acb9`, and trade refresh/invalidation is fixed in `57137295`. The MVP is **not ready**: native SP/MP player settlement and T6 acceptance remain open.
 
 ## Checked-out inputs
 
@@ -12,9 +12,9 @@ Validated 2026-10-14 after a safe fetch of `origin/main`; existing uncommitted D
 
 | Repository | HEAD | Evidence scope |
 |---|---|---|
-| DynamicTrading | `337caddd3b71` | current V2 rewrite |
+| DynamicTrading | `a2663b89` | current V2 rewrite |
 | MarketSense | `32a73836a2bf7de52cb36d75bd1f368ffbd445a5` | public definition/instance pricing APIs |
-| ProjectHoomans | `ded1acb9cf7d` | trade-mode window, result feedback, and inventory rows |
+| ProjectHoomans | `57137295` | trade-mode window, result feedback, inventory rows, and refresh invalidation |
 | PsychopatzCore | `7609e992bcca` | inventory/currency primitives |
 
 ## T0 — complete
@@ -42,7 +42,7 @@ Validated 2026-10-14 after a safe fetch of `origin/main`; existing uncommitted D
 
 - Hoomans trade endpoint consumes authoritative `sellRows`, hides unavailable sell prices, preserves item identities, rejects counted stacks in trade rows, and submits only the identities selected from an aggregate row.
 - Hoomans trade/storage/transaction focused tests pass, including aggregate-row identity trimming. The standalone UI smoke remains harness-limited because it has no native `ISUI/ISPanel` module.
-- Trade footer now reserves a visible status row, shows trader budget, explains player receive/pay direction, and exposes asynchronous server rejection text; commit `ded1acb9` is pushed.
+- Trade footer now reserves a visible status row, shows trader budget, explains player receive/pay direction, and exposes asynchronous server rejection text; commit `ded1acb9` is pushed. Trade refresh caching/invalidation and bounded post-settlement reconciliation are pushed as `57137295`.
 - Real UI screenshot and end-to-end SP/MP player evidence are not claimed.
 
 ## T5 — implemented; native seed smoke passes
@@ -59,6 +59,13 @@ T6 — user-run manual native SP/MP player trade loop, restart/replay checks, an
 ## T6 — open
 
 The native server boot, MarketSense adapter, bounded seed, and write/reload fixtures pass with activation order `PsychopatzCore → MarketSense → DTCommon → DTAbstract → ProjectHoomans → DTHoomans` and zero actionable errors. This proves loading, quote-boundary, first-time seed, and trader-stock persistence behavior. Native SP player settlement, native MP settlement/reconnect/replay, and measured snapshot/commit performance remain unverified.
+
+## Current checkpoint — trade refresh cache
+
+- Project Hoomans no longer rebuilds and repopulates both trade lists every render frame. Refreshes now occur on initial setup, explicit draft/snapshot changes, inventory invalidation events, container changes, or a changed trader revision.
+- Accepted trades schedule three bounded 100 ms reconciliation passes so replicated player inventory changes become visible without reopening the window.
+- Focused `pnc_inventory_trade_smoke.lua` and `pnc_inventory_open_perf_smoke.lua` pass. Changed production files report zero Kahlua errors.
+- Manual native SP/MP verification of hitch reduction and live refresh is still required; no headless runtime harness was used.
 
 ## Remaining defects and evidence limits
 
