@@ -1,5 +1,93 @@
 # Reusable PsychopatzCore Radio OS — Progress Ledger
 
+## C0–C3/C4 offline stabilization checkpoint — 2026-10-15
+
+Core-owned compositor and adaptive-scale work is implemented and pushed in
+PsychopatzCore `6c20a47` (`feat(radio-os): layer LCD compositing and adaptive zoom`).
+DynamicTrading, ProjectHoomans, and MarketSense source ownership is unchanged.
+
+### C0 audit and reproduced cause
+
+The renderer already attempted `screen_bg_<theme>`, so the failure was not an
+absent background draw. Pillow inspection of the checked-in 1024×1024 shell
+atlas found the complete connected alpha-zero LCD apertures are larger than the
+safe content rectangles:
+
+| skin | content viewport | measured aperture |
+| --- | --- | --- |
+| Toys | 90,236,81×61 | 88,232,90×81 |
+| Valutech | 85,236,82×61 | 82,232,96×81 |
+| Premium | 81,236,83×61 | 80,232,102×81 |
+| Tactical | 99,246,81×55 | 97,231,93×81 |
+| US Army | 107,247,72×55 | 97,234,93×81 |
+| Makeshift | 86,247,79×55 | 83,231,99×81 |
+
+The prior renderer backed only the first column, leaving transparent pixels in
+the intended aperture able to expose the game world. `lcdBackdrop` metadata now
+covers the measured aperture while `screen` remains the inset content/portrait
+viewport. Exterior shell transparency is not filled.
+
+### C1–C4 offline implementation/evidence
+
+- The Core renderer now draws an explicit device-local sandwich: opaque theme
+  matte, themed LCD sprite, stencil-clipped dynamic page/status, optional
+  scanlines, then the transparent shell and physical controls. Portrait child
+  rendering is wrapped in the same safe viewport stencil; screen-render errors
+  clear the stencil before returning. Pixel-snapped rectangles use the same
+  scale transform for LCDs, controls, shell destination, and hitboxes.
+- Settings is discoverable from Home and exposes translated Zoom +, Zoom −,
+  Reset Zoom, and Fit Screen rows. Limits derive from available viewport with
+  90% width / 82% height safety margins and are exercised at 1280×720,
+  1920×1080, 2560×1440, and 3840×2160. Position/scale persistence remains
+  player/device scoped through Core UI settings. Resolution changes re-clamp
+  the open window without resetting the saved preference.
+- `OS.SetCompositorDebug(true)` is an opt-in, non-persisted development probe;
+  normal gameplay keeps it disabled. It outlines shell destination, matte
+  aperture, content viewport, and physical hitboxes.
+- New offline Pillow test:
+  `python3 tests/radio_os/psychopatz_radio_os_compositor_smoke.py` → PASS;
+  six synthetic RGBA composites prove opaque matte coverage and exterior
+  transparency, plus alpha-hole, UV-cell, scaled geometry, and button checks.
+- Compact production builder now fails if any of the six measured alpha-hole
+  bounds drift. Rebuild command → `PASS: 1024x1024 / 6 walkie shells /
+  alpha-zero LCD openings / valid cells`. Checked-in and rebuilt shell PNGs
+  are pixel-identical; both SHA-256 values are
+  `6aac44ea4c6de17a4ff2ea13f8b6cddd50b432f02700a5258bb7b2f0a5ebfb9d`.
+- Core offline Lua smokes pass: manifest (6 skins/132 sprites), window,
+  registry, and action. The window smoke now asserts matte-first ordering,
+  stencil cleanup after an intentional render failure, aperture containment,
+  adaptive limits, resolution clamping, settings actions, drag/resize ratio,
+  device-scoped persistence, and native-host restoration. Offline translation
+  mocks may print the known `getModFileReader_unavailable` diagnostic.
+- Changed Core Lua files pass `luac -p`; `pz_verify` reports zero Kahlua
+  errors and zero hardcoded UI strings in the Radio OS directory. The token
+  report still warns on the large manifest/device/renderer files; this is a
+  maintainability warning, not a failed compatibility check.
+
+### C2 source-fidelity result and native boundary
+
+Core and the historical DynamicTrading DTAbstract copies of all seven radio
+PNGs are byte/pixel-identical. The accessible project trees contain the
+341×341 compact source and deterministic 1024×1024 output, but no authentic
+1448×1086 master required by the high-resolution builder. No unrelated artwork
+was substituted; fine-detail recovery remains an art-source blocker.
+
+No normal Project Zomboid gameplay, SP/MP session, screenshot, console.txt
+capture, or profiler run was performed in this chunk. The prohibited PZ
+Headless Harness was not used. Native C5/C6 acceptance therefore remains
+pending and must be verified in normal Build 42 gameplay.
+
+### Commit/push and next task
+
+- PsychopatzCore `6c20a47` pushed `main → origin/main`.
+- DynamicTrading documentation is the only DT change in this checkpoint; it
+  does not alter DTCommon, DTAbstract, or DTHoomans behavior.
+- Next: run focused DT/Hoomans/Core integration regressions against the pushed
+  Core, then perform the consolidated normal-game checklist for all six skins,
+  Home/Contacts/Settings/Trader Scanner, portrait containment, scale controls,
+  console.txt, and profiler evidence. Keep native SP/MP/profiler claims
+  separate from offline evidence.
+
 **Planning update:** 2026-10-15
 **Baseline at planning:** DynamicTrading `da480d5ef91e18bbbcdfe80c79e5523356e13cca`; PsychopatzCore `ff7ce885eed29fa5f42b1a5223e39144982c8049`. Rechecked before implementation; unrelated worktree changes were preserved.
 
