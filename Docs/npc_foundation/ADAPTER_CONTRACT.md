@@ -1,0 +1,25 @@
+# Dynamic Trading -> Core NPC Foundation: Adapter Contract
+
+Status: planning only. Authoritative cross-repository job: https://github.com/psychopatz/psychopatzCore/tree/main/Docs/npc_foundation. This document is a handoff for DTCommon/DTAbstract/DTHoomans; it does NOT replace GOAL_PROMPT.md or Docs/trading/DT_TRADING_MVP_* and does NOT mark native T6 trade acceptance complete.
+
+## Roles and dependency behavior
+- DTCommon keeps authoritative trader ID, market stock/virtual goods, trader budget, MarketSense quotes, item/currency transaction, access policy, dedupe and trade revisions. Link traderID -> Core actorId. Do not equate merchant stock and Core personal NPC inventory.
+- DTAbstract provides radio and nearby abstract merchant contact, generic Talk, and trading presentation only under server-authorized physical access or future explicit delivery/fulfillment. It must run with Core+MarketSense+DTCommon alone; no PNC import.
+- DTHoomans provides optional Hoomans live-body and richer dialogue adapter. It reuses the canonical Core NPC data and DTCommon merchant ledger. Its current mod.info requires ProjectHoomans; preserve that dependency.
+- Hoomans absent -> retain one actor with stable identity, appearance, clothing and personal equipment, relationship and journey. Hoomans enabled -> materialize the same data without NPC reroll or merchant duplication.
+- Both frontends loaded -> one actorId, one traderID, one journey authority, one physical body lease and one interaction entry. Save/restart/load module switching must be lossless; in-process provider switching only when both adapters already loaded.
+
+## Existing coupling to remove incrementally
+DTHoomans_CaravanLifecycle currently creates/maintains PNC mobile factions; DTHoomans_SettlementTrader binds Hoomans-staffed settlements; DTHoomans_Server validates live merchant body/role. DTAbstract_Client enumerates radio traders and opens trade. DTCommon_TraderService currently validates nearby actor or active radio for snapshots/transactions; a radio may authorize direct settlement. Do not delete these guards; replace with server-controlled encounter/communication/fulfillment policies backed by Core position/presence and explicit trading modes.
+
+## Merchant world behavior
+- Merchant chooses eligible Core Location anchors/settlements and travels via Core Journeys. Location discovery and permissions are scoped; no magical omniscient map of all merchants.
+- On arrival establish a bounded stop and optionally perform idempotent DTCommon restock after verified visit; no restock on simply opening UI. No Hoomans community director required for the DT-only case.
+- Relationship snapshots from Core inform capped server-side DT buy/sell modifiers; MarketSense continues to own intrinsic value and DTCommon owns quote/revision/settlement. Avoid repeated trivial-trade reputation farming and stale quote commit.
+- Map hover uses Core portrait from resolved appearance and clothes; nearby floating Talk invokes registered shared interaction provider; no duplicate shop/dialogue windows.
+- Radio contact can talk at distance, but item and money exchange require local encounter or future separately implemented reserved delivery/pickup path. No item teleportation by merely possessing a radio.
+
+## Mandatory compatibility and security checks
+Core+DTCommon only; DTAbstract only (without Hoomans); DTHoomans only (with Hoomans); both enabled; switching via save/restart; Hoomans added/removed after migration; multiplayer with reconnect. Assert stable actor/trader/relationship/inventory/stock IDs and versions, no duplicate merchant stock or independent body simulation; test stale snapshots, remote commit rejection, invalid item identity, transaction rollback.
+
+Existing Docs/trading/DT_TRADING_MVP_PROGRESS.md has open native SP/MP T6 gates; preserve them. No Workshop publish/re-publish or non-user live gameplay signoff. Initial work is Core P0A mapping and source-backed fixture, not a DT gameplay rewrite.
