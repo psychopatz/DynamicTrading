@@ -131,7 +131,7 @@ function Stock.Price(fullType, inventoryItem)
     }, details)
 end
 
-function Stock.Quote(fullType, operation, inventoryItem)
+function Stock.Quote(fullType, operation, inventoryItem, pricingContext)
     local price = Stock.Price(fullType, inventoryItem)
     local audit = tradeAudit()
     local auditEnabled = auditIsEnabled(audit)
@@ -156,8 +156,17 @@ function Stock.Quote(fullType, operation, inventoryItem)
         end
         return result
     end
+    local modifier = pricingContext
+        and tonumber(pricingContext.relationshipModifier) or 0
+    modifier = math.max(-0.25, math.min(0.25, modifier))
+    if operation == DTCommon.OP_BUY then
+        unitPrice = math.floor(unitPrice * (1 - modifier) + 0.5)
+    else
+        unitPrice = math.floor(unitPrice * (1 + modifier) + 0.5)
+    end
     price.operation = operation
-    price.unitPrice = unitPrice
+    price.unitPrice = math.max(1, unitPrice)
+    price.relationshipModifier = modifier
     if auditEnabled and type(audit.RecordQuote) == "function" then
         audit.RecordQuote(fullType, operation, price)
     end
@@ -167,8 +176,9 @@ end
 -- Compatibility helper for the old stock callers.  It deliberately returns
 -- nil on an unavailable price; callers must carry the reason instead of
 -- inventing a generic fallback amount.
-function Stock.MarketPrice(fullType, inventoryItem)
-    local quote = Stock.Quote(fullType, DTCommon.OP_BUY, inventoryItem)
+function Stock.MarketPrice(fullType, inventoryItem, pricingContext)
+    local quote = Stock.Quote(fullType, DTCommon.OP_BUY, inventoryItem,
+        pricingContext)
     if not quote.ok then return nil, quote.reason end
     return quote.unitPrice
 end
@@ -316,7 +326,7 @@ function Stock.SaveAndTransmit()
     Storage.Transmit()
 end
 
-function Stock.SnapshotItems(record, existingStore)
+function Stock.SnapshotItems(record, existingStore, pricingContext)
     local store = existingStore
     local reason
     local audit = tradeAudit()
@@ -332,8 +342,10 @@ function Stock.SnapshotItems(record, existingStore)
         local fullType = Inventory.getItemFullType(itemRecord[1])
         if fullType then
             scanned = scanned + 1
-            local buyQuote = Stock.Quote(fullType, DTCommon.OP_BUY)
-            local sellQuote = Stock.Quote(fullType, DTCommon.OP_SELL)
+            local buyQuote = Stock.Quote(fullType, DTCommon.OP_BUY, nil,
+                pricingContext)
+            local sellQuote = Stock.Quote(fullType, DTCommon.OP_SELL, nil,
+                pricingContext)
             if buyQuote.ok and sellQuote.ok then
                 accepted = accepted + 1
                 items[#items + 1] = {
@@ -355,7 +367,7 @@ end
 -- Build player-side sell rows independently from trader stock membership.  The
 -- wire projection contains only primitive identity and quote data; concrete
 -- InventoryItem objects never cross the client boundary.
-function Stock.SnapshotSellRows(physical)
+function Stock.SnapshotSellRows(physical, pricingContext)
     local rows = {}
     local byKey = {}
     local audit = tradeAudit()
@@ -374,7 +386,8 @@ function Stock.SnapshotSellRows(physical)
         local fullType = tostring(itemValue(item, "getFullType", "") or "")
         local itemID = tostring(itemValue(item, "getID", "") or "")
         if fullType ~= "" and itemID ~= "" and not isCurrency(fullType) then
-            local quote = Stock.Quote(fullType, DTCommon.OP_SELL, item)
+            local quote = Stock.Quote(fullType, DTCommon.OP_SELL, item,
+                pricingContext)
             if quote.ok then
                 accepted = accepted + 1
                 local quantity = math.max(1, math.floor(

@@ -6,6 +6,7 @@ DTCommon.TraderService = Service
 local Storage = DTCommon.Storage
 local Stock = DTCommon.TraderStock
 local Support = DTCommon.TraderSupport
+local Policy = require "DTCommon/DTCommon_CoreActorPolicy"
 
 function Service.ForEach(callback)
     if type(callback) ~= "function" then return false end
@@ -40,6 +41,9 @@ function Service.Get(traderID)
         leaderNPCID = record.l and Support.Bounded(record.l, 128) or nil,
         memberNPCIDs = type(record.m) == "table" and record.m or {},
         abstractAccessEnabled = record.a == 1,
+        coreActorID = record.ca and record.ca.actorID or nil,
+        coreActorAvailable = record.ca == nil
+            or record.ca.available ~= false,
     }
 end
 
@@ -69,6 +73,7 @@ function Service.Create(definition)
         l = nil,
         m = {},
         a = definition.abstractAccessEnabled == false and 0 or 1,
+        ca = Policy.New(definition.coreActor or definition),
     }
     local saved, reason = Storage.SaveInventory(record, Stock.New())
     if not saved then return nil, reason end

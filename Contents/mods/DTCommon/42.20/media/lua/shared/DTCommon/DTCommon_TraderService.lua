@@ -9,6 +9,7 @@ require "PsychopatzCore/Economy/PsychopatzCurrency"
 local Storage = DTCommon.Storage
 local Stock = DTCommon.TraderStock
 local Support = DTCommon.TraderSupport
+local Policy = require "DTCommon/DTCommon_CoreActorPolicy"
 
 local MAX_ROWS = 32
 local MAX_ITEMS_PER_ROW = 100
@@ -305,6 +306,8 @@ end
 -- trader must prove a live nearby body; a guessed trader ID cannot open that
 -- path remotely. DTHoomans may add stricter role/presence checks.
 local function validateAccess(player, record)
+    local policyOK, policyReason = Policy.IsAvailable(record)
+    if not policyOK then return false, policyReason end
     local status = tostring(record and record.s or DTCommon.STATUS_READY)
     if status ~= tostring(DTCommon.STATUS_READY) then
         return false, "trader_unavailable"
@@ -370,7 +373,7 @@ local function selectedItem(physical, wantedID, wantedFullType)
     return matches[1]
 end
 
-local function prepareSellRows(physical, player, rows)
+local function prepareSellRows(physical, player, rows, pricingContext)
     local selections = {}
     local seenIDs = {}
     local total = 0
@@ -403,7 +406,8 @@ local function prepareSellRows(physical, player, rows)
             end
             local protected = itemProtectionReason(player, item)
             if protected then return nil, nil, protected end
-            local quote = Stock.Quote(row.fullType, DTCommon.OP_SELL, item)
+            local quote = Stock.Quote(row.fullType, DTCommon.OP_SELL, item,
+                pricingContext)
             if not quote.ok then return nil, nil, quote.reason end
             selections[#selections + 1] = {
                 item = item,
@@ -418,7 +422,7 @@ local function prepareSellRows(physical, player, rows)
     return selections, total, nil
 end
 
-local function prepareBuyRows(stock, rows)
+local function prepareBuyRows(stock, rows, pricingContext)
     local selections = {}
     local seenTypes = {}
     local total = 0
@@ -431,7 +435,8 @@ local function prepareBuyRows(stock, rows)
         if stock:count(row.fullType) < row.quantity then
             return nil, nil, "insufficient_stock"
         end
-        local quote = Stock.Quote(row.fullType, DTCommon.OP_BUY)
+        local quote = Stock.Quote(row.fullType, DTCommon.OP_BUY, nil,
+            pricingContext)
         if not quote.ok then return nil, nil, quote.reason end
         selections[#selections + 1] = {
             fullType = row.fullType,
@@ -519,6 +524,7 @@ function Service.Snapshot(traderID, player)
     local usedWeight
     local maxWeight
     local snapshot
+    local pricingContext
     if not record then return nil, "trader_not_found" end
     if player then
         local accessOK, accessReason = validateAccess(player, record)
@@ -526,7 +532,8 @@ function Service.Snapshot(traderID, player)
     end
     store, loadReason = Storage.LoadInventory(record)
     if not store then return nil, loadReason end
-    items, reason = Stock.SnapshotItems(record, store)
+    pricingContext = Policy.PriceContext(record, player)
+    items, reason = Stock.SnapshotItems(record, store, pricingContext)
     if reason then return nil, reason end
     usedWeight, maxWeight = applyCaravanCapacity(record, store)
     snapshot = Service.Get(traderID)
@@ -539,7 +546,8 @@ function Service.Snapshot(traderID, player)
             recursive = true,
         })
         if physical then
-            snapshot.sellRows = Stock.SnapshotSellRows(physical) or {}
+            snapshot.sellRows = Stock.SnapshotSellRows(physical,
+                pricingContext) or {}
         end
     end
     snapshot.quoteRevision = snapshot.stockVersion
@@ -593,6 +601,98 @@ function Service.ExecuteTrade(player, request)
     return Service.ExecuteTradeBasket(player, basket)
 end
 
+function Service.BindCoreActor(traderID, actorID, definition)
+    if not authority() then return false, "server_authority_required" end
+    local record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    if not actorID or tostring(actorID) == "" then
+        return false, "core_actor_required"
+    end
+    Policy.Bind(record, actorID, definition)
+    Storage.Touch()
+    Storage.Transmit()
+    return true
+end
+
+function Service.SetCoreActorAvailability(traderID, available, reason)
+    if not authority() then return false, "server_authority_required" end
+    local record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    Policy.SetAvailable(record, available, reason)
+    record.s = available == true and DTCommon.STATUS_READY
+        or DTCommon.STATUS_AWAY
+    Storage.Touch()
+    Storage.Transmit()
+    return true
+end
+
+function Service.Restock(traderID, options)
+    if not authority() then return nil, "server_authority_required" end
+    local record = Service.GetRecord(traderID)
+    if not record then return nil, "trader_not_found" end
+    local store, reason = Storage.LoadInventory(record)
+    if not store then return nil, reason end
+    local result
+    result, reason = Policy.Restock(record, store, options)
+    if not result then return nil, reason end
+    local saved
+    saved, reason = Storage.SaveInventory(record, store)
+    if not saved then return nil, reason end
+    record.v = integer(record.v, 0) + 1
+    Stock.SaveAndTransmit()
+    return result
+end
+
+function Service.MarkSettlementVisit(traderID, options)
+    if not authority() then return nil, "server_authority_required" end
+    local record = Service.GetRecord(traderID)
+    if not record then return nil, "trader_not_found" end
+    local policy, reason = Policy.MarkVisit(record, options)
+    if not policy then return nil, reason end
+    record.s = DTCommon.STATUS_READY
+    local restockResult
+    if options and options.restock == true then
+        restockResult, reason = Service.Restock(traderID, options)
+        if not restockResult then return nil, reason end
+    end
+    Storage.Touch()
+    Storage.Transmit()
+    return {
+        traderID = traderID,
+        actorID = policy.actorID,
+        visitCount = policy.visitCount,
+        restock = restockResult,
+    }
+end
+
+-- Optional presentation projection. DT contributes merchant capability and
+-- provider metadata; Core remains authoritative for actor identity, body,
+-- portrait, social state, and personal inventory.
+function Service.ProjectCoreMapEntry(traderID, core, mapRegistry, spec)
+    if type(mapRegistry) ~= "table"
+        or type(mapRegistry.ProjectActor) ~= "function"
+    then return nil, "core_map_unavailable" end
+    local record = Service.GetRecord(traderID)
+    local actorID = record and record.ca and record.ca.actorID or nil
+    local actors = core and core.Actors
+    if not actorID or not actors or type(actors.Get) ~= "function" then
+        return nil, "core_actor_unavailable"
+    end
+    local actor = actors.Get(actorID)
+    if not actor then return nil, "core_actor_unavailable" end
+    spec = type(spec) == "table" and spec or {}
+    spec.provider = "DynamicTrading"
+    spec.capabilities = spec.capabilities or {
+        talk = true, inspect = true, trade = true,
+    }
+    local existing = type(mapRegistry.Get) == "function"
+        and mapRegistry:Get(actorID) or nil
+    if existing and type(mapRegistry.Update) == "function" then
+        return mapRegistry:Update(actor, spec)
+    end
+    return mapRegistry:ProjectActor(actor, spec)
+end
+
 function Service.ExecuteTradeBasket(player, request)
     local traderID
     local requestID
@@ -618,6 +718,7 @@ function Service.ExecuteTradeBasket(player, request)
     local accessOK
     local reason
     local result
+    local pricingContext
 
     if not authority() then
         return failure(nil, "BASKET", "server_authority_required")
@@ -646,6 +747,8 @@ function Service.ExecuteTradeBasket(player, request)
         return failure(traderID, "BASKET", "empty_trade")
     end
 
+    pricingContext = Policy.PriceContext(record, player)
+
     stock, reason = Storage.LoadInventory(record)
     if not stock then return failure(traderID, "BASKET", reason) end
     applyCaravanCapacity(record, stock)
@@ -658,10 +761,11 @@ function Service.ExecuteTradeBasket(player, request)
     })
     if not physical then return failure(traderID, "BASKET", "inventory_unavailable") end
 
-    buySelections, buyTotal, reason = prepareBuyRows(stock, buyRows)
+    buySelections, buyTotal, reason = prepareBuyRows(stock, buyRows,
+        pricingContext)
     if not buySelections then return failure(traderID, "BASKET", reason) end
     sellSelections, sellTotal, reason = prepareSellRows(
-        physical, player, sellRows)
+        physical, player, sellRows, pricingContext)
     if not sellSelections then return failure(traderID, "BASKET", reason) end
     netTotal = buyTotal - sellTotal
     if netTotal > 0 and currencyCount(physical) < netTotal then
