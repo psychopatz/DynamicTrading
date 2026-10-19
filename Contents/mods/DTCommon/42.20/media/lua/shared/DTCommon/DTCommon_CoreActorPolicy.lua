@@ -55,10 +55,21 @@ function Policy.New(spec)
             }
         end
     end
+    local providerLease = type(spec.providerLease) == "table"
+        and spec.providerLease or {}
     return {
         schemaVersion = Policy.SCHEMA_VERSION,
         actorID = text(spec.actorID or spec.actorId
             or spec.coreActorID or spec.coreActorId, nil),
+        provider = text(spec.provider or spec.coreProvider
+            or providerLease.provider, nil),
+        providerState = text(spec.providerState or providerLease.state, nil),
+        providerLeaseID = text(spec.providerLeaseID or providerLease.leaseID,
+            nil),
+        providerBodyID = text(spec.providerBodyID or providerLease.bodyID,
+            nil),
+        providerRevision = math.max(0, math.floor(number(
+            spec.providerRevision or providerLease.revision, 0))),
         available = spec.available ~= false,
         availabilityReason = text(spec.availabilityReason, nil),
         relationshipPricing = spec.relationshipPricing ~= false,
@@ -113,6 +124,19 @@ function Policy.SetAvailable(record, available, reason)
     local policy = Policy.Get(record)
     policy.available = available == true
     policy.availabilityReason = text(reason, nil)
+    record.ca = policy
+    return policy
+end
+
+function Policy.SetProviderLease(record, lease)
+    if type(record) ~= "table" then return nil, "trader_required" end
+    if type(lease) ~= "table" then return nil, "provider_lease_required" end
+    local policy = Policy.Get(record)
+    policy.provider = text(lease.provider, nil)
+    policy.providerState = text(lease.state, nil)
+    policy.providerLeaseID = text(lease.leaseID, nil)
+    policy.providerBodyID = text(lease.bodyID, nil)
+    policy.providerRevision = math.max(0, math.floor(number(lease.revision, 0)))
     record.ca = policy
     return policy
 end

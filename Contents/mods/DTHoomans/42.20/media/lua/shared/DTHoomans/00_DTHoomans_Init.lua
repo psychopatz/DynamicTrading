@@ -7,5 +7,6 @@ DTHoomans.SPAWN_COMMAND = "SpawnTrader"
 -- after Project Hoomans so both client menu composition and server authority
 -- use the same caravan-role contract.
 require "DTHoomans/DTHoomans_Conversation"
+require "DTHoomans/DTHoomans_CoreProvider"
 
 return DTHoomans

@@ -64,6 +64,17 @@ local bound, bindReason = Service.BindCoreActor("trader:p7", "npc:p7:service", {
     restockItems = { { fullType = "Base.Bandage", quantity = 2 } },
 })
 T.truthy(bound, bindReason)
+T.equal(record.ca.provider, "DTAbstract", "default abstract provider")
+local leaseBound, leaseReason = Service.SetCoreProviderLease("trader:p7", {
+    provider = "DTHoomans",
+    state = "abstract",
+    leaseID = "lease:npc:p7:service",
+    revision = 4,
+})
+T.truthy(leaseBound, leaseReason)
+T.equal(record.ca.provider, "DTHoomans", "provider lease provider")
+T.equal(record.ca.providerLeaseID, "lease:npc:p7:service",
+    "provider lease id")
 local visit, visitReason = Service.MarkSettlementVisit("trader:p7", {
     authority = "server",
     atSettlement = true,

@@ -608,7 +608,20 @@ function Service.BindCoreActor(traderID, actorID, definition)
     if not actorID or tostring(actorID) == "" then
         return false, "core_actor_required"
     end
+    definition = type(definition) == "table" and definition or {}
+    definition.provider = definition.provider or "DTAbstract"
     Policy.Bind(record, actorID, definition)
+    Storage.Touch()
+    Storage.Transmit()
+    return true
+end
+
+function Service.SetCoreProviderLease(traderID, lease)
+    if not authority() then return false, "server_authority_required" end
+    local record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    local policy, reason = Policy.SetProviderLease(record, lease)
+    if not policy then return false, reason end
     Storage.Touch()
     Storage.Transmit()
     return true

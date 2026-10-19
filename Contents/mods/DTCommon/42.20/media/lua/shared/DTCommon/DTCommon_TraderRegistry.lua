@@ -44,6 +44,10 @@ function Service.Get(traderID)
         coreActorID = record.ca and record.ca.actorID or nil,
         coreActorAvailable = record.ca == nil
             or record.ca.available ~= false,
+        coreProvider = record.ca and record.ca.provider or nil,
+        coreProviderState = record.ca and record.ca.providerState or nil,
+        coreProviderLeaseID = record.ca and record.ca.providerLeaseID or nil,
+        coreProviderBodyID = record.ca and record.ca.providerBodyID or nil,
     }
 end
 

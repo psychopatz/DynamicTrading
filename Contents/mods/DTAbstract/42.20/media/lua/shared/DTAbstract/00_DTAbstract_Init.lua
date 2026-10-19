@@ -5,5 +5,6 @@ DTAbstract.Enabled = true
 DTAbstract.RequireRadio = true
 -- Development-only preview. Default false: no UI entry or changes to trading.
 DTAbstract.EnableRadioOSPreview = DTAbstract.EnableRadioOSPreview == true
+require "DTAbstract/DTAbstract_CoreProvider"
 
 return DTAbstract
