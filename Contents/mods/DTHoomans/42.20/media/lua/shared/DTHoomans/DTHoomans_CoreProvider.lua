@@ -83,6 +83,7 @@ function Adapter.Materialize(actor, core, spec)
         provider = "DTHoomans",
         owner = owner(spec),
         bodyID = id,
+        authority = spec.authority,
         now = spec.now,
     }
     nextActor, reason = service.Materialize(actor, transition)
@@ -133,6 +134,7 @@ function Adapter.Dematerialize(actor, core, spec)
         provider = "DTHoomans",
         owner = owner(spec),
         bodyID = spec.bodyID or projection.providerLease.bodyID,
+        authority = spec.authority,
         now = spec.now,
     }
     nextActor, reason = service.Dematerialize(actor, transition)
