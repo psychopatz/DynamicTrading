@@ -23,3 +23,9 @@ DTHoomans_CaravanLifecycle currently creates/maintains PNC mobile factions; DTHo
 Core+DTCommon only; DTAbstract only (without Hoomans); DTHoomans only (with Hoomans); both enabled; switching via save/restart; Hoomans added/removed after migration; multiplayer with reconnect. Assert stable actor/trader/relationship/inventory/stock IDs and versions, no duplicate merchant stock or independent body simulation; test stale snapshots, remote commit rejection, invalid item identity, transaction rollback.
 
 Existing Docs/trading/DT_TRADING_MVP_PROGRESS.md has open native SP/MP T6 gates; preserve them. No Workshop publish/re-publish or non-user live gameplay signoff. Initial work is Core P0A mapping and source-backed fixture, not a DT gameplay rewrite.
+
+## Permanent Git policy and separate-goal status — 2026-10-20
+
+**Create no new Git branches** for DT, Core or Hoomans integration. Use existing authorized `main` after actual status/upstream/worktree review; reconcile Hoomans' preexisting PR #4 only through safe existing-main integration, not by spawning a new merge/feature/PR branch. Follow root `AGENTS.md`. Preserve user history; no force, reset, blind pull or Workshop publication.
+
+Core Foundation P1–P9 has source-backed developer acceptance on Core main and provider integration tests in DT/Hoomans, but this does NOT establish native SP/MP compatibility. Hoomans grounded NPC personal dialogue B0–B6 remains a separately unfinished goal. Do not retrofit personal Knowledge facts into DT merchant stock/budget or leak hidden backstory through provider projections.
