@@ -1,3 +1,5 @@
+> **ACTIVE NEW PORTABLE CONVERSATION GOAL (2026-10-21):** Shared persona/Knowledge/contextual talk C1–C6 is authorized in PsychopatzCore `Docs/portable_npc_conversation/`, with DT adopter rules in `Docs/npc_foundation/PORTABLE_CONVERSATION_ADAPTER.md`. Hoomans PR #4 is ALREADY merged; historical unmerged-branch statements below are obsolete. Core current C1, then C2–C6, no new branch, existing main only, no prompt Markdown, no native PZ or Workshop action. Preserve merchant stock/budget/trade authority distinct from Core actor personal inventory.
+
 # DynamicTrading — Agent Repository Instructions
 
 ## Mandatory no-new-branches policy (user direction 2026-10-20)

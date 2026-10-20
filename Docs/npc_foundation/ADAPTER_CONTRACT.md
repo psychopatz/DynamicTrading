@@ -29,3 +29,7 @@ Existing Docs/trading/DT_TRADING_MVP_PROGRESS.md has open native SP/MP T6 gates;
 **Create no new Git branches** for DT, Core or Hoomans integration. Use existing authorized `main` after actual status/upstream/worktree review; reconcile Hoomans' preexisting PR #4 only through safe existing-main integration, not by spawning a new merge/feature/PR branch. Follow root `AGENTS.md`. Preserve user history; no force, reset, blind pull or Workshop publication.
 
 Core Foundation P1–P9 has source-backed developer acceptance on Core main and provider integration tests in DT/Hoomans, but this does NOT establish native SP/MP compatibility. Hoomans grounded NPC personal dialogue B0–B6 remains a separately unfinished goal. Do not retrofit personal Knowledge facts into DT merchant stock/budget or leak hidden backstory through provider projections.
+
+## Portable Core conversation follow-on (2026-10-21)
+
+The earlier Core actor/provider foundation is recorded developer accepted. The **NEW** Core-owned C1–C6 shared offline conversation/Knowledge/hot-swap goal is active and not yet implemented. Detailed DT adopter contract: `Docs/npc_foundation/PORTABLE_CONVERSATION_ADAPTER.md`. Canonical Core roadmap and one current C1 chunk: `psychopatzCore/Docs/portable_npc_conversation/`. Preserve the current DTCommon trade and MarketSense contracts. No new branches, no native Workshop actions, no committed `/goal` prompt; do not resurrect outdated Hoomans PR #4 merge instructions.
