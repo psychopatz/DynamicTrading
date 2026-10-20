@@ -2,6 +2,7 @@ local T = require "tests/support/test"
 
 local registered
 local opened
+local talked
 local player = {
     getX = function() return 100 end,
     getY = function() return 100 end,
@@ -59,6 +60,10 @@ DTCommon = {
     Client = {
         OpenTrader = function(id, options)
             opened = { id = id, options = options }
+            return true
+        end,
+        RequestTalk = function(id, mode, options)
+            talked = { id = id, mode = mode, options = options }
             return true
         end,
     },
@@ -136,6 +141,13 @@ T.equal(opened.id, "settlement_near", "action keeps trader identity")
 T.equal(opened.options.mode, "trade", "action uses existing trade mode")
 T.equal(opened.options.npcID, "merchant_near",
     "action carries the verified nearby merchant")
+local talkAccepted = registered.invoke(registered, "settlement_near",
+    "dynamictrading:physical_talk")
+T.truthy(talkAccepted, "physical Talk delegates to the Core talk request")
+T.equal(talked.id, "settlement_near", "Talk keeps trader identity")
+T.equal(talked.mode, "physical", "Talk identifies physical authority")
+T.equal(talked.options.npcID, "merchant_near",
+    "Talk carries the verified nearby body")
 T.falsy(registered.invoke(registered, "settlement_near", "bad_action"),
     "provider rejects unsupported actions")
 

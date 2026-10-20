@@ -32,6 +32,9 @@ T.contains(authoritySource, "function PNC.Conversation.Authority.ValidateLease",
 local knowledgeAPI = T.read(
     "ProjectHoomans", "server",
     "PNC/Knowledge/PNC_NPCKnowledgeAPI.lua")
+    .. T.read(
+        "ProjectHoomans", "server",
+        "PNC/Knowledge/NPCKnowledgeAPI/PNC_NPCKnowledgeAPI_Mutations.lua")
 T.contains(knowledgeAPI, "function API.DiscloseRelatedForPlayer",
     "Hoomans exposes the related identity disclosure API")
 

@@ -556,6 +556,25 @@ function Service.Snapshot(traderID, player)
     return snapshot
 end
 
+-- Shared server gate for conversational capabilities.  The radio and
+-- physical adapters call this same path so a contact-list snapshot can never
+-- become an authorization source.  Trade continues to use Snapshot and the
+-- existing quote/commit endpoints; this method does not inspect or mutate
+-- stock, budget, prices, or player inventory.
+function Service.ValidateTalkAccess(player, traderID, mode)
+    if not authority() then return false, "server_authority_required" end
+    local record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    mode = tostring(mode or "")
+    if mode == "radio" and tonumber(record.a) ~= 1 then
+        return false, "radio_talk_unavailable"
+    end
+    if mode == "physical" and tonumber(record.a) == 1 then
+        return false, "physical_talk_unavailable"
+    end
+    return validateAccess(player, record)
+end
+
 local function requestVersion(request, record)
     local observed = tonumber(request.observedStockVersion)
     local observedQuote = tonumber(request.observedQuoteRevision)

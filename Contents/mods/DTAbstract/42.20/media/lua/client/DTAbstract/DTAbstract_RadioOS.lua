@@ -13,6 +13,7 @@ end
 DTAbstract = DTAbstract or {}
 local PROVIDER_ID = "dynamictrading:remote_traders"
 local ACTION_ID = "dynamictrading:trade"
+local TALK_ACTION_ID = "dynamictrading:talk"
 local MAX_CONTACTS = 64
 local MAX_PAGE_SIZE = 12
 
@@ -57,8 +58,13 @@ local function list(_, page)
                             id = ACTION_ID,
                             label = DTCommon.T("DTHoomans_Trade", "Trade"),
                         },
+                        {
+                            id = TALK_ACTION_ID,
+                            label = DTCommon.T(
+                                "DTCommon_Radio_Talk", "Talk"),
+                        },
                     },
-                    capabilities = { remote = true },
+                    capabilities = { remote = true, talk = true },
                 }
             end
         end)
@@ -73,11 +79,22 @@ local function list(_, page)
     return { contacts = contacts, total = #rows }
 end
 
-local function invoke(_, contactID, actionID)
-    if tostring(actionID or "") ~= ACTION_ID then
+local function invoke(_, contactID, actionID, snapshot)
+    actionID = tostring(actionID or "")
+    if actionID ~= ACTION_ID and actionID ~= TALK_ACTION_ID then
         return false, "action_unsupported"
     end
     if not findTrader(contactID) then return false, "trader_unavailable" end
+    if actionID == TALK_ACTION_ID then
+        if not DTCommon.Client
+            or type(DTCommon.Client.RequestTalk) ~= "function"
+        then
+            return false, "talk_service_unavailable"
+        end
+        return DTCommon.Client.RequestTalk(contactID, "radio", {
+            snapshot = snapshot,
+        })
+    end
     if not DTCommon.Client or type(DTCommon.Client.OpenTrader) ~= "function" then
         return false, "trade_service_unavailable"
     end

@@ -4,6 +4,7 @@ DTCommon.Client = DTCommon.Client or {}
 local Client = DTCommon.Client
 Client.Snapshots = Client.Snapshots or {}
 Client.PendingOpen = Client.PendingOpen or {}
+Client.TalkSessions = Client.TalkSessions or {}
 Client.RequestSerial = tonumber(Client.RequestSerial) or 0
 
 local function log(level, message)
@@ -140,6 +141,72 @@ function Client.SubmitTradeBasket(traderID, buyRows, sellRows)
     return true
 end
 
+-- Talk has its own authenticated server command and session state. It never
+-- reuses PendingOpen or the trade snapshot path, so a radio Talk request
+-- cannot implicitly open a trade window or authorize an inventory operation.
+function Client.RequestTalk(traderID, mode, options)
+    local current = player()
+    options = type(options) == "table" and options or {}
+    traderID = tostring(traderID or "")
+    mode = tostring(mode or "radio")
+    if traderID == "" or not current
+        or type(sendClientCommand) ~= "function"
+    then
+        log("WARN", "talk_request_rejected trader=" .. traderID)
+        return false, "talk_transport_unavailable"
+    end
+    Client.RequestSerial = Client.RequestSerial + 1
+    local requestID = "dt_talk_open_" .. tostring(Client.RequestSerial)
+    log("INFO", "talk_open_request trader=" .. traderID
+        .. " mode=" .. mode .. " request=" .. requestID)
+    sendClientCommand(current, DTCommon.MOD_ID, "TalkOpen", {
+        requestID = requestID,
+        traderID = traderID,
+        mode = mode,
+        npcID = options.npcID,
+        language = options.language,
+    })
+    return true, requestID
+end
+
+function Client.SubmitTalk(traderID, talkSessionID, text, mode, language)
+    local current = player()
+    traderID = tostring(traderID or "")
+    if traderID == "" or tostring(talkSessionID or "") == ""
+        or not current or type(sendClientCommand) ~= "function"
+    then
+        return false, "talk_transport_unavailable"
+    end
+    Client.RequestSerial = Client.RequestSerial + 1
+    local requestID = "dt_talk_turn_" .. tostring(Client.RequestSerial)
+    sendClientCommand(current, DTCommon.MOD_ID, "TalkSubmit", {
+        requestID = requestID,
+        traderID = traderID,
+        sessionID = tostring(talkSessionID),
+        mode = tostring(mode or "radio"),
+        text = tostring(text or ""),
+        language = language,
+    })
+    return true, requestID
+end
+
+function Client.CloseTalk(traderID, talkSessionID, mode)
+    local current = player()
+    traderID = tostring(traderID or "")
+    if traderID == "" or tostring(talkSessionID or "") == ""
+        or not current or type(sendClientCommand) ~= "function"
+    then
+        return false, "talk_transport_unavailable"
+    end
+    sendClientCommand(current, DTCommon.MOD_ID, "TalkClose", {
+        traderID = traderID,
+        sessionID = tostring(talkSessionID),
+        mode = tostring(mode or "radio"),
+    })
+    Client.TalkSessions[traderID] = nil
+    return true
+end
+
 local function onServerCommand(module, command, args)
     if module ~= DTCommon.MOD_ID then return end
     args = type(args) == "table" and args or {}
@@ -206,6 +273,14 @@ local function onServerCommand(module, command, args)
         elseif DTCommon.TradeWindow and DTCommon.TradeWindow.Active then
             if args.snapshot then DTCommon.TradeWindow.Active:SetSnapshot(args.snapshot) end
             DTCommon.TradeWindow.Active:SetResult(args)
+        end
+    elseif command == "TalkResult" then
+        Client.TalkSessions[traderID] = args
+        log("INFO", "talk_result trader=" .. traderID
+            .. " accepted=" .. tostring(args.accepted)
+            .. " reason=" .. tostring(args.reason))
+        if type(Client.OnTalkResult) == "function" then
+            Client.OnTalkResult(args)
         end
     end
 end

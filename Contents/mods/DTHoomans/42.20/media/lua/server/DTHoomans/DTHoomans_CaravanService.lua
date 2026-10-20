@@ -421,11 +421,12 @@ end
 
 local function nativeSpec(state)
     local constants = PNC and PNC.FactionConstants or {}
+    local GROUP_SIZE = state.memberCount
     return {
         x = state.x,
         y = state.y,
         z = state.z,
-        groupSize = state.memberCount,
+        groupSize = GROUP_SIZE,
         -- One trader plus guards. The faction leader stays at the base, so the
         -- roaming group is generated leaderless with an explicit role order.
         roleOrder = caravanRoleOrder(state.memberCount),

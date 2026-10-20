@@ -17,6 +17,7 @@ end
 DTHoomans = DTHoomans or {}
 local PROVIDER_ID = "dynamictrading:physical_traders"
 local ACTION_ID = "dynamictrading:physical_trade"
+local TALK_ACTION_ID = "dynamictrading:physical_talk"
 local MAX_CONTACTS = 64
 local MAX_PAGE_SIZE = 12
 local MAX_DISTANCE_SQUARED = 36
@@ -169,9 +170,15 @@ local function list(_, page)
                         id = ACTION_ID,
                         label = DTCommon.T("DTHoomans_Trade", "Trade"),
                     },
+                    {
+                        id = TALK_ACTION_ID,
+                        label = DTCommon.T(
+                            "DTCommon_Radio_Talk", "Talk"),
+                    },
                 },
                 capabilities = {
                     physical = true,
+                    talk = true,
                     npcID = npcID,
                 },
             }
@@ -187,8 +194,9 @@ local function list(_, page)
     return { contacts = contacts, total = #rows }
 end
 
-local function invoke(_, contactID, actionID)
-    if tostring(actionID or "") ~= ACTION_ID then
+local function invoke(_, contactID, actionID, snapshot)
+    actionID = tostring(actionID or "")
+    if actionID ~= ACTION_ID and actionID ~= TALK_ACTION_ID then
         return false, "action_unsupported"
     end
     if not DTCommon or not DTCommon.TraderService
@@ -200,6 +208,17 @@ local function invoke(_, contactID, actionID)
     local record = DTCommon.TraderService.GetRecord(traderID)
     local npcID = merchant(record, player())
     if not npcID then return false, "merchant_unavailable" end
+    if actionID == TALK_ACTION_ID then
+        if not DTCommon.Client
+            or type(DTCommon.Client.RequestTalk) ~= "function"
+        then
+            return false, "talk_service_unavailable"
+        end
+        return DTCommon.Client.RequestTalk(traderID, "physical", {
+            npcID = npcID,
+            snapshot = snapshot,
+        })
+    end
     if not DTCommon.Client
         or type(DTCommon.Client.OpenTrader) ~= "function"
     then

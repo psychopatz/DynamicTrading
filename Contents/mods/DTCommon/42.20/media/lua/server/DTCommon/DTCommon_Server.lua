@@ -63,6 +63,74 @@ local function onClientCommand(module, command, player, args)
             .. " accepted=" .. tostring(result and result.accepted)
             .. " reason=" .. tostring(result and result.reason))
         send(player, "TradeResult", result)
+    elseif command == "TalkOpen" then
+        local Talk = DTCommon.TalkService
+        local result
+        local reason
+        if not Talk or type(Talk.Open) ~= "function" then
+            result, reason = nil, "talk_service_unavailable"
+        else
+            result, reason = Talk.Open(player, args.traderID, args.mode, {
+                requestID = args.requestID,
+                language = args.language,
+            })
+        end
+        log("INFO", "talk_open_response trader=" .. tostring(args.traderID)
+            .. " accepted=" .. tostring(result and result.accepted == true)
+            .. " reason=" .. tostring(reason))
+        send(player, "TalkResult", result or {
+            accepted = false,
+            traderID = args.traderID,
+            mode = args.mode,
+            reason = reason or "talk_rejected",
+        })
+    elseif command == "TalkSubmit" then
+        local Talk = DTCommon.TalkService
+        local result
+        local reason
+        if not Talk or type(Talk.Submit) ~= "function" then
+            result, reason = nil, "talk_service_unavailable"
+        else
+            result, reason = Talk.Submit(
+                player,
+                args.traderID,
+                args.sessionID,
+                args.text,
+                {
+                    mode = args.mode,
+                    requestID = args.requestID,
+                    language = args.language,
+                }
+            )
+        end
+        log("INFO", "talk_submit_response trader=" .. tostring(args.traderID)
+            .. " accepted=" .. tostring(result and result.accepted == true)
+            .. " reason=" .. tostring(reason))
+        send(player, "TalkResult", result or {
+            accepted = false,
+            traderID = args.traderID,
+            mode = args.mode,
+            reason = reason or "talk_rejected",
+        })
+    elseif command == "TalkClose" then
+        local Talk = DTCommon.TalkService
+        local closed
+        local reason
+        if Talk and type(Talk.Close) == "function" then
+            closed, reason = Talk.Close(
+                player, args.traderID, args.sessionID, args.mode)
+        else
+            closed, reason = false, "talk_service_unavailable"
+        end
+        log("INFO", "talk_close trader=" .. tostring(args.traderID)
+            .. " closed=" .. tostring(closed == true)
+            .. " reason=" .. tostring(reason))
+        send(player, "TalkResult", {
+            accepted = closed == true,
+            traderID = args.traderID,
+            mode = args.mode,
+            reason = closed == true and "talk_closed" or reason,
+        })
     end
 end
 
