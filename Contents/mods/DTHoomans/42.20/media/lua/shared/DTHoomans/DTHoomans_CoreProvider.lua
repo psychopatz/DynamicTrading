@@ -69,6 +69,11 @@ function Adapter.Materialize(actor, core, spec)
     spec = type(spec) == "table" and spec or {}
     projection, reason = service.Project(actor, "DTHoomans")
     if not projection then return nil, reason end
+    if projection.providerLease
+        and projection.providerLease.state == "materialized"
+    then
+        return nil, "body_lease_active"
+    end
     factory = spec.bodyFactory or spec.spawn
     if type(factory) ~= "function" then return nil, "body_factory_required" end
     id, body = factory(projection, spec)
@@ -97,6 +102,17 @@ function Adapter.Materialize(actor, core, spec)
         if applied == false then
             cleanup = spec.cleanup or spec.destroy
             if type(cleanup) == "function" then cleanup(body, spec) end
+            -- The Core lease was materialized before the adopter projection
+            -- hook ran.  Roll that lease back as part of the same failed
+            -- transition so a rejected body cannot strand a materialized
+            -- provider or block the next hot-swap.
+            service.Dematerialize(nextActor, {
+                provider = "DTHoomans",
+                owner = owner(spec),
+                bodyID = id,
+                authority = spec.authority,
+                now = spec.now,
+            })
             return nil, "body_projection_rejected"
         end
     end
@@ -159,6 +175,17 @@ function Adapter.Release(actor, core, spec)
     spec.provider = "DTHoomans"
     spec.owner = owner(spec)
     return service.Release(actor, spec)
+end
+
+function Adapter.Switch(actor, core, spec)
+    local service = provider(core)
+    if not service or type(service.Switch) ~= "function" then
+        return nil, "core_provider_unavailable"
+    end
+    spec = type(spec) == "table" and spec or {}
+    spec.provider = "DTHoomans"
+    spec.owner = owner(spec)
+    return service.Switch(actor, spec)
 end
 
 return Adapter

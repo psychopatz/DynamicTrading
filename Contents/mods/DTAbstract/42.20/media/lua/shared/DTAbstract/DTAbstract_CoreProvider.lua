@@ -72,4 +72,15 @@ function Adapter.Release(actor, core, spec)
     return service.Release(actor, spec)
 end
 
+function Adapter.Switch(actor, core, spec)
+    local service = provider(core)
+    if not service or type(service.Switch) ~= "function" then
+        return nil, "core_provider_unavailable"
+    end
+    spec = type(spec) == "table" and spec or {}
+    spec.provider = "DTAbstract"
+    spec.owner = owner(spec)
+    return service.Switch(actor, spec)
+end
+
 return Adapter

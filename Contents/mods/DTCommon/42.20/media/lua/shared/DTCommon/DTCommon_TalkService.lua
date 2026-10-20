@@ -122,6 +122,7 @@ local function access(player, traderID, mode)
 end
 
 function Service.Open(player, traderID, mode, options)
+    local providerRevision
     if not authority() then return nil, "server_authority_required" end
     if not ActorService then return nil, "core_conversation_unavailable" end
     traderID = boundedText(traderID, 128)
@@ -134,11 +135,15 @@ function Service.Open(player, traderID, mode, options)
     if not record then return nil, accessReason end
     local actor, actorReason = actorFor(record)
     if not actor then return nil, actorReason end
+    providerRevision = tonumber(record.ca and record.ca.providerRevision) or 0
     local key = sessionKey(playerKey(player), traderID, mode)
     local existing = Service.Sessions[key]
-    if existing and existing.actorID == actor.actorId then
+    if existing and existing.actorID == actor.actorId
+        and tonumber(existing.providerRevision) == providerRevision
+    then
         return snapshot(existing)
     end
+    if existing then Service.Sessions[key] = nil end
 
     local session = {
         key = key,
@@ -146,8 +151,7 @@ function Service.Open(player, traderID, mode, options)
         traderID = traderID,
         actorID = tostring(actor.actorId or actor.id or ""),
         mode = mode,
-        providerRevision = tonumber(record.ca and record.ca.providerRevision)
-            or 0,
+        providerRevision = providerRevision,
         openedAt = now(),
         lastAt = now(),
         requests = {},
@@ -191,6 +195,7 @@ function Service.Open(player, traderID, mode, options)
 end
 
 function Service.Submit(player, traderID, talkSessionID, text, options)
+    local providerRevision
     if not authority() then return nil, "server_authority_required" end
     options = type(options) == "table" and options or {}
     traderID = boundedText(traderID, 128)
@@ -204,6 +209,10 @@ function Service.Submit(player, traderID, talkSessionID, text, options)
     if not record then return nil, accessReason end
     if tostring(record.ca and record.ca.actorID or "") ~= session.actorID then
         return nil, "actor_binding_changed"
+    end
+    providerRevision = tonumber(record.ca and record.ca.providerRevision) or 0
+    if providerRevision ~= tonumber(session.providerRevision or 0) then
+        return nil, "talk_provider_changed"
     end
     text = boundedText(text, MAX_TEXT)
     if text == "" then return nil, "utterance_required" end

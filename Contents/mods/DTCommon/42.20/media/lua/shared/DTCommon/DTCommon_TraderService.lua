@@ -627,6 +627,20 @@ function Service.BindCoreActor(traderID, actorID, definition)
     if not actorID or tostring(actorID) == "" then
         return false, "core_actor_required"
     end
+    local existing = Policy.Get(record)
+    if existing.actorID and tostring(existing.actorID) ~= tostring(actorID) then
+        return false, "core_actor_binding_conflict"
+    end
+    if existing.actorID and tostring(existing.actorID) == tostring(actorID) then
+        if not existing.provider then
+            existing.provider = "DTAbstract"
+            existing.providerState = existing.providerState or "abstract"
+            record.ca = existing
+            Storage.Touch()
+            Storage.Transmit()
+        end
+        return true
+    end
     definition = type(definition) == "table" and definition or {}
     definition.provider = definition.provider or "DTAbstract"
     Policy.Bind(record, actorID, definition)
@@ -639,6 +653,32 @@ function Service.SetCoreProviderLease(traderID, lease)
     if not authority() then return false, "server_authority_required" end
     local record = Service.GetRecord(traderID)
     if not record then return false, "trader_not_found" end
+    lease = type(lease) == "table" and lease or nil
+    if not lease then return false, "provider_lease_required" end
+    local current = Policy.Get(record)
+    if not current.actorID then return false, "core_actor_required" end
+    if lease.actorID ~= nil and tostring(lease.actorID)
+        ~= tostring(current.actorID)
+    then return false, "core_actor_mismatch" end
+    local incomingRevision = tonumber(lease.revision)
+    if incomingRevision == nil or incomingRevision ~= math.floor(incomingRevision)
+    then return false, "provider_revision_required" end
+    incomingRevision = math.max(0, math.floor(incomingRevision))
+    if incomingRevision < current.providerRevision then
+        return false, "stale_provider_lease"
+    end
+    if incomingRevision == current.providerRevision then
+        local same = tostring(lease.provider or "")
+                == tostring(current.provider or "")
+            and tostring(lease.state or "")
+                == tostring(current.providerState or "")
+            and tostring(lease.leaseID or "")
+                == tostring(current.providerLeaseID or "")
+            and tostring(lease.bodyID or lease.bodyId or "")
+                == tostring(current.providerBodyID or "")
+        if same then return true end
+        return false, "stale_provider_lease"
+    end
     local policy, reason = Policy.SetProviderLease(record, lease)
     if not policy then return false, reason end
     Storage.Touch()

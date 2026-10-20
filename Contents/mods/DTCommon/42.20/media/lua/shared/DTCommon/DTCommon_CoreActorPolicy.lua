@@ -8,6 +8,16 @@ DTCommon.CoreActorPolicy = Policy
 
 Policy.SCHEMA_VERSION = 1
 Policy.MAX_PRICE_MODIFIER = 0.25
+Policy.PROVIDERS = {
+    PsychopatzCore = true,
+    DTAbstract = true,
+    DTHoomans = true,
+}
+Policy.STATES = {
+    abstract = true,
+    materialized = true,
+    released = true,
+}
 
 local function number(value, fallback)
     value = tonumber(value)
@@ -132,6 +142,17 @@ function Policy.SetProviderLease(record, lease)
     if type(record) ~= "table" then return nil, "trader_required" end
     if type(lease) ~= "table" then return nil, "provider_lease_required" end
     local policy = Policy.Get(record)
+    if lease.actorID ~= nil and policy.actorID ~= tostring(lease.actorID) then
+        return nil, "core_actor_mismatch"
+    end
+    if lease.provider ~= nil and not Policy.PROVIDERS[tostring(lease.provider)]
+    then return nil, "provider_invalid" end
+    if lease.state ~= nil and not Policy.STATES[tostring(lease.state)] then
+        return nil, "provider_state_invalid"
+    end
+    if tostring(lease.state or "") == "materialized"
+        and text(lease.bodyID or lease.bodyId, nil) == nil
+    then return nil, "body_id_required" end
     policy.provider = text(lease.provider, nil)
     policy.providerState = text(lease.state, nil)
     policy.providerLeaseID = text(lease.leaseID, nil)

@@ -99,6 +99,18 @@ T.truthy(duplicate, duplicateReason)
 T.equal(duplicate.state.turnCount, turn.state.turnCount,
     "duplicate Talk request does not advance state")
 
+record.ca.providerRevision = 5
+local transitioned, transitionedReason = Talk.Submit(
+    playerA, "trader:portable", first.sessionID, "hello", {
+        mode = "radio",
+        requestID = "turn-after-transition",
+    }
+)
+T.equal(transitioned, nil, "provider transition invalidates stale Talk")
+T.equal(transitionedReason, "talk_provider_changed",
+    "stale Talk transition reason")
+record.ca.providerRevision = 4
+
 local stale, staleReason = Talk.Submit(
     playerB, "trader:portable", first.sessionID, "hello", {
         mode = "radio",
