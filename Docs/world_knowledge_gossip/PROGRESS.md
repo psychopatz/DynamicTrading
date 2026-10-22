@@ -20,7 +20,7 @@ Evidence on 2026-10-22:
 - `python3 tests/run_tests.py dt_world_knowledge_smoke dt_talk_service --verbose` — PASS 2/2 during the adapter slice.
 - `python3 /home/psychopatz/Desktop/Projects/Zomboid-devSkills/skills/pz-verify/scripts/pz_verify.py --dir Contents/mods/DTCommon/42.20/media/lua/shared/DTCommon --kahlua --no-snippets` — 13 files, 0 Kahlua errors, 0 warnings.
 
-Persistence evidence: one historical route fact remained after `Adapter.Save()` and reload; one ephemeral route-probe fact was excluded. Save touched/transmitted the existing DT ModData envelope. Context and propagation are bounded; no global zombie or all-trader/all-fact scan is introduced. Commit: `PENDING_W7_COMMIT`.
+Persistence evidence: one historical route fact remained after `Adapter.Save()` and reload; one ephemeral route-probe fact was excluded. Save touched/transmitted the existing DT ModData envelope. Context and propagation are bounded; no global zombie or all-trader/all-fact scan is introduced. Commit: `77c6f90b`.
 
 ## Next chunk
 
