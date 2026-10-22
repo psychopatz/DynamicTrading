@@ -22,6 +22,6 @@ Evidence on 2026-10-22:
 
 Persistence evidence: one historical route fact remained after `Adapter.Save()` and reload; one ephemeral route-probe fact was excluded. Save touched/transmitted the existing DT ModData envelope. Context and propagation are bounded; no global zombie or all-trader/all-fact scan is introduced. Commit: `77c6f90b`.
 
-## Next chunk
+## W7 developer closeout
 
-Extend the existing Project Hoomans Semantic Lab UI with first-class World Knowledge inspection, then run cross-repository persistence/performance regression evidence.
+DT adoption is complete. Cross-repository W8 Semantic Lab inspection and W9 persistence/performance evidence are recorded in the canonical Core and Hoomans ledgers. Native Project Zomboid live gameplay remains user-owned and explicitly untested.
