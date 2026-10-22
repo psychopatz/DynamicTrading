@@ -17,6 +17,7 @@ end
 
 local Policy = DTCommon.CoreActorPolicy
 local TraderService = DTCommon.TraderService
+local WorldKnowledge = DTCommon.WorldKnowledge
 local MAX_SESSIONS = 64
 local MAX_REQUESTS = 32
 local MAX_TEXT = 4000
@@ -71,6 +72,17 @@ local function sessionID(key, traderID)
         .. tostring(key) .. ":" .. tostring(traderID)
 end
 
+local function knowledgeFor(session)
+    if not WorldKnowledge
+        or type(WorldKnowledge.BuildConversationContext) ~= "function"
+    then return nil end
+    return WorldKnowledge.BuildConversationContext(session.traderID, {
+        now = now(),
+        max = 4,
+        renderFact = session.renderFact,
+    })
+end
+
 local function actorFor(record)
     if not Policy or type(Policy.ResolveActor) ~= "function" then
         return nil, "core_actor_policy_unavailable"
@@ -92,6 +104,7 @@ end
 
 local function snapshot(session, result)
     local state = session.service and session.service:Snapshot() or nil
+    local knowledge = knowledgeFor(session)
     return {
         schemaVersion = Service.VERSION,
         accepted = true,
@@ -104,6 +117,7 @@ local function snapshot(session, result)
         lastAt = session.lastAt,
         result = result,
         state = state,
+        worldKnowledge = knowledge,
     }
 end
 
@@ -156,14 +170,35 @@ function Service.Open(player, traderID, mode, options)
         lastAt = now(),
         requests = {},
         requestOrder = {},
+        renderFact = nil,
     }
     if session.actorID == "" then return nil, "core_actor_required" end
     local conversation, conversationReason = ActorService.New({
         actor = actor,
         authority = "server",
         conversationID = session.id,
-        responsePlanner = function(_, result)
+        responsePlanner = function(_, result, _, context)
             local decision = result and result.decision or {}
+            local gossip = context and context.npcGossip or nil
+            local intent = result and result.ir and result.ir.intent
+            if (intent == "GOSSIP" or intent == "GOSSIP_RECEIVED"
+                or intent == "QUESTION") and gossip
+                and type(gossip.statements) == "table"
+                and type(gossip.statements[1]) == "string"
+            then
+                return {
+                    key = "DTCommon_WorldKnowledge_Gossip",
+                    fallback = gossip.statements[1],
+                }
+            end
+            if (intent == "GOSSIP" or intent == "GOSSIP_RECEIVED")
+                and gossip
+            then
+                return {
+                    key = "DTCommon_WorldKnowledge_NoNews",
+                    fallback = "I haven't heard any news lately.",
+                }
+            end
             if type(decision.response) == "table" then
                 return decision.response
             end
@@ -220,7 +255,12 @@ function Service.Submit(player, traderID, talkSessionID, text, options)
     if requestID ~= "" and session.requests[requestID] then
         return session.requests[requestID]
     end
-    local result, reason = session.service:Submit(text, {
+    local knowledge = knowledgeFor(session)
+    local context = knowledge and {
+        worldKnowledge = knowledge.worldKnowledge,
+        npcGossip = knowledge.npcGossip,
+    } or nil
+    local result, reason = session.service:Submit(text, context, {
         source = "dynamictrading",
         mode = mode,
         traderID = traderID,
