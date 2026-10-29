@@ -10,7 +10,7 @@ The complete M0–M10 roadmap, including M10G, remains the parent completion bou
 
 ### DynamicTrading
 
-- local `main`: `447cc27a65c9c7aca413eff77b5fc8e57d2fded5`;
+- local `main`: `c1c16cbdc23678b23d7ef599eb9e38da4f021859`;
 - `origin/main`: same;
 - unrelated pre-existing local edit remains:
   `Contents/mods/DTHoomans/42.20/media/lua/shared/DTHoomans/DTHoomans_Conversation.lua`.
@@ -20,9 +20,9 @@ Preserve that edit unless its owner explicitly incorporates it.
 ### Project Hoomans
 
 - local `main`: `7df32a633db81f4d74940790f2ae6eb65c42974c`;
-- `origin/main`: `fb5c75664cae94889798de8e51fe5e8ad2abfa33`;
-- local `main` is clean and 9 commits ahead;
-- ahead history interleaves required M10 commits with unrelated semantic-scene commits.
+- `origin/main`: same;
+- published `main` contains the required M10 history interleaved with unrelated semantic-scene commits;
+- local worktree has unrelated semantic-scene edits; preserve them unstaged.
 
 Planning-time ahead sequence:
 
@@ -120,7 +120,7 @@ Implementation commit:
 
 Hoomans implementation commit:
 
-`16d1635e` — committed locally, not yet on published `origin/main`.
+`16d1635e` — contained by published `origin/main` through `7df32a63`.
 
 DynamicTrading implementation:
 
@@ -130,27 +130,22 @@ Verified developer evidence:
 
 - DynamicTrading full suite: `41/41`;
 - focused resident/caravan cross-repo regressions: `3/3`;
-- clean Hoomans archive at `16d1635e` paired with DynamicTrading `447cc27a`: `936/936`.
+- clean published Hoomans `origin/main` paired with DynamicTrading `origin/main`: focused M10/M9 regressions `3/3`; DynamicTrading full suite `41/41`.
 
 These results prove the local committed implementation, not the published dependency graph.
 
 ## Post-M10F audit — remaining developer gaps
 
-### 1. Published Hoomans dependency graph is incomplete
+### 1. Published Hoomans dependency graph — closed by M10G-A
 
-A clean published-pair audit using:
+A clean published-pair audit now uses:
 
 ```text
-DynamicTrading origin/main = 447cc27a
-ProjectHoomans origin/main = fb5c7566
+DynamicTrading origin/main = c1c16cbd
+ProjectHoomans origin/main = 7df32a63
 ```
 
-fails M10 tests because published Hoomans is missing required modules including:
-
-- `PNC_CommunityExcursionService.lua`;
-- `PNC_CommercialMobilityService.lua`.
-
-Therefore the goal is not developer-complete while pushed DynamicTrading requires local-only Hoomans implementation.
+contains the required Hoomans excursion/commercial modules and dependencies. Published-pair M10 resident/caravan and M9 bridge regressions pass with no missing M10 module failures. The full published Hoomans suite still has two unrelated semantic-scene failures: the MP server-file inventory count and the generated conversation registry import. Those files are outside this goal and remain preserved.
 
 ### 2. Production semantics does not consume excursion whereabouts
 
@@ -194,9 +189,16 @@ See `SPATIAL_LANGUAGE.md`.
 
 ## Current phase
 
-**M10G — Publication + Semantic Spatial Integration Closure**
+**M10G-B — PsychopatzCore reusable spatial relation**
 
-## Next Chunk — M10G-A: clean Hoomans publication reconciliation
+## M10G-A validation ledger — accepted
+
+- Exact published heads are DynamicTrading `c1c16cbdc23678b23d7ef599eb9e38da4f021859`, ProjectHoomans `7df32a633db81f4d74940790f2ae6eb65c42974c`, and PsychopatzCore `ea5a1c7c8ec8c97efe87a2a233cbc61419a7a862`.
+- Published ProjectHoomans contains `PNC_CommunityExcursionService.lua`, `PNC_CommercialMobilityService.lua`, resident excursion integration, and required generic travel/arrival dependencies; no local-only M10 module is needed.
+- Clean published-pair focused regressions pass DynamicTrading M10/M9 resident/caravan/no-fixture `3/3` and ProjectHoomans commercial mobility/excursion `3/3`; DynamicTrading full suite passes `41/41`.
+- The published Hoomans full runner reports only the two unrelated semantic-scene failures recorded above; no dirty semantic-scene file was staged or changed.
+
+## Next Chunk — M10G-B: PsychopatzCore reusable spatial relation
 
 Start with publication truth before adding new downstream dependencies.
 
