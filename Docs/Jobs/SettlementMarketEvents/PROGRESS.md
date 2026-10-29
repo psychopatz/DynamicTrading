@@ -123,11 +123,11 @@ The claim that native SP/MP was the only remaining step is superseded.
 
 ## Current phase
 
-**M10A — Generic Non-Admission Settlement Visit**
+**M10B — Generic Community Excursion Foundation**
 
-## Next Chunk — M10A
+## Next Chunk — M10B
 
-Start by closing the small existing-runtime gaps before building the broader excursion system.
+M10A is accepted. Continue with the purpose-agnostic Hoomans excursion lifecycle.
 
 ### Required work
 
@@ -249,4 +249,12 @@ Mandatory order:
 - Full verification: DynamicTrading `929/929`; Project Hoomans `929/929`; focused M9A/M9D/M9E and Hoomans admission regressions pass; applicable Kahlua and diff checks pass.
 - Unrelated DynamicTrading conversation work and unrelated Hoomans semantic-document work were not staged, committed, or pushed.
 
-Immediate next chunk: M10A generic non-admission settlement visit. Continue automatically through M10F.
+## M10A validation ledger — accepted
+
+- Hoomans published generic `settlement_visit` purpose and bounded extensible `intent` field; `commercial` is data preserved by the generic service, not a Dynamic Trading branch.
+- Non-admission visits reuse Hoomans relationship/hostility checks, encounter deferral, pending arrival, expiry, public visit projection, and abstract arrival lifecycle.
+- Commercial-style arrival never invokes the configured AI admission join chance, transfers no member, and rejects admission actions.
+- Duplicate arrival revisions are idempotent; the focused Hoomans regression and full `929/929` suite pass.
+- Published Hoomans commit: `fb5c7566`.
+
+Immediate next chunk: M10B purpose-agnostic community excursion foundation. Continue automatically through M10F.
