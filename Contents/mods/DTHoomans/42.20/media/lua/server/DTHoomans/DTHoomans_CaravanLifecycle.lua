@@ -11,8 +11,8 @@ then return end
 -- trading caravans alive in the world and re-raises one when the previous one
 -- is gone, so a region is never permanently without trade access.
 --
--- The trader's second variant - idle at its faction base - is not implemented
--- yet; only the roaming variant exists today.
+-- This lifecycle manages base-less roaming caravans only. Settlement-owned
+-- traders use the separate generic Hoomans excursion/visit lifecycle.
 
 DTHoomans = DTHoomans or {}
 DTHoomans.CaravanLifecycle = DTHoomans.CaravanLifecycle or {}
