@@ -2,7 +2,7 @@
 
 ## Parent status
 
-**IN PROGRESS — M7 accepted; M8 is next.**
+**IN PROGRESS — all developer-implementable M0–M8 requirements accepted; native SP/MP acceptance remains user-owned.**
 
 The complete M0–M8 roadmap remains the parent completion boundary. Finishing
 one chunk or phase does not complete the parent objective.
@@ -150,7 +150,7 @@ M1B added data-driven profile baselines and the bounded market mutation path:
 
 ## Current phase
 
-**M7 — Grounded event presentation accepted**
+**M8 — Performance, migration, and hardening accepted**
 
 ## M2A — accepted bounded settlement exchange
 
@@ -338,15 +338,50 @@ seams without creating a second event store or mutating economic state:
   production tree and changed presentation files; Lua parse, translation JSON
   parity, and `git diff --check` passed.
 
-## Next Chunk — M8
+## M8 — accepted performance, migration, and hardening
 
-Complete performance, migration, expiry/recovery edge-case, bounded-cache,
-profiling, and integration-boundary hardening, then document native SP/MP
-acceptance as the remaining user-owned gate where it cannot be executed here.
+M8 closes the developer-side correctness and bounded-runtime gate:
 
-## Remaining gap after M7
+- storage migration is exercised through the real market/event envelopes, with
+  legacy defaults, unknown-field removal, future-schema rejection, bounded
+  records, active event definition reload, expiry timing, and recovery time
+  clamping covered by `dt_market_hardening_smoke.lua`;
+- `MarketCatalog.Get` now keeps uncatalogued MarketSense facts in a separate
+  bounded 256-entry runtime cache. The primary registry index remains bounded
+  and explicit invalidation still permits only one new MarketSense scan;
+- the optional Core profiler feature exposes quote-context, event-resolution,
+  event-presentation, catalog-query, market-recovery, settlement-visit, and
+  settlement-exchange timers. The feature is inactive unless Core performance
+  capture is enabled, and cleanup restores the original functions;
+- representative JSON observations cover 64 settlement market records and 32
+  event records without item definitions: 31,442 market bytes and 19,066 event
+  bytes in the deterministic harness;
+- direct source audit confirms no market/event per-frame hook, all-trader event
+  rewrite, or per-quote/per-visit `GetAllKnownItems` scan. Exchange and event
+  state remain bounded by the existing schema/operation limits.
 
-M8 hardening and native Project Zomboid acceptance remain incomplete.
+## M8 evidence
+
+- `python3 tests/run_tests.py`: `PASS 33/33`.
+- Focused M8/regression run: `PASS 9/9` for hardening, schema, catalog,
+  events, pricing, pressure, exchange, baseline, and two-settlement paths.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- Dependency-boundary regressions passed: PsychopatzCore profiler/inventory
+  `3/3`, Project Hoomans travel/presence/staffing `3/3`, and MarketSense API,
+  availability-budget, and market-modifier `3/3`.
+- PZ Verify Kahlua reported zero errors across the 24-file DTCommon shared
+  production tree; the new test's two `package.path` findings are
+  harness-only because Project Zomboid supplies those paths automatically.
+  Full `luac -p`, translation JSON parity, and `git diff --check` passed.
+- Native SP/MP acceptance was not executed because repository policy leaves
+  native driving and live acceptance user-owned/authorization-gated.
+
+## Remaining gap after M8
+
+Only the explicit native Project Zomboid SP/MP checklist remains: stock
+continuity, arrival exchange, travel, event-visible quotes, save/reload,
+server authority, and reconnect idempotency.
 
 ## Known constraints
 

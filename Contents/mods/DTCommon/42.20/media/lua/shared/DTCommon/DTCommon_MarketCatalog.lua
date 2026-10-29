@@ -12,6 +12,7 @@ Catalog.MAX_ITEMS = 4096
 Catalog.MAX_TAGS_PER_ITEM = 32
 Catalog.MAX_QUERY_RESULTS = 64
 Catalog.MAX_CATEGORY_LENGTH = 96
+Catalog.MAX_DYNAMIC_FACTS = 256
 
 local function newState()
     return {
@@ -21,10 +22,16 @@ local function newState()
         indexedCount = 0,
         byType = {},
         byCategory = {},
+        dynamicByType = {},
+        dynamicCount = 0,
     }
 end
 
 Catalog._state = Catalog._state or newState()
+Catalog._state.dynamicByType = Catalog._state.dynamicByType or {}
+Catalog._state.dynamicCount = math.max(0, math.min(
+    Catalog.MAX_DYNAMIC_FACTS,
+    math.floor(tonumber(Catalog._state.dynamicCount) or 0)))
 
 local function api()
     return rawget(_G, "MarketSense")
@@ -194,14 +201,20 @@ function Catalog.Get(fullType)
     local key = boundedText(fullType, 192)
     local fact = key and state.byType[key] or nil
     local marketSense
+    local dynamic
     if fact then return fact end
+    dynamic = key and state.dynamicByType[key] or nil
+    if dynamic then return dynamic end
     marketSense = api()
     if not key or type(marketSense) ~= "table" then
         return nil, "marketsense_unavailable"
     end
     fact = factFor(key, {}, marketSense)
     if not fact then return nil, "market_tags_unavailable" end
-    state.byType[key] = fact
+    if state.dynamicCount < Catalog.MAX_DYNAMIC_FACTS then
+        state.dynamicByType[key] = fact
+        state.dynamicCount = state.dynamicCount + 1
+    end
     return fact
 end
 
@@ -261,6 +274,8 @@ function Catalog.Diagnostics()
         buildCount = state.buildCount,
         scannedCount = state.scannedCount,
         indexedCount = state.indexedCount,
+        dynamicCount = state.dynamicCount,
+        dynamicLimit = Catalog.MAX_DYNAMIC_FACTS,
         categoryCount = categoryCount,
     }
 end

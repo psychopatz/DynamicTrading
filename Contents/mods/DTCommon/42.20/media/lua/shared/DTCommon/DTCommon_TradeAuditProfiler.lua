@@ -26,6 +26,13 @@ local function installProfiler(Profiler)
     wrap(DTCommon.TraderStock, "SnapshotSellRows", Audit.METRIC_SNAPSHOT_SELL_ROWS)
     wrap(DTCommon.TraderService, "Snapshot", Audit.METRIC_SNAPSHOT)
     wrap(DTCommon.TraderService, "ExecuteTradeBasket", Audit.METRIC_EXECUTE_BASKET)
+    wrap(DTCommon.MarketPricing, "BuildContext", Audit.METRIC_MARKET_CONTEXT)
+    wrap(DTCommon.MarketEvents, "ResolveContext", Audit.METRIC_EVENT_RESOLUTION)
+    wrap(DTCommon.MarketEvents, "ListActive", Audit.METRIC_EVENT_PRESENTATION)
+    wrap(DTCommon.MarketCatalog, "GetCandidates", Audit.METRIC_CATALOG_QUERY)
+    wrap(DTCommon.SettlementMarket, "Recover", Audit.METRIC_MARKET_RECOVERY)
+    wrap(DTCommon.TraderService, "MarkSettlementVisit", Audit.METRIC_SETTLEMENT_VISIT)
+    wrap(DTCommon.SettlementExchange, "Execute", Audit.METRIC_SETTLEMENT_EXCHANGE)
 
     return function()
         for index = #cleanups, 1, -1 do cleanups[index]() end

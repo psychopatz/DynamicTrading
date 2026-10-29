@@ -461,6 +461,16 @@ Do not block this goal on full physical settlement-storage accounting.
 - event/market/stock revisions drive invalidation;
 - persist once per coherent market exchange.
 
+The runtime hardening boundary keeps the primary MarketSense catalog scan
+game-start/cache-driven and caps uncatalogued taxonomy facts at 256 entries.
+The optional Core profiler feature measures quote-context resolution, event
+resolution/presentation, catalog candidate queries, market recovery, the
+authoritative settlement visit seam, and settlement exchange execution. It is
+installed only when Core performance capture is active, so disabled gameplay
+does not pay for timing or storage. Schema normalization is applied at every
+market/event envelope load, while representative persistence remains category
+and modifier data rather than item definitions.
+
 ## 16. Non-goals
 
 This job does not require:

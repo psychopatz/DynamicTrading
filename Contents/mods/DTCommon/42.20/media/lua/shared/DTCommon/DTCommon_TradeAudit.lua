@@ -30,6 +30,13 @@ Audit.METRIC_SNAPSHOT_ITEMS = "DTCommon.Trade.SnapshotItems"
 Audit.METRIC_SNAPSHOT_SELL_ROWS = "DTCommon.Trade.SnapshotSellRows"
 Audit.METRIC_SNAPSHOT = "DTCommon.Trade.Snapshot"
 Audit.METRIC_EXECUTE_BASKET = "DTCommon.Trade.ExecuteBasket"
+Audit.METRIC_MARKET_CONTEXT = "DTCommon.Market.QuoteContext"
+Audit.METRIC_EVENT_RESOLUTION = "DTCommon.Market.EventResolution"
+Audit.METRIC_EVENT_PRESENTATION = "DTCommon.Market.EventPresentation"
+Audit.METRIC_CATALOG_QUERY = "DTCommon.Market.CatalogQuery"
+Audit.METRIC_MARKET_RECOVERY = "DTCommon.Market.Recovery"
+Audit.METRIC_SETTLEMENT_VISIT = "DTCommon.Market.SettlementVisit"
+Audit.METRIC_SETTLEMENT_EXCHANGE = "DTCommon.Market.SettlementExchange"
 
 local DISABLED_SNAPSHOT = {
     enabled = false,
