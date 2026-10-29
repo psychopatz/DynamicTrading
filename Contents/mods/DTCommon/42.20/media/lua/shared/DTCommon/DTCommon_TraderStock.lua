@@ -135,6 +135,14 @@ function Stock.Quote(fullType, operation, inventoryItem, pricingContext)
     local price = Stock.Price(fullType, inventoryItem)
     local audit = tradeAudit()
     local auditEnabled = auditIsEnabled(audit)
+    local pricing = rawget(DTCommon, "MarketPricing")
+    local itemContext
+    local commercialBase
+    local commercialMargin
+    local relationshipFactor
+    local marketModifier
+    local eventPriceMultiplier
+    local priceBeforeRounding
     local unitPrice
     operation = string.upper(tostring(operation or DTCommon.OP_BUY))
     if not price.ok then
@@ -147,8 +155,10 @@ function Stock.Quote(fullType, operation, inventoryItem, pricingContext)
         unitPrice = math.floor(price.intrinsicPrice * 0.5)
         -- This floor applies only after a valid positive MarketSense price.
         unitPrice = math.max(1, unitPrice)
+        commercialMargin = 0.5
     elseif operation == DTCommon.OP_BUY then
         unitPrice = price.intrinsicPrice
+        commercialMargin = 1
     else
         local result = unavailable(price.fullType, "operation_not_supported")
         if auditEnabled and type(audit.RecordQuote) == "function" then
@@ -156,17 +166,77 @@ function Stock.Quote(fullType, operation, inventoryItem, pricingContext)
         end
         return result
     end
+    commercialBase = unitPrice
     local modifier = pricingContext
         and tonumber(pricingContext.relationshipModifier) or 0
+    if not modifier or modifier ~= modifier then modifier = 0 end
     modifier = math.max(-0.25, math.min(0.25, modifier))
-    if operation == DTCommon.OP_BUY then
-        unitPrice = math.floor(unitPrice * (1 - modifier) + 0.5)
-    else
-        unitPrice = math.floor(unitPrice * (1 + modifier) + 0.5)
+    relationshipFactor = operation == DTCommon.OP_BUY
+        and (1 - modifier) or (1 + modifier)
+    itemContext = {
+        marketModifier = 0,
+        eventPriceMultiplier = 1,
+        eventCount = 0,
+    }
+    if pricing and type(pricing.GetItemContext) == "function" then
+        local ok
+        local resolved
+        ok, resolved = pcall(pricing.GetItemContext, fullType,
+            pricingContext)
+        if ok and type(resolved) == "table" then itemContext = resolved end
     end
+    marketModifier = tonumber(itemContext.marketModifier) or 0
+    marketModifier = math.max(-0.25, math.min(0.25, marketModifier))
+    eventPriceMultiplier = tonumber(itemContext.eventPriceMultiplier) or 1
+    if eventPriceMultiplier ~= eventPriceMultiplier then
+        eventPriceMultiplier = 1
+    end
+    eventPriceMultiplier = math.max(0, math.min(4, eventPriceMultiplier))
+    priceBeforeRounding = commercialBase * (1 + marketModifier)
+        * eventPriceMultiplier * relationshipFactor
+    unitPrice = math.floor(priceBeforeRounding + 0.5)
     price.operation = operation
     price.unitPrice = math.max(1, unitPrice)
     price.relationshipModifier = modifier
+    price.commercialMargin = commercialMargin
+    price.marketModifier = marketModifier
+    price.marketCategory = itemContext.category
+    price.marketSupply = itemContext.marketSupply
+    price.marketDemand = itemContext.marketDemand
+    price.effectiveSupply = itemContext.effectiveSupply
+    price.effectiveDemand = itemContext.effectiveDemand
+    price.marketPressure = itemContext.marketPressure or 0
+    price.marketApplied = itemContext.marketApplied == true
+    price.marketRevision = itemContext.marketRevision
+    price.eventRevision = itemContext.eventRevision
+    price.eventPriceMultiplier = eventPriceMultiplier
+    price.eventCount = itemContext.eventCount or 0
+    price.settlementID = itemContext.settlementID
+    price.explanation = {
+        fullType = price.fullType,
+        operation = operation,
+        settlementID = itemContext.settlementID,
+        marketRevision = itemContext.marketRevision,
+        eventRevision = itemContext.eventRevision,
+        marketCategory = itemContext.category,
+        intrinsicPrice = price.intrinsicPrice,
+        commercialMargin = commercialMargin,
+        commercialBase = commercialBase,
+        relationshipModifier = modifier,
+        relationshipFactor = relationshipFactor,
+        marketSupply = itemContext.marketSupply,
+        marketDemand = itemContext.marketDemand,
+        effectiveSupply = itemContext.effectiveSupply,
+        effectiveDemand = itemContext.effectiveDemand,
+        marketPressure = itemContext.marketPressure or 0,
+        marketModifier = marketModifier,
+        marketFactor = 1 + marketModifier,
+        eventPriceMultiplier = eventPriceMultiplier,
+        eventCount = itemContext.eventCount or 0,
+        priceBeforeRounding = priceBeforeRounding,
+        unitPrice = price.unitPrice,
+        reason = itemContext.reason,
+    }
     if auditEnabled and type(audit.RecordQuote) == "function" then
         audit.RecordQuote(fullType, operation, price)
     end
@@ -353,6 +423,8 @@ function Stock.SnapshotItems(record, existingStore, pricingContext)
                     quantity = math.max(1, math.floor(tonumber(itemRecord[2]) or 1)),
                     unitPrice = buyQuote.unitPrice,
                     sellPrice = sellQuote.unitPrice,
+                    buyExplanation = buyQuote.explanation,
+                    sellExplanation = sellQuote.explanation,
                 }
             end
         end
@@ -401,6 +473,7 @@ function Stock.SnapshotSellRows(physical, pricingContext)
                         itemIDQuantities = {},
                         quantity = 0,
                         unitPrice = quote.unitPrice,
+                        explanation = quote.explanation,
                     }
                     byKey[key] = row
                     rows[#rows + 1] = row

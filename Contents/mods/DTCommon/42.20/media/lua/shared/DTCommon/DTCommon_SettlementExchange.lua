@@ -10,6 +10,7 @@ local Planner = require "DTCommon/DTCommon_SettlementExchangePlan"
 local Storage = DTCommon.Storage
 local Stock = DTCommon.TraderStock
 local Market = DTCommon.SettlementMarket
+local Pricing = DTCommon.MarketPricing
 
 Exchange.VERSION = 1
 Exchange.MAX_OPERATIONS = 8
@@ -86,8 +87,15 @@ function Exchange.Execute(traderID, settlementID, options)
             settlementID = settlementID,
             stockVersion = plan.stockVersion,
             marketRevision = plan.marketRevision,
+            eventRevision = plan.eventRevision,
+            quoteContextRevision = plan.quoteContextRevision,
             operations = {},
         }
+    end
+    if Pricing and type(Pricing.IsCurrent) == "function" then
+        local contextOK, contextReason = Pricing.IsCurrent(
+            plan.pricingContext)
+        if not contextOK then return nil, contextReason end
     end
     record = service.GetRecord(traderID)
     if not record then return nil, "trader_not_found" end
@@ -183,6 +191,8 @@ function Exchange.Execute(traderID, settlementID, options)
         settlementID = settlementID,
         stockVersion = record.v,
         marketRevision = marketResult.revision,
+        eventRevision = plan.eventRevision,
+        quoteContextRevision = plan.quoteContextRevision,
         budget = record.b,
         operations = plan.operations,
         saleTotal = plan.saleTotal,

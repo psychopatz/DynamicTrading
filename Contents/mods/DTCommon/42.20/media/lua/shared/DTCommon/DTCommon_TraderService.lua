@@ -62,6 +62,32 @@ local function authority()
         and Storage.IsAuthority() == true
 end
 
+local function buildPricingContext(record, player, options)
+    local pricing = rawget(DTCommon, "MarketPricing")
+    local context
+    local ok
+    if pricing and type(pricing.BuildContext) == "function" then
+        ok, context = pcall(pricing.BuildContext, record, player, options)
+        if ok and type(context) == "table" then return context end
+    end
+    if Policy and type(Policy.PriceContext) == "function" then
+        context = Policy.PriceContext(record, player)
+        return type(context) == "table" and context or {}
+    end
+    return {}
+end
+
+local function validatePricingContext(context)
+    local pricing = rawget(DTCommon, "MarketPricing")
+    local ok
+    local reason
+    if pricing and type(pricing.IsCurrent) == "function" then
+        ok, reason = pricing.IsCurrent(context)
+        if ok == false then return false, reason or "stale_market" end
+    end
+    return true
+end
+
 local function playerKey(player)
     local value
     if player and type(player.getOnlineID) == "function" then
@@ -532,7 +558,7 @@ function Service.Snapshot(traderID, player)
     end
     store, loadReason = Storage.LoadInventory(record)
     if not store then return nil, loadReason end
-    pricingContext = Policy.PriceContext(record, player)
+    pricingContext = buildPricingContext(record, player)
     items, reason = Stock.SnapshotItems(record, store, pricingContext)
     if reason then return nil, reason end
     usedWeight, maxWeight = applyCaravanCapacity(record, store)
@@ -551,6 +577,10 @@ function Service.Snapshot(traderID, player)
         end
     end
     snapshot.quoteRevision = snapshot.stockVersion
+    snapshot.marketRevision = pricingContext.marketRevision
+    snapshot.eventRevision = pricingContext.eventRevision
+    snapshot.quoteContextRevision = pricingContext.quoteContextRevision
+    snapshot.settlementID = pricingContext.settlementID
     snapshot.usedWeight = usedWeight
     snapshot.maxWeight = maxWeight
     return snapshot
@@ -575,9 +605,10 @@ function Service.ValidateTalkAccess(player, traderID, mode)
     return validateAccess(player, record)
 end
 
-local function requestVersion(request, record)
+local function requestVersion(request, record, pricingContext)
     local observed = tonumber(request.observedStockVersion)
     local observedQuote = tonumber(request.observedQuoteRevision)
+    local observedMarket = tonumber(request.observedMarketRevision)
     if not observed or observed ~= math.floor(observed) then
         return false, "stock_version_required"
     end
@@ -587,6 +618,20 @@ local function requestVersion(request, record)
     end
     if observedQuote ~= nil and observedQuote ~= integer(record.v, 0) then
         return false, "stale_quote"
+    end
+    if observedMarket ~= nil
+        and observedMarket ~= math.floor(observedMarket)
+    then
+        return false, "market_revision_invalid"
+    end
+    if observedMarket ~= nil then
+        local currentMarket = pricingContext
+            and tonumber(pricingContext.marketRevision) or nil
+        if currentMarket == nil
+            or observedMarket ~= math.floor(currentMarket)
+        then
+            return false, "stale_market"
+        end
     end
     return true
 end
@@ -832,7 +877,9 @@ function Service.ExecuteTradeBasket(player, request)
     if not record then return failure(traderID, "BASKET", "trader_not_found") end
     accessOK, reason = validateAccess(player, record)
     if not accessOK then return failure(traderID, "BASKET", reason) end
-    local versionOK, versionReason = requestVersion(request, record)
+    pricingContext = buildPricingContext(record, player)
+    local versionOK, versionReason = requestVersion(
+        request, record, pricingContext)
     if not versionOK then return failure(traderID, "BASKET", versionReason) end
     local claim, claimReason = claimRequest(player, traderID, requestID)
     if not claim then return failure(traderID, "BASKET", claimReason) end
@@ -844,8 +891,6 @@ function Service.ExecuteTradeBasket(player, request)
     if #buyRows < 1 and #sellRows < 1 then
         return failure(traderID, "BASKET", "empty_trade")
     end
-
-    pricingContext = Policy.PriceContext(record, player)
 
     stock, reason = Storage.LoadInventory(record)
     if not stock then return failure(traderID, "BASKET", reason) end
@@ -878,6 +923,10 @@ function Service.ExecuteTradeBasket(player, request)
         physical, stock, player, buySelections, sellSelections)
     if not capacityOK then
         return failure(traderID, "BASKET", capacityReason)
+    end
+    local contextOK, contextReason = validatePricingContext(pricingContext)
+    if not contextOK then
+        return failure(traderID, "BASKET", contextReason)
     end
 
     for rowIndex = 1, #sellRows do
@@ -979,6 +1028,10 @@ function Service.ExecuteTradeBasket(player, request)
         sellTotal = sellTotal,
         totalValue = netTotal,
         stockVersion = record.v,
+        marketRevision = pricingContext.marketRevision,
+        eventRevision = pricingContext.eventRevision,
+        quoteContextRevision = pricingContext.quoteContextRevision,
+        settlementID = pricingContext.settlementID,
         snapshot = snapshot,
         reason = snapshotReason,
     }

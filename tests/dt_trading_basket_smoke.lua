@@ -429,6 +429,28 @@ local staleQuote = Service.ExecuteTradeBasket(player, {
 })
 T.equal(staleQuote.reason, "stale_quote", "stale quote is rejected")
 
+DTCommon.MarketPricing = {
+    BuildContext = function()
+        return {
+            relationshipModifier = 0,
+            marketRevision = 7,
+            quoteContextRevision = "7:none",
+        }
+    end,
+    IsCurrent = function() return true end,
+}
+local staleMarket = Service.ExecuteTradeBasket(player, {
+    requestID = "basket-stale-market",
+    traderID = "trader-kestrel",
+    observedStockVersion = 3,
+    observedMarketRevision = 6,
+    buyRows = { { fullType = "Base.Bandage", quantity = 1 } },
+    sellRows = {},
+})
+T.equal(staleMarket.reason, "stale_market",
+    "market revision invalidates an old basket quote")
+T.equal(record.v, 3, "stale market leaves stock version unchanged")
+
 physical.items[#physical.items + 1] = makeItem(
     "katana-stack", "Base.Katana", { count = 5 })
 local stacked = Service.ExecuteTradeBasket(player, {

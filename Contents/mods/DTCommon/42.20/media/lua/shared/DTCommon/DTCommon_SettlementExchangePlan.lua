@@ -8,6 +8,7 @@ DTCommon.SettlementExchangePlan = Plan
 local Storage = DTCommon.Storage
 local Policy = DTCommon.CoreActorPolicy
 local Market = DTCommon.SettlementMarket
+local Pricing = DTCommon.MarketPricing
 local Candidates = require "DTCommon/DTCommon_SettlementExchangeCandidates"
 local Exchange = DTCommon.SettlementExchange
 
@@ -46,12 +47,21 @@ function Plan.Build(traderID, settlementID, options)
     store, reason = Storage.LoadInventory(record)
     if not store then return nil, reason end
     options = type(options) == "table" and options or {}
-    context = Policy and type(Policy.PriceContext) == "function"
-        and Policy.PriceContext(record, nil) or {}
+    if Pricing and type(Pricing.BuildContext) == "function" then
+        context = Pricing.BuildContext(record, nil, {
+            settlementID = settlementID,
+        })
+    else
+        context = Policy and type(Policy.PriceContext) == "function"
+            and Policy.PriceContext(record, nil) or {}
+    end
     plan = {
         traderID = traderID,
         settlementID = settlementID,
         marketRevision = market.revision,
+        eventRevision = context.eventRevision,
+        quoteContextRevision = context.quoteContextRevision,
+        pricingContext = context,
         stockVersion = integer(record.v, 0),
         budgetBefore = math.max(0, integer(record.b, 0)),
         maxOperations = math.max(1, math.min(

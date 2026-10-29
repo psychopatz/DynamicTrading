@@ -273,15 +273,13 @@ Disposal should not empty the trader inventory unless market conditions and boun
 ```text
 MarketSense intrinsic value
     ↓
-Settlement market modifier
+Existing BUY/SELL commercial base
+    ↓
+Settlement market pressure modifier
     ↓
 Active event modifier
     ↓
-Trader specialization/preference
-    ↓
 Relationship/policy modifier (existing bounded seam)
-    ↓
-BUY/SELL commercial margin
     ↓
 final authoritative quote
 ```
@@ -305,6 +303,16 @@ Do not expose client-authoritative arithmetic. Breakdown is presentation of serv
 ### Bounds
 
 Dynamic modifiers must be clamped to prevent runaway multiplicative explosions.
+
+The current DTCommon quote adapter keeps MarketSense's intrinsic price as the
+only valuation source. It derives a category from the bounded MarketSense
+catalog, maps `demand - supply` through a `0.25` pressure scale, clamps the
+result to `-0.25..0.25`, and composes that factor with the existing relationship
+bias and BUY/SELL commercial base. Quote explanations include the intrinsic
+price, commercial base, effective category pressure, event factor, relationship
+factor, rounding input, and final unit price. Settlement and event revisions
+are carried with the context so a server trade can reject stale market data
+before mutation.
 
 ## 10. Price vs stock timing
 

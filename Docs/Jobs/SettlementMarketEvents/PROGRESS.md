@@ -2,7 +2,7 @@
 
 ## Parent status
 
-**IN PROGRESS — M2B accepted; M3 is next.**
+**IN PROGRESS — M3 accepted; M4 is next.**
 
 The complete M0–M8 roadmap remains the parent completion boundary. Finishing
 one chunk or phase does not complete the parent objective.
@@ -150,7 +150,7 @@ M1B added data-driven profile baselines and the bounded market mutation path:
 
 ## Current phase
 
-**M2 — Settlement Exchange**
+**M3 — Market-aware pricing**
 
 ## M2A — accepted bounded settlement exchange
 
@@ -204,23 +204,52 @@ M2B wires the exchange through the real Hoomans travel ownership boundary:
   DTHoomans production trees and the M2B contract/integration tests.
 - `luac -p` and `git diff --check` passed.
 
-## Next Chunk — M3
+## M3 — accepted market-aware commercial pricing
 
-Add market-aware commercial pricing over the existing MarketSense quote
-boundary:
+M3 adds the server-owned quote context and pricing adapter over the existing
+MarketSense boundary:
 
-1. Resolve effective settlement pressure and active event modifiers without
-   replacing MarketSense intrinsic valuation.
-2. Apply bounded local scarcity/abundance and trader relationship modifiers
-   while preserving existing BUY/SELL commercial margins.
-3. Return structured server-owned quote explanations and cover opposite
-   surplus/shortage cases, immediate quote reaction, and reload behavior.
+- `DTCommon.MarketPricing` resolves a trader's canonical last settlement,
+  bounded category pressure, optional active event modifiers, and revision
+  context without storing or scanning an item universe per quote;
+- `TraderStock.Quote` preserves the existing intrinsic valuation and BUY/SELL
+  commercial bases, then composes bounded settlement pressure, event price
+  factors, and the existing relationship policy bias;
+- stock snapshots, sell rows, basket results, and exchange plans carry
+  structured quote explanations plus market/event revisions;
+- basket settlement rejects an observed stale market revision before any
+  player, stock, budget, or version mutation, and rechecks the context before
+  transfer; exchange planning uses the same market-aware quote boundary;
+- opposite surplus/shortage settlements, relationship composition, event
+  reaction, immediate revision invalidation, reloaded quote reaction, and
+  existing transaction regressions are covered without changing persistent
+  trader stock on quote or event context changes.
 
-## Remaining gap after M2B
+## M3 evidence
 
-Market-aware availability and quotes, generic scoped event resolution,
-grounded presentation, and the later roadmap phases remain incomplete; M2B
-does not change commercial quote calculation.
+- `python3 tests/run_tests.py`: `PASS 29/29`.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- PZ Verify Kahlua checks reported zero errors across the 21-file DTCommon
+  shared production tree. Test sources retain the repository's existing
+  harness-only `package`/`dofile` sandbox findings; `luac -p` passed for all
+  changed production and test Lua files.
+- `git diff --check` passed.
+
+## Next Chunk — M4
+
+Implement the generic typed event registry and effective-context resolver:
+
+1. Persist versioned events with global, region, faction, and settlement
+   scopes and bounded start/end expiry.
+2. Resolve active generic category modifiers into the M3 pricing context with
+   revision invalidation and no event-specific quote branches.
+3. Prove event price/availability response without event-start stock mutation.
+
+## Remaining gap after M3
+
+Generic scoped event persistence/activation, market-aware availability,
+grounded presentation, and the later roadmap phases remain incomplete.
 
 ## Known constraints
 
