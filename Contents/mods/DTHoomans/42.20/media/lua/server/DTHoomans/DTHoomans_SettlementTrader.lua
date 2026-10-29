@@ -174,6 +174,11 @@ function Settlement.TraderIDFor(factionID)
     return TRADER_ID_PREFIX .. tostring(factionID)
 end
 
+-- Stable name used by the settlement-visit and excursion bridges. Keep the
+-- shorter historical helper as the implementation so existing callers remain
+-- compatible.
+Settlement.TraderIDForFaction = Settlement.TraderIDFor
+
 Settlement.ActiveCommunityForFaction = activeCommunityForFaction
 
 -- Bind a trader record to an existing settlement faction. Returns

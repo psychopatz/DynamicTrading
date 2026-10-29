@@ -73,19 +73,24 @@ end
 function Mobility.Register()
     local service = PNC and PNC.CommercialMobilityService or nil
     local ok
+    local registered
     local reason
     if not service or type(service.RegisterOpportunityScorer) ~= "function" then
         return false, "commercial_mobility_service_unavailable"
     end
     if Mobility.Registered then return true, "already_registered" end
-    ok, reason = pcall(
+    ok, registered, reason = pcall(
         service.RegisterOpportunityScorer,
         "dynamic_trading",
         Mobility.OpportunityScore
     )
-    if not ok then return false, reason end
-    Mobility.Registered = reason == "scorer_registered"
-        or reason == "scorer_replaced"
+    if not ok then return false, registered end
+    Mobility.Registered = registered == true
+        and (reason == "scorer_registered"
+            or reason == "scorer_replaced")
+    if not Mobility.Registered then
+        return false, reason or "scorer_registration_failed"
+    end
     return Mobility.Registered, reason
 end
 
