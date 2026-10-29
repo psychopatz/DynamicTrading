@@ -1,538 +1,236 @@
-# Progress — Settlement Market & Events
+# Progress — Settlement Market, Events & Trader Mobility
 
 ## Parent status
 
-**IN PROGRESS — M0–M8 engine work accepted; M9 Runtime Market Activation is mandatory before native SP/MP handoff.**
+**IN PROGRESS — M0–M9D market/runtime engine work accepted; M9E resident/publication closure and M10 Community Excursions & Commercial Trader Mobility are mandatory before native SP/MP handoff.**
 
-The complete M0–M9 roadmap is now the parent completion boundary. Finishing
-one chunk or phase does not complete the parent objective.
+The complete M0–M10 roadmap is the parent completion boundary. A chunk or phase completing does not complete the parent objective.
 
 ## Planning baseline
 
-Current audited DynamicTrading `main` baseline: `96303d91a1f44270c43b71581e92e619e2448541`
+DynamicTrading audited `main`:
 
-Legacy behavioral reference: `ee0a8dc6a6989fbbdbd943ec23aa3f1c54099415`
+`9ee65f0be58bdea00a1f1532173ec9fa8afee021`
 
-The working tree contains the unrelated pre-existing edit to:
+Legacy behavioral reference:
+
+`ee0a8dc6a6989fbbdbd943ec23aa3f1c54099415`
+
+Contemporaneous Project Hoomans audit:
+
+- local `main`: `6768843e`;
+- `origin/main`: `8632bc30`;
+- required generic settlement-arrival observer commit `2200b866` existed locally but was not contained by any remote branch.
+
+Recheck both repositories before acting because Project Hoomans is concurrently changing.
+
+DynamicTrading also contains the unrelated pre-existing local edit:
 
 `Contents/mods/DTHoomans/42.20/media/lua/shared/DTHoomans/DTHoomans_Conversation.lua`
 
-That file remains preserved and is not part of this work.
+Preserve it unless its owner explicitly incorporates it.
 
-## Accepted existing foundation
+## Accepted M0–M8 engine foundation
+
+Accepted and regression-protected:
 
 - stable trader registry and persistent exact merchant stock;
-- bounded initial MarketSense-backed stock seed;
-- MarketSense definition/instance pricing;
-- server-authoritative buy/sell basket settlement;
-- exact item identity, replay, stale-version, and transaction rollback guards;
-- trader budget and stock revisions;
-- Core actor policy settlement-gated `MarkVisit` and `Restock`;
-- Hoomans physical trader/faction binding;
-- DTAbstract remote access;
-- Talk, WorldKnowledge, and reusable Radio OS presentation seams.
+- MarketSense intrinsic-value/taxonomy authority;
+- compact settlement market registry/profile/pressure/recovery;
+- bounded partial settlement exchange;
+- server-authoritative market-aware quote pipeline;
+- generic scoped market-event registry and data-only proof events;
+- two-settlement logistics propagation through persistent trader stock;
+- grounded WorldKnowledge / Talk / Radio market-event presentation;
+- schema migration, bounds, cache/profiler hardening;
+- replay/stale-version/security protections;
+- no per-frame economy, all-trader event rewrite, or per-quote full item scan.
 
-These foundations are preserved; the market/event work must evolve them rather
-than replace them.
+Legacy remains behavioral reference only. Do not restore DTNPC, manual price catalogs, or monolithic legacy dialogue.
 
-## M0A — accepted source-audit contracts
+## Accepted M9A–M9D runtime activation
 
-M0A verified the real integration seams before adding settlement market state:
+M9 closed the earlier "engine exists but gameplay does not drive it" gap.
 
-- `DTCommon_TraderService.Snapshot` loads the persisted serialized inventory
-  through `TraderStock.SnapshotItems`; it does not call `TraderStock.New`, so
-  reopening a trader does not reroll exact stock.
-- `DTCommon_TraderService.MarkSettlementVisit` remains the server-authoritative
-  visit seam. The Core actor policy now requires an explicit settlement
-  identity, records `lastSettlementID`, and retains duplicate visit protection.
-- Project Hoomans' active `community.id` is the canonical settlement identity.
-  `factionID` identifies the owning faction and `siteID` identifies a physical
-  location; neither replaces the community identity.
-- Hoomans exposes an explicit travel-arrival handler seam through
-  `PNC.API.Travel.RegisterArrivalHandler` and `PNC.Travel.Arrivals.Dispatch`.
-  The server-only `dynamic_trading_settlement` adapter resolves the active
-  community, resolves the trader from the arriving NPC, and forwards one
-  idempotent server visit to DynamicTrading. Post-M8 audit later proved this
-  explicit DT arrival action is **not** the same as Hoomans' ordinary
-  `PNC.MobileSettlementVisitService` lifecycle and has no production caller;
-  M9 must close that activation gap without moving travel authority into DT.
-- MarketSense remains the intrinsic-value and taxonomy authority through
-  `GetPriceDetails*`, `GetItemAvailability`, `GetAllKnownItems`, and `GetTags`;
-  no DynamicTrading item taxonomy or manual intrinsic-price catalog was added.
-- No settlement market state, event state, or per-visit item-registry scan was
-  introduced in M0A.
+Accepted behavior:
 
-## M0B — accepted versioned schemas
+- production Hoomans mobile-settlement arrival can notify DynamicTrading;
+- missing settlement markets are lazily provisioned by canonical Hoomans `community.id`;
+- bounded Hoomans metadata resolves a market profile with safe `default` fallback;
+- settlement visit drives one idempotent DT exchange;
+- elapsed authoritative time drives lazy market recovery;
+- production market-condition producer can register/clear Food Shortage / Agricultural Surplus through the generic event registry;
+- event production uses raw persisted pressure with hysteresis/cooldown;
+- event start affects price/availability/presentation but not exact merchant stock;
+- M9 flagship starts with no target DT market/event and drives the public Hoomans arrival lifecycle rather than direct test-only DT setup calls.
 
-M0B added `DTCommon.MarketSchema` as a shared, data-only contract for future
-market and event registries. It defines version 1 envelopes and normalizers for
-settlement markets, market events, and their bounded stores. It provides
-defaults and migration handling for absent/partial records, clamps invalid
-numeric values, rejects future schema versions, drops unknown fields, and
-preserves generic MarketSense category/tag keys without an item ledger.
+Latest accepted DynamicTrading evidence at the M9 audit:
 
-The schema boundary does not resolve prices, run recovery, activate events,
-scan all items, or mutate trader stock.
+- full DT suite: `37/37`;
+- DTHoomans bridge: `83 checks, 0 failures`;
+- affected Hoomans mobile-settlement / abstract-world / composition regressions passed;
+- changed production Lua passed `luac -p`, Kahlua verification, and `git diff --check`.
 
-## M0B evidence
+These are accepted engine/runtime results. Do not redo M0–M9D unless current source proves a regression.
 
-- `python3 tests/run_tests.py`: `PASS 23/23`.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- PZ Verify Kahlua checks reported zero errors for all 14 DTCommon shared files,
-  all 6 DTHoomans server files, and the schema smoke test.
-- `luac -p` and `git diff --check` passed.
+## Post-M9 trader-lifecycle audit
 
-## M1A — accepted market registry and catalog
+The claim that native SP/MP was the only remaining step is superseded.
 
-M1A added the first production settlement market foundation:
+### Two real trader types
 
-- `DTCommon.Storage` now owns a separate `DTCommon.SettlementMarkets`
-  persistence envelope; trader inventory data remains in its existing key and
-  serializer.
-- `DTCommon.SettlementMarket` creates, reads, lists, and commits bounded
-  category-pressure records through the M0B schema. Creation and commits are
-  server-authoritative, increment the envelope revision, preserve stale-revision
-  protection, and return normalized copies rather than exposing ModData tables.
-- market creation validates an active Hoomans `community.id` when the Hoomans
-  community service is available; no faction or site identity is substituted.
-- `DTCommon.MarketCatalog` consumes MarketSense category, tag, availability,
-  and price facts into a bounded runtime index. It builds once at game start,
-  supports explicit invalidation, and exposes deterministic category candidates
-  without persisting an item universe.
-- M1A does not change trader quotes, exchange behavior, event activation, or
-  physical stock.
+**Settlement-owned resident trader**
 
-## M1A evidence
+- ordinary non-mobile Hoomans settlement member with role `trader`;
+- has a real home community;
+- currently remains at home;
+- should leave only rarely for purposeful commercial excursions.
 
-- `python3 tests/run_tests.py`: `PASS 25/25`.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- PZ Verify Kahlua checks reported zero errors for all 16 DTCommon shared files.
-- `luac -p` and `git diff --check` passed.
+**Base-less roaming trader/caravan**
 
-## M1B — accepted profiles, pressure, and recovery
+- independent Hoomans mobile trader faction;
+- has no home community or hidden base;
+- default state is perpetual roaming/travel;
+- should commercially visit settlements without admission/absorption.
 
-M1B added data-driven profile baselines and the bounded market mutation path:
+### Verified developer gaps
 
-- `default`, `farm`, and `military` profiles provide distinct normalized
-  MarketSense category baselines without defining item identities.
-- `SettlementMarket.ApplyDelta` is the single server-owned bounded supply,
-  demand, and wealth mutation path. It advances market and storage revisions,
-  records update time, and rejects stale revisions.
-- `SettlementMarket.Recover` moves category pressure and wealth toward the
-  selected profile in one deterministic bounded calculation, with no periodic
-  or per-frame loop.
-- the registry returns normalized copies and persists/reloads two-settlement
-  state through the separate market envelope; trader inventory remains
-  untouched.
+1. **Resident market context**
+   `DTHoomans_SettlementTrader.EnsureTraderForFaction` binds the staffed trader but does not yet guarantee canonical home market provisioning/current pricing context before any mobile visitor arrives.
 
-## M1B evidence
+2. **Cross-repo publication**
+   The generic Hoomans arrival observer used by M9 was local-only at audit time.
 
-- `python3 tests/run_tests.py`: `PASS 26/26`.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- PZ Verify Kahlua checks reported zero errors for all 17 DTCommon shared files
-  and the M1B pressure smoke test.
-- `luac -p` and `git diff --check` passed.
+3. **Roaming caravan destination lifecycle**
+   DT generates caravans with `mobileControlMode = strategic` and `mobilePathMode = random`. Hoomans' ordinary settlement-departure scheduler requires ambient street-roaming groups, so production DT caravans do not naturally use that settlement-to-settlement selector.
 
-## M0A evidence
+4. **Unsafe admission semantics**
+   Hoomans currently distinguishes `settlement_admission` and `hostile_contact`, not a generic temporary non-admission settlement visit. AI admission has a configured 35% default member join chance. Commercial visitors must never use that path.
 
-- `python3 tests/run_tests.py`: `PASS 22/22`.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- `luac -p` passed for every changed production and contract-test Lua file.
-- `git diff --check` passed.
-- PZ Verify Kahlua checks reported zero errors for the affected DTCommon and
-  DTHoomans server trees and both new contract tests.
-- Codebase-memory graph status and coverage were checked first for the
-  Project Hoomans and MarketSense source paths. DynamicTrading media paths are
-  excluded from the current graph index, so those exact production files were
-  verified by direct source inspection as required by the coverage result.
+5. **Resident excursion lifecycle**
+   Resident traders have no generic PREPARING → OUTBOUND → VISITING → RETURNING_HOME lifecycle and no exact-home commercial return behavior.
+
+6. **Semantic/public absence facts**
+   No generic Hoomans public excursion projection yet exposes authoritative "trader is away / trading run / rough destination / ETA" state for semantic consumers.
+
+7. **Stale caravan-base comments**
+   Some DT caravan comments still claim a leader "stays at the base" or imply an idle-at-base variant. The approved roaming trader is base-less; do not implement a fake base to match stale comments.
 
 ## Current phase
 
-**M9 — Runtime Market Activation REQUIRED**
-
-M0–M8 are accepted as engine implementation. Parent completion is reopened because production call-site audit found that ordinary gameplay does not yet provision settlement markets, consume the normal Hoomans mobile-settlement arrival lifecycle, advance recovery, or produce events.
-
-## M2A — accepted bounded settlement exchange
-
-M2A adds a narrow exchange facade, planner, and MarketSense-backed candidate
-adapter over the existing persistent virtual inventory:
-
-- disposals inspect only exact trader stock and acquisitions use bounded
-  `MarketCatalog` category candidates; unrelated records are preserved;
-- plans cap operations and units, carry stock/market revisions and budget,
-  and apply pressure deltas only for completed disposal/acquisition units;
-- execution preflights stock and market revisions, saves the exact inventory
-  once, applies one expected-revision market mutation, and restores stock,
-  budget, and version on save or market failure;
-- `MarkSettlementVisit` can invoke the exchange after the authoritative
-  settlement seam, while the Hoomans arrival adapter forwards the explicit
-  exchange intent and the policy keeps a bounded recent visit-ID ledger;
-- no UI snapshot calls `TraderStock.New`, no event-start stock mutation, and
-  no per-quote item-universe scan were introduced.
-
-## M2A evidence
-
-- `python3 tests/run_tests.py`: `PASS 27/27`.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- PZ Verify Kahlua checks reported zero errors across 20 DTCommon shared files,
-  6 DTHoomans server files, and the exchange smoke test; exchange modules also
-  passed the token-bloat threshold check.
-- `luac -p` and `git diff --check` passed.
-
-## M2B — accepted travel wiring and two-settlement propagation
-
-M2B wires the exchange through the real Hoomans travel ownership boundary:
-
-- `DTHoomans.Settlement.StartTraderTravel` validates the active canonical
-  community, resolves the physical trader NPC, and delegates movement to
-  `PNC.API.Travel.Start`;
-- the serialized arrival action is strict, carries the canonical settlement
-  and DT trader identity, and defaults to `exchange=true` while allowing an
-  explicit opt-out;
-- the two-settlement integration moves food through a surplus farm visit and
-  a shortage military visit, changes each local market in the expected
-  direction, preserves unrelated exact stock, and reloads both markets and
-  trader stock from persistence.
-
-## M2B evidence
-
-- `python3 tests/run_tests.py`: `PASS 28/28`.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- PZ Verify Kahlua checks reported zero errors across the DTCommon and
-  DTHoomans production trees and the M2B contract/integration tests.
-- `luac -p` and `git diff --check` passed.
-
-## M3 — accepted market-aware commercial pricing
-
-M3 adds the server-owned quote context and pricing adapter over the existing
-MarketSense boundary:
-
-- `DTCommon.MarketPricing` resolves a trader's canonical last settlement,
-  bounded category pressure, optional active event modifiers, and revision
-  context without storing or scanning an item universe per quote;
-- `TraderStock.Quote` preserves the existing intrinsic valuation and BUY/SELL
-  commercial bases, then composes bounded settlement pressure, event price
-  factors, and the existing relationship policy bias;
-- stock snapshots, sell rows, basket results, and exchange plans carry
-  structured quote explanations plus market/event revisions;
-- basket settlement rejects an observed stale market revision before any
-  player, stock, budget, or version mutation, and rechecks the context before
-  transfer; exchange planning uses the same market-aware quote boundary;
-- opposite surplus/shortage settlements, relationship composition, event
-  reaction, immediate revision invalidation, reloaded quote reaction, and
-  existing transaction regressions are covered without changing persistent
-  trader stock on quote or event context changes.
-
-## M3 evidence
-
-- `python3 tests/run_tests.py`: `PASS 29/29`.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- PZ Verify Kahlua checks reported zero errors across the 21-file DTCommon
-  shared production tree. Test sources retain the repository's existing
-  harness-only `package`/`dofile` sandbox findings; `luac -p` passed for all
-  changed production and test Lua files.
-- `git diff --check` passed.
-
-## M4 — accepted generic market event registry
-
-M4 adds the generic event persistence and effective-context resolver:
-
-- `DTCommon.Storage` persists a separate versioned `DTCommon.MarketEvents`
-  envelope, leaving trader stock and settlement market envelopes independent;
-- `DTCommon.MarketEvents` supports server-authoritative register, replace,
-  list, remove, diagnostics, and deterministic active-context resolution for
-  global, region, faction, and settlement scopes;
-- start/end windows are deterministic and end-exclusive; matching category
-  modifiers aggregate into bounded supply, demand, availability, and price
-  factors without event-specific branches;
-- event store writes and active-set/time-window changes produce context
-  revisions consumed by the M3 quote invalidation seam;
-- event registration/removal only changes event state: it does not loop over
-  traders, rewrite stock, or create magical inventory.
-
-## M4 evidence
-
-- `python3 tests/run_tests.py`: `PASS 30/30`.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- PZ Verify Kahlua checks reported zero errors across the 22-file DTCommon
-  shared production tree; `luac -p` and `git diff --check` passed.
-
-## M5 — accepted generic proof events
-
-M5 adds data-only food shortage and agricultural surplus definitions through
-the M4 registry and connects generic availability to bounded exchange
-candidate exposure:
-
-- the shortage and surplus definitions use only typed category modifiers for
-  supply, demand, availability, and price; no event-specific pricing branch
-  was added;
-- identical MarketSense intrinsic food items receive opposite immediate
-  commercial quote responses and retain the same intrinsic value;
-- exchange candidate selection honors each active category availability factor
-  deterministically within its existing operation/unit budget;
-- event expiry restores the neutral quote and candidate availability context;
-- event registration and planning leave persistent trader state untouched.
-
-## M5 evidence
-
-- `python3 tests/run_tests.py`: `PASS 31/31`.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- PZ Verify Kahlua checks reported zero errors across the 23-file DTCommon
-  shared production tree; `luac -p` and `git diff --check` passed.
-
-## M6 — accepted deterministic two-settlement logistics
-
-M6 proves the complete settlement-centered logistics path through the real
-Hoomans arrival adapter and DTCommon visit/exchange seam:
-
-- a persistent trader acquires one MarketSense-backed food unit at a farm
-  surplus, keeps unrelated stock, and records the canonical farm settlement;
-- the exact stock and farm pressure survive a fresh storage/market reload;
-- Hoomans-owned travel delegates the same physical NPC to a military
-  settlement, where the carried food is partially disposed and the canonical
-  settlement context moves to the destination;
-- local farm and military quotes react to their own completed pressure changes;
-- stock versions, market revisions, budget, and visit IDs advance only on
-  completed exchanges; replaying the same arrival ID does not transact twice.
-
-## M6 evidence
-
-- `python3 tests/run_tests.py`: `PASS 32/32`.
-- Focused M6/regression run: `PASS 3/3` for the logistics, arrival-contract,
-  and two-settlement exchange harnesses.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- PZ Verify Kahlua reported zero errors for the 23-file DTCommon shared
-  production tree and the new logistics harness; `luac -p` and
-  `git diff --check` passed.
-
-## M7 — accepted grounded event presentation
-
-M7 connects authoritative active market events to the existing presentation
-seams without creating a second event store or mutating economic state:
-
-- `MarketEventPresentation` exposes bounded active summaries and stable fact
-  identities directly from `DTCommon.MarketEvents`, including scope and time;
-- on-demand WorldKnowledge synchronization publishes one typed `market.event`
-  fact and acquires it only for the trader whose Talk context is being built;
-- Talk renders the same fact and returns truthful no-news after expiry or when
-  no event matches the trader's settlement context;
-- physical and abstract Radio OS contact rows expose the same bounded event
-  summaries, while the scanner renders localized event news or explicit no-news;
-- event presentation remains read-only with respect to trader stock, budget,
-  stock versions, quotes, and settlement market pressure.
-
-## M7 evidence
-
-- `python3 tests/run_tests.py`: `PASS 32/32`.
-- Focused M7 event/presentation run: `PASS 4/4` for event registry, proof
-  events, WorldKnowledge/Talk, and Radio OS harnesses.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- PZ Verify Kahlua reported zero errors across the 24-file DTCommon shared
-  production tree and changed presentation files; Lua parse, translation JSON
-  parity, and `git diff --check` passed.
-
-## M8 — accepted performance, migration, and hardening
-
-M8 closes the developer-side correctness and bounded-runtime gate:
-
-- storage migration is exercised through the real market/event envelopes, with
-  legacy defaults, unknown-field removal, future-schema rejection, bounded
-  records, active event definition reload, expiry timing, and recovery time
-  clamping covered by `dt_market_hardening_smoke.lua`;
-- `MarketCatalog.Get` now keeps uncatalogued MarketSense facts in a separate
-  bounded 256-entry runtime cache. The primary registry index remains bounded
-  and explicit invalidation still permits only one new MarketSense scan;
-- the optional Core profiler feature exposes quote-context, event-resolution,
-  event-presentation, catalog-query, market-recovery, settlement-visit, and
-  settlement-exchange timers. The feature is inactive unless Core performance
-  capture is enabled, and cleanup restores the original functions;
-- representative JSON observations cover 64 settlement market records and 32
-  event records without item definitions: 31,442 market bytes and 19,066 event
-  bytes in the deterministic harness;
-- direct source audit confirms no market/event per-frame hook, all-trader event
-  rewrite, or per-quote/per-visit `GetAllKnownItems` scan. Exchange and event
-  state remain bounded by the existing schema/operation limits.
-
-## M8 evidence
-
-- `python3 tests/run_tests.py`: `PASS 33/33`.
-- Focused M8/regression run: `PASS 9/9` for hardening, schema, catalog,
-  events, pricing, pressure, exchange, baseline, and two-settlement paths.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- Dependency-boundary regressions passed: PsychopatzCore profiler/inventory
-  `3/3`, Project Hoomans travel/presence/staffing `3/3`, and MarketSense API,
-  availability-budget, and market-modifier `3/3`.
-- PZ Verify Kahlua reported zero errors across the 24-file DTCommon shared
-  production tree; the new test's two `package.path` findings are
-  harness-only because Project Zomboid supplies those paths automatically.
-  Full `luac -p`, translation JSON parity, and `git diff --check` passed.
-- Native SP/MP acceptance was not executed because repository policy leaves
-  native driving and live acceptance user-owned/authorization-gated.
-
-## Post-M8 audit correction
-
-The previous statement that only native SP/MP remained was incorrect. Repository inspection at `96303d91` found four developer-side activation gaps:
-
-1. `SettlementMarket.GetOrCreate` has no production caller; ordinary settlements can reach exchange with no market and fail `market_not_found`.
-2. `DTHoomans.Settlement.StartTraderTravel` / `dynamic_trading_settlement` are test/API paths with no production caller; the normal Hoomans `PNC.MobileSettlementVisitService` arrival lifecycle does not currently notify DT.
-3. `SettlementMarket.Recover` has no production caller; pressure recovery is test-driven only.
-4. `MarketEvents.Register` has no production caller; proof events are test/debug-driven only.
-
-The existing `33/33` DT suite and `83/0` bridge evidence remain accepted for M0–M8, but they manually create/drive the missing runtime state and therefore do not close M9.
-
-## Next Chunk — M9A Automatic provisioning + real Hoomans arrival
-
-Start with the production lifecycle, not another market algorithm.
-
-1. Re-audit the current Project Hoomans `PNC.MobileSettlementVisitService` and community/faction public APIs.
-2. Identify whether Hoomans already exposes a reusable observer/listener for normal settlement arrival. If not, add the smallest generic non-DynamicTrading-specific notification contract in Project Hoomans with focused Hoomans regressions.
-3. Add a bounded DTHoomans adapter that consumes that real arrival notification, resolves the arriving bound DT trader and canonical active `community.id`, and invokes one idempotent `MarkSettlementVisit(..., exchange=true)`.
-4. Before exchange, provision a missing settlement market idempotently through `SettlementMarket.GetOrCreate` using a bounded profile resolver over existing Hoomans community/faction/archetype/tags. Unknown mappings must use `default`.
-5. Preserve existing-save compatibility through lazy provisioning; do not perform a destructive world migration.
-6. Add a fail-first integration test that starts with an active Hoomans-style community and **no DT market**, then drives the public Hoomans arrival lifecycle. The test body must not call `SettlementMarket.GetOrCreate`, `StartTraderTravel`, the DT arrival handler, or `SettlementExchange.Execute` directly.
-7. Prove duplicate/replayed arrival cannot provision twice or transact twice.
-
-### M9A acceptance
-
-A normal Hoomans-owned settlement arrival from zero DT market state creates exactly one market and applies at most one exchange through production integration entrypoints. Hoomans remains movement/lifecycle authority.
-
-### M9A evidence
-
-- `python3 tests/run_tests.py`: `PASS 34/34`, including the no-manual-fixture
-  `dt_m9a_runtime_activation_smoke`.
-- M9A smoke starts an active Hoomans-style mobile group and target community
-  with no DT market, loads the real `PNC.MobileSettlementVisitService`, and
-  drives its public `OnSettlementArrival` entrypoint. The observer provisions
-  the canonical `community.id` market, selects the bounded farm profile from
-  Hoomans faction tags, forwards one exchange, preserves unrelated stock, and
-  ignores a replayed travel revision.
-- Project Hoomans focused regressions passed for mobile settlement admission
-  and abstract-world arrival. The broader composition smoke remains affected
-  by unrelated local combat-observatory work and is not attributed to M9A.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- Changed DT/Hoomans production and test Lua files passed `luac -p`, PZ Verify
-  Kahlua error scans, and `git diff --check`.
-
-## Current next chunk — M9B Production recovery runtime
-
-M9A is accepted. Wire elapsed-time `SettlementMarket.Recover` through a
-bounded authoritative production entrypoint; no per-frame or full-world
-simulation. Continue automatically to M9C and M9D after the focused recovery
-gate passes.
-
-After M9A, continue automatically to M9B recovery runtime, M9C grounded production event producer, and M9D no-fixture lifecycle acceptance. Do not stop for another `/goal`.
-
-### M9B evidence
-
-- `python3 tests/run_tests.py`: `PASS 35/35`, including
-  `dt_m9b_recovery_runtime_smoke` and all M0–M8 regressions.
-- The production `DTCommon.TraderService.MarkSettlementVisit` seam now
-  advances only the visited market toward its profile baseline when an
-  authoritative elapsed world timestamp is supplied. The focused test changes
-  pressure, advances time, uses the visit seam without calling recovery
-  directly, verifies revision/timestamp/baseline movement, and proves a client
-  call cannot mutate it.
-- Recovery is lazy and access-scoped; no per-frame hook or all-market loop was
-  added. Changed Lua passed `luac -p`, PZ Verify Kahlua error scanning, and
-  `git diff --check`.
-
-## M9C — accepted grounded production event producer
-
-M9C adds one bounded production producer at the authoritative settlement-visit
-runtime seam:
-
-- `DTCommon.MarketEventProducer` reads only persisted settlement `Food`
-  pressure, never event-modified effective pressure;
-- shortage and agricultural-surplus entry/clear thresholds use hysteresis;
-- one stable producer event identity per settlement preserves duration and
-  cooldown state through the existing event envelope without a second state
-  store;
-- the producer uses the existing data-only definitions and generic
-  `DTCommon.MarketEvents.Register` API; the registry has no named-event branch;
-- production evaluation is bounded to a completed visit, never a per-frame,
-  all-market, all-trader, or item-registry loop;
-- event start changes quote/availability and presentation context only; it
-  does not rewrite exact merchant inventory.
-
-### M9C evidence
-
-- `python3 tests/run_tests.py`: `PASS 37/37`, including the focused
-  `dt_m9c_event_producer_runtime_smoke` and the M9D flagship smoke.
-- The M9C smoke drives `TraderService.MarkSettlementVisit`, mutates raw market
-  pressure through the normal market mutation API, verifies a shortage event,
-  quote/availability and shared presentation reaction, exact stock stability,
-  sustained-condition idempotence, clear behavior, and persisted cooldown
-  re-entry. The test body never calls `MarketEvents.Register`.
-- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
-  `83 checks, 0 failures`.
-- Changed production Lua passed `luac -p` and PZ Verify Kahlua error scans;
-  the test-only `package.preload` findings are harness loader mechanics. Lua
-  diff checks passed.
-
-## M9D — accepted no-fixture gameplay lifecycle
-
-The flagship `dt_m9d_no_fixture_lifecycle_smoke` begins with an active Hoomans
-community/faction and bound mobile trader but no DT market or event. It drives
-the real `PNC.MobileSettlementVisitService.OnSettlementArrival` entrypoint and
-proves:
-
-- automatic canonical `community.id` market provisioning and farm profile
-  resolution;
-- one bounded exchange with persistent unrelated stock and replay-safe visit
-  identity;
-- later Hoomans arrival driving lazy pressure recovery toward the profile
-  baseline;
-- natural event expiry, a later raw-pressure shortage, immediate quote and
-  presentation reaction, and no event-start inventory mutation;
-- WorldKnowledge publication and physical Radio presentation of the same
-  bounded event summary;
-- fresh DT persistence readers preserving market profile, event timing/type,
-  and exact stock state.
-
-The flagship body does not call `SettlementMarket.GetOrCreate`,
-`SettlementExchange.Execute`, `SettlementMarket.Recover`,
-`MarketEvents.Register`, `DTHoomans.Settlement.StartTraderTravel`, or the
-private DT arrival handler.
-
-### M9D evidence
-
-- `python3 tests/run_tests.py`: `PASS 37/37`.
-- M9D starts with zero target market/event records and uses only the real
-  Hoomans public arrival lifecycle for provisioning, exchange, recovery, event
-  production, expiry, and replay idempotence.
-- The DT/Hoomans bridge remains `83 checks, 0 failures`.
-- Project Hoomans affected regressions passed: mobile settlement admission,
-  abstract-world phase 2, and composition bootstrap (`1/1` each). Its existing
-  unrelated semantic-combat worktree changes were preserved.
-- Production DT Lua passed `luac -p`, PZ Verify Kahlua error scans, and
-  `git diff --check`; no new per-frame/all-trader/all-item loop was added.
-
-## M9 developer gate status
-
-M9A, M9B, M9C, and M9D developer-side implementation and deterministic
-acceptance gates are complete. Native Project Zomboid SP/MP driving remains the
-sole user-owned acceptance step, as authorized by the runbook.
-
-## Known constraints
-
-- Legacy Dynamic Trading is a behavioral reference only; do not wholesale-port
-  its DTNPC runtime, manual item catalog, or monolithic dialogue system.
-- Physical NPC identity, movement, settlement presence, and lifecycle remain
-  Project Hoomans responsibilities.
-- Native Project Zomboid SP/MP acceptance is not yet complete and remains a
-  later user-owned/native gate **after M9 developer-side activation is accepted**.
-- Continue automatically through M0–M9; do not stop for another `/goal` after
-  M9A, M9B, M9C, or an individual phase/chunk.
+**M9E — Resident Market Context + Cross-Repo Publication Closure**
+
+## Next Chunk — M9E
+
+Start by closing the small existing-runtime gaps before building the broader excursion system.
+
+### Required work
+
+1. Read DynamicTrading root `AGENTS.md` and this job package in runbook order.
+2. Inspect DynamicTrading local/remote status, HEAD, dirty files, and worktrees.
+3. Before touching Project Hoomans, read its root `AGENTS.md` and inspect its local/remote status, ahead commits, dirty files, and worktrees.
+4. Re-audit the current resident settlement-trader binding path and canonical faction→community lookup.
+5. During resident binding:
+   - resolve active Hoomans `community.id`;
+   - idempotently provision its DT market;
+   - establish explicit resident home/current market pricing context;
+   - do **not** call `MarkSettlementVisit`;
+   - do **not** trigger exchange or pressure mutation;
+   - keep home identity distinct from last actual commercial visit.
+6. Add fail-first acceptance:
+   ```text
+   brand-new staffed settlement
+   + no mobile arrival
+   + no DT market
+   → bind resident trader
+   → exactly one market exists
+   → resident snapshot/quote uses local market
+   → stock/budget/pressure unchanged by binding
+   → repeat/save-reload remains idempotent
+   ```
+7. Re-audit required Hoomans observer commit `2200b866` against current history. Reconcile/publish safely; never blindly push unrelated unverified intervening work.
+8. Make generic arrival-listener clean `false, reason` results observable without allowing a consumer failure to break the Hoomans-owned arrival lifecycle.
+9. Run focused DynamicTrading and Project Hoomans regressions, Lua/Kahlua/static/diff checks, update this ledger, and commit/push coherent in-scope work when fast-forward-safe.
+
+### M9E gate
+
+M9E is accepted only when:
+
+- a resident trader has correct local market context from first binding without a fake visit/exchange;
+- the required generic Hoomans observer is present in the safely published dependency graph, or a genuine publication blocker is precisely documented;
+- unrelated local work remains preserved.
+
+After M9E, continue automatically into M10. Do not stop for another `/goal`.
+
+## M10 — Community Excursions & Commercial Trader Mobility
+
+Read `COMMUNITY_EXCURSIONS.md` before implementation.
+
+Mandatory order:
+
+1. **M10A — generic non-admission settlement visit**
+   - temporary visit distinct from admission;
+   - extensible visit intent, commercial first;
+   - no membership transfer;
+   - reuse Hoomans relationship/encounter/pending-arrival/expiry/LOD behavior.
+
+2. **M10B — generic Community Excursion foundation**
+   - Hoomans-owned, purpose-agnostic;
+   - AT_HOME → PREPARING → OUTBOUND → VISITING → RETURNING_HOME → AT_HOME;
+   - exact home community;
+   - compact persistence, notifications, public/social projection;
+   - long-distance abstract / local live boundary preserved.
+
+3. **M10C — base-less roaming commercial caravan**
+   - no home/base/return phase;
+   - production AI naturally selects commercial settlements;
+   - Hoomans owns final destination/movement;
+   - DT provides bounded economic opportunity score only;
+   - recent-visit anti-ping-pong memory;
+   - player settlement treated as another safe/opportune market;
+   - commercial visit never admission;
+   - remove stale imaginary-base comments.
+
+4. **M10D — rare resident-trader commercial excursions**
+   - home by default;
+   - rare purposeful departure;
+   - remain member of original faction/community;
+   - no whole-faction mobility conversion;
+   - protected Follow/task/home cooldown gates;
+   - exact-home return;
+   - away trader unavailable for physical home trade;
+   - exact merchant stock carried through visits.
+
+5. **M10E — semantic/public excursion facts + future request seam**
+   - generic public status: home/preparing/away/visiting/returning;
+   - public reason can be trading run;
+   - destination/ETA only when known/allowed;
+   - semantic knowledge layer consumes facts, not movement internals;
+   - first proof supports truthful "where is your trader?" context;
+   - future "visit my settlement" is a request/suggestion evaluated by faction/trader AI, never a direct movement command;
+   - full player invitation UI/dialogue is not required.
+
+6. **M10F — flagship/failure/hardening**
+   - perpetual caravan: A→B→C commercial visits, no admission/home/stock reroll;
+   - resident trader: Home A→B→Home A, exact home and membership preserved;
+   - encounter, invalid destination, duplicate arrival, Follow/protected task, save/reload failsafes;
+   - semantic status through all phases;
+   - no per-frame route solver, full-market scan per NPC, or physical full-map pathfinding.
+
+## Ownership invariants
+
+- **Project Hoomans:** NPC/faction/community identity, movement, long-distance abstract travel, local live behavior, encounters, presence/LOD, generic temporary visits, generic excursions, exact-home resolution, public excursion social truth.
+- **Dynamic Trading:** merchant stock/budget, settlement market, exchange, market events, commercial scoring/policy, economic consequences.
+- **MarketSense:** intrinsic value and taxonomy.
+- **Semantic/knowledge systems:** consume authoritative public facts and knowledge visibility; never mutate movement directly.
+
+## Known constraints / stop conditions
+
+- Preserve the unrelated local `DTHoomans_Conversation.lua` edit.
+- Preserve unrelated Project Hoomans semantic-combat work.
+- Never route a commercial trader through admission member-transfer semantics.
+- Never invent a base/home for the perpetual caravan.
+- Never make DynamicTrading the movement/encounter/LOD authority.
+- Native SP/MP remains user-owned **only after M9E and M10 developer gates pass**.
+- Continue automatically through M9E and M10A–M10F.
+- Stop early only for a genuine repository conflict/publication blocker, missing required dependency with no safe fallback, authorization boundary, or unspecified product decision that prevents safe implementation.

@@ -1,14 +1,14 @@
-# Agent Runbook — Settlement Market & Events
+# Agent Runbook — Settlement Market, Events & Trader Mobility
 
 ## Mission
 
-Implement the full Settlement Market & Events parent objective on the existing DynamicTrading `main`.
+Implement the full Settlement Market, Events & Trader Mobility parent objective on the existing DynamicTrading `main`, with the smallest required generic cross-repo Project Hoomans changes on its existing `main`.
 
 The immediate Next Chunk in `PROGRESS.md` is only the starting responsibility.
 
 > A chunk or phase completing is **not** completion of this job.
 
-Continue automatically through all mandatory M0–M9 roadmap work after each accepted chunk unless a genuine blocker or user-only native acceptance gate remains. M0–M8 built the engine; M9 runtime activation is now mandatory before native handoff.
+Continue automatically through all mandatory M0–M10 roadmap work after each accepted chunk unless a genuine blocker or user-only native acceptance gate remains. M0–M9D built and activated the market/event engine; M9E and M10 now close resident-market, publication, generic excursion, and commercial-mobility gaps before native handoff.
 
 ## Read order
 
@@ -16,9 +16,10 @@ Continue automatically through all mandatory M0–M9 roadmap work after each acc
 2. this `AGENT_RUNBOOK.md`;
 3. `AUDIT.md`;
 4. `ARCHITECTURE.md`;
-5. `ROADMAP.md`;
-6. `HARNESS_ACCEPTANCE.md`;
-7. `PROGRESS.md` **last**.
+5. `COMMUNITY_EXCURSIONS.md`;
+6. `ROADMAP.md`;
+7. `HARNESS_ACCEPTANCE.md`;
+8. `PROGRESS.md` **last**.
 
 Inspect current production source and dependency code as needed.
 
@@ -41,7 +42,7 @@ If docs disagree with current code, correct the docs.
 
 - MarketSense owns intrinsic value and taxonomy.
 - DTCommon owns market pressure, events, merchant stock, quotes and commercial authority.
-- Project Hoomans owns physical NPC identity, movement, settlement presence and lifecycle.
+- Project Hoomans owns physical NPC identity, movement, settlement presence, faction/community membership, home resolution, generic excursion state, and lifecycle.
 - PsychopatzCore owns reusable actors/inventory/currency/radio/world-knowledge infrastructure.
 - DTAbstract/DTHoomans are adapters/fronts, not separate market engines.
 
@@ -59,6 +60,11 @@ Do not add a second NPC lifecycle or second intrinsic pricing system.
 8. No all-trader rewrite when an event starts.
 9. No full item-universe scan on every quote/visit.
 10. Duplicate visit IDs must not double-apply exchange.
+11. Commercial temporary visits never transfer members into the destination settlement.
+12. Base-less caravans never acquire a fake home community.
+13. Resident traders stay members of their original community/faction during excursions and return to that exact home.
+14. Long-distance trader travel remains abstract; live behavior remains local.
+15. Semantic systems read generic Hoomans public excursion facts and never command movement directly.
 
 ## Git/concurrency
 
@@ -73,6 +79,8 @@ At start:
 - do not include unrelated dirty files in a market/event commit.
 
 The planning baseline had an unrelated modification to `DTHoomans_Conversation.lua`. Recheck; do not overwrite or absorb it.
+
+M9/M10 also require Project Hoomans work. Before editing that repository, read its root `AGENTS.md`, inspect local/remote divergence/worktrees, and preserve unrelated semantic-combat work. At planning time required observer commit `2200b866` was local-only among other ahead commits; never blindly push unrelated history merely to publish one dependency.
 
 ## Unattended loop
 
@@ -138,9 +146,26 @@ The M9 flagship test must begin without manually calling `SettlementMarket.GetOr
 
 Do not solve missing arrival wiring by moving travel authority into DynamicTrading. If Hoomans needs a reusable notification/listener seam, make the smallest generic Hoomans change and cover it with Hoomans regressions.
 
+## Community excursion and commercial-mobility discipline
+
+Read `COMMUNITY_EXCURSIONS.md` before M10.
+
+Mandatory rules:
+
+- first add/reuse a generic Hoomans temporary non-admission settlement visit; do not route traders through refugee-style admission;
+- generic excursion state belongs to Hoomans and must remain usable by future non-trader purposes;
+- DynamicTrading may provide economic destination scoring but must not own the final target or movement;
+- do not simply flip DT caravans from strategic to ambient without proving the resulting production lifecycle and player/local behavior;
+- preserve current encounter, pending-arrival, LOD, Follow Player, task/facility, and home-retry safeguards;
+- resident trader departure is rare/purposeful, not the default state;
+- do not turn a settlement faction into a mobile group merely because its trader leaves;
+- exact home return means the originating `community.id`, not "some settlement";
+- public semantic excursion state is a projection/query, not a duplicate persistence store;
+- future "visit my settlement" requests are requests/suggestions evaluated by faction/trader AI, never direct semantic movement commands.
+
 ## Scope discipline
 
-Mandatory M0–M9 only.
+Mandatory M0–M10 only.
 
 Do not expand into:
 
@@ -152,6 +177,8 @@ Do not expand into:
 - full physical settlement warehouse accounting;
 - haggling;
 - broad reputation restoration;
+- full player commercial-invitation UI/dialogue flow (only the generic future request seam is in scope);
+- physical full-map caravan walking/pathfinding;
 - unrelated Radio OS art/UI work.
 
 A tiny adapter/test fixture needed by the mandatory architecture is allowed.
@@ -164,7 +191,7 @@ Stop early only for:
 - missing required dependency/API with no safe fallback;
 - a real product decision not specified by these docs;
 - authorization restriction;
-- completed developer-side M0–M9, including the no-fixture runtime lifecycle gate, with only explicit user-owned native acceptance remaining.
+- completed developer-side M0–M10, including M9E cross-repo publication and both M10 flagship trader lifecycles, with only explicit user-owned native acceptance remaining.
 
 A passing phase is not a stop condition.
 

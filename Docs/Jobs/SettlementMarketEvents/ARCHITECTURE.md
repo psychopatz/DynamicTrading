@@ -531,7 +531,168 @@ The producer must:
 
 A test/manual API call is not proof of gameplay activation. Parent completion requires production call sites for provisioning, real arrival exchange, recovery, and event production.
 
-## 17. Non-goals
+## 17. Trader mobility and community excursions
+
+The market engine now has two distinct trader lifecycle consumers.
+
+### 17.1 Trader-type derivation
+
+Do not create a separate DT-owned NPC identity hierarchy.
+
+Derive the two behaviors from Hoomans ownership:
+
+```text
+non-mobile faction + active community + role=trader
+    = settlement-owned resident trader
+
+mobile faction + trader archetype/dynamicTrading ownership + no home community
+    = base-less roaming trader/caravan
+```
+
+The DT trader record may persist bounded commercial/home context, but Hoomans remains authoritative for faction/community membership, movement, presence, and travel.
+
+### 17.2 Commercial visit is not admission
+
+A commercial stop must use a generic Hoomans temporary settlement visit distinct from membership-seeking admission.
+
+```text
+settlement_admission
+    → may transfer members
+
+settlement_visit + intent= commercial
+    → temporary visit only
+    → never transfers membership
+```
+
+The current AI join chance must never apply to commercial visitors.
+
+### 17.3 Community excursion authority
+
+Temporary purposeful absence of a settlement member is a generic Hoomans social/movement concept.
+
+Hoomans owns:
+
+- home community;
+- excursion identity/phase;
+- participants;
+- itinerary/destination;
+- exact-home return;
+- abstract/live travel transition;
+- encounters/failure/retry;
+- public/social status;
+- lifecycle notifications.
+
+Dynamic Trading owns only commercial policy/economics layered onto that excursion.
+
+### 17.4 Distinct lifecycle defaults
+
+```text
+Roaming caravan
+    default = mobile
+    home = none
+    return-home = never
+    commercial visits = normal lifecycle
+
+Resident settlement trader
+    default = home
+    home = exact Hoomans community
+    commercial excursion = rare/purposeful exception
+    return-home = mandatory after route
+```
+
+Do not make a whole settlement faction mobile merely because its trader is away.
+
+### 17.5 Destination-scoring seam
+
+Hoomans must own the final destination decision.
+
+A generic scoring/provider seam may accept bounded contributions from optional systems.
+
+Dynamic Trading may contribute commercial opportunity using:
+
+- trader-carried stock;
+- local settlement demand/scarcity;
+- price opportunity;
+- market events;
+- specialization;
+- recent-visit penalty.
+
+Hoomans continues to own:
+
+- candidate discovery;
+- relation/hostility;
+- reachability;
+- distance;
+- danger;
+- recent threat;
+- travel and encounter state.
+
+Project Hoomans must remain functional when Dynamic Trading is absent.
+
+### 17.6 Long-distance simulation
+
+Keep cross-map commercial travel abstract.
+
+Materialized Hoomans are for nearby gameplay:
+
+- conversation;
+- trade;
+- local roaming;
+- combat;
+- player interaction.
+
+Do not add physical full-map caravan pathfinding.
+
+### 17.7 Public semantic projection
+
+Movement state and semantic/social state are separate contracts.
+
+The generic excursion service should expose a stable projection such as:
+
+```text
+status = away
+reason = trading_run
+phase = visiting
+destinationKnown = true
+expectedReturnAt = ...
+```
+
+The semantic/knowledge layer decides what a specific speaker knows and how to say it.
+
+Dynamic Trading movement code must not author fixed dialogue.
+
+### 17.8 Future commercial requests
+
+Future semantic/player systems may request or suggest a destination, but never directly mutate travel.
+
+```text
+request/suggestion
+    ↓
+faction/trader policy evaluation
+    ↓
+accept / reject / defer
+    ↓
+normal Hoomans excursion/travel lifecycle
+```
+
+The current phase only requires a stable bounded extension seam, not a complete player invitation UI.
+
+### 17.9 Failsafes
+
+Commercial mobility must preserve existing Hoomans protections:
+
+- encounter-delayed arrival;
+- stale pending-arrival cancellation;
+- invalid destination recovery;
+- Follow Player ownership;
+- protected facility/work ownership;
+- duplicate/replayed arrival idempotence;
+- LOD reconciliation;
+- exact-stock persistence.
+
+Excursion or travel failure must never reroll merchant stock.
+
+## 18. Non-goals
 
 This job does not require:
 
@@ -544,4 +705,7 @@ This job does not require:
 - giant per-settlement item inventories;
 - full Hoomans settlement storage integration;
 - haggling;
+- full player-facing commercial invitation UI/dialogue flow;
+- authored dialogue library for every excursion phase;
+- physical full-map caravan pathfinding;
 - restoration of every legacy UI or reputation feature.

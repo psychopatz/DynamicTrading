@@ -168,4 +168,66 @@ M0–M8 implemented and regression-tested the engine, but a repository audit fou
 
 The existing `33/33` DT suite and `83/0` Hoomans bridge results are valid evidence for the engine they cover, but they do not close these runtime call-site gaps because the tests manually create/drive the missing state.
 
-Therefore the parent goal is reopened for mandatory **M9 Runtime Market Activation**. M0–M8 remain accepted engine work and must not be rewritten.
+Therefore the parent goal was reopened for mandatory **M9 Runtime Market Activation**. M0–M8 remain accepted engine work and must not be rewritten.
+
+## Post-M9 trader-mobility audit
+
+Audit baseline: DynamicTrading `main` at `9ee65f0be58bdea00a1f1532173ec9fa8afee021` plus the contemporaneous Project Hoomans checkout.
+
+M9 successfully implemented production market provisioning, lazy recovery, event production, and a no-fixture mobile-arrival lifecycle. The remaining product gap is no longer the market engine; it is **trader lifecycle ownership and commercial mobility**.
+
+### Two trader types are real and must remain distinct
+
+1. **Settlement-owned resident trader** — a normal non-mobile Hoomans settlement member with role `trader`. It currently stays at its settlement and has no excursion/return-home lifecycle.
+2. **Base-less roaming trader/caravan** — an independent Hoomans mobile faction spawned/maintained by Dynamic Trading. It has no real home settlement and should remain perpetually mobile.
+
+### Resident-trader gap
+
+`DTHoomans_SettlementTrader.EnsureTraderForFaction` binds the DT merchant record to the staffed settlement trader, but at the audited baseline it does not provision/bind the resident trader's canonical `community.id` market context. A resident can therefore be traded with before any mobile visitor has provisioned that settlement and receive neutral/unresolved market context.
+
+Resident traders also have no purposeful excursion lifecycle. If this is added, the trader must remain a member of the original settlement faction/community and must return to that exact home community rather than converting the whole settlement faction into a mobile group.
+
+### Roaming-caravan gap
+
+Dynamic Trading currently creates caravans with `mobilePathMode = random` and `mobileControlMode = strategic`. Project Hoomans' ordinary settlement-departure pump only admits ambient street-roaming groups, so DT caravans bypass the generic settlement-to-settlement selector under normal production configuration.
+
+The accepted M9 arrival tests prove that the economy reacts correctly **if** a trader reaches a settlement; they do not prove that a production DT caravan naturally chooses and reaches commercial settlements.
+
+### Admission is unsafe for commercial travel
+
+Current Hoomans settlement travel purposes are `settlement_admission` and `hostile_contact`. Neutral AI-settlement admission may transfer visiting members into the destination settlement; the default configured AI join chance is 35%.
+
+That is valid for refugees and invalid for commercial caravans. Enabling trader settlement hopping through the admission path could dissolve a caravan into the destination faction.
+
+A generic non-admission temporary settlement-visit purpose is therefore mandatory before commercial trader routing is enabled.
+
+### Abstract/live split is already correct
+
+Project Hoomans deliberately abstracts materialized mobile members when beginning long-distance settlement travel. `AbstractTraversal` owns cross-map travel/encounter progression, while live Hoomans behavior owns nearby roaming, interaction, combat, and local activity. Preserve this scalability boundary.
+
+### Existing failsafes to reuse
+
+Hoomans already protects or models:
+
+- active travel rejection;
+- active settlement-visit gating;
+- encounter-delayed arrival and pending-arrival retry/cancel;
+- invalid destination recovery;
+- Follow Player and protected facility/activity ownership;
+- LOD repair/materialization;
+- bounded departure scheduling;
+- home-return retry semantics through `PNC.HomeDutyService` for player-colony residents.
+
+Do not recreate these in Dynamic Trading.
+
+### Semantic/public-state requirement
+
+The desired dialogue capability — e.g. a faction local truthfully answering that its trader is away on a trading run — should consume a **generic Hoomans excursion/public-status projection**, not inspect DT travel internals or hard-code trader-specific sentences.
+
+The foundational Hoomans excursion model should be purpose-agnostic so future medics, envoys, scouts, couriers, recruiters, rescue parties, or commercial visit requests can use the same lifecycle.
+
+### Cross-repo publication gap
+
+At audit time Project Hoomans commit `2200b866` (`feat: expose mobile settlement arrival observers`) existed locally but was not contained by any remote branch, while the local Hoomans `main` also contained unrelated newer semantic-combat commits. The required observer contract must be reconciled/published safely; do not blindly publish unrelated local work merely to satisfy Dynamic Trading.
+
+The parent goal therefore remains developer-active for **M9E Resident/Publication Closure** and **M10 Community Excursions & Commercial Trader Mobility**.

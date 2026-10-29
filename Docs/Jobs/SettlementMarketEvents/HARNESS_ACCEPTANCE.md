@@ -1,4 +1,4 @@
-# Acceptance — Settlement Market & Events
+# Acceptance — Settlement Market, Events & Trader Mobility
 
 ## Evidence rule
 
@@ -238,7 +238,156 @@ Hoomans community exists
 
 M9 passes only when the above no-fixture lifecycle is green with production integration entrypoints, all previous DynamicTrading regressions remain green, affected Project Hoomans/Core/MarketSense regressions pass, and production Lua/Kahlua/static/diff checks remain clean.
 
-Only then may native SP/MP be the sole remaining acceptance gate.
+M9A–M9D satisfy runtime market activation, but later audit found resident/publication and trader-mobility gaps. Native handoff is deferred until M9E and M10.
+
+## M9E resident/publication acceptance
+
+Required evidence:
+
+- begin with a fresh active Hoomans settlement staffed with a resident trader;
+- no mobile trader has visited and no DT market exists yet;
+- run the production resident binding path;
+- exactly one canonical market is provisioned from that settlement's `community.id`;
+- resident trader home/current market context resolves immediately;
+- snapshot/quote applies the local market;
+- binding does not call a fake settlement visit, does not change market pressure, and does not mutate merchant stock/budget;
+- repeat binding and save/reload remain idempotent;
+- the generic Hoomans arrival observer used by DynamicTrading is present in the safely published dependency graph;
+- observer callbacks that return `false, reason` are diagnostically visible without breaking the Hoomans-owned arrival lifecycle.
+
+## M10 Community Excursions & Commercial Trader Mobility acceptance
+
+### M10A non-admission visit
+
+Prove through production Hoomans APIs:
+
+- temporary settlement visit is a distinct purpose from admission;
+- commercial intent can reach AI and player settlements;
+- relationship/hostility checks still apply;
+- encounter/pending-arrival behavior is reused;
+- visit expiry returns the visitor to ordinary mobility;
+- no visitor member is transferred to the destination faction/community;
+- admission fixtures still retain their existing configured join behavior;
+- commercial visit outcome is unaffected by the 35% admission join chance.
+
+### M10B generic excursion foundation
+
+Using a non-DynamicTrading fixture purpose:
+
+- community member starts at exact home community;
+- PREPARING → OUTBOUND → VISITING → RETURNING_HOME → AT_HOME transitions are inspectable;
+- participant remains a member of the original faction/community;
+- exact home is the originating `community.id`, not merely any settlement;
+- save/reload during OUTBOUND/VISITING/RETURNING resumes coherently;
+- lifecycle notifications are emitted once per accepted transition;
+- failure/invalid destination becomes a bounded failed/recovery state rather than teleporting or deleting the member;
+- public/social status is a projection of authoritative state rather than separate persistence.
+
+### M10C perpetual caravan flagship
+
+Start with a production-configured DT roaming caravan — do not manually set its destination.
+
+Required sequence:
+
+```text
+base-less caravan
+→ Hoomans/DT commercial scoring chooses settlement A
+→ abstract travel
+→ commercial visit A
+→ one DT exchange
+→ leave
+→ choose B
+→ visit/exchange B
+→ choose C
+→ visit/exchange C
+```
+
+Verify:
+
+- caravan has no `homeCommunityID`, hidden base, or offscreen home leader assumption;
+- it never enters settlement admission;
+- it never joins/gets absorbed by A/B/C;
+- exact trader stock carries across all legs;
+- each visit mutates the destination market at most once;
+- recent-visit memory prevents immediate A↔B ping-pong under deterministic scoring;
+- player settlement candidates use the same safety/opportunity contract rather than an unconditional player preference;
+- long-distance legs are abstract;
+- local/materialized trade/conversation remains available when relevant;
+- save/reload and duplicate arrival are idempotent.
+
+### M10D resident-trader flagship
+
+Start with a resident trader at Home A.
+
+Drive the production rare-excursion policy deterministically through fixtures rather than directly starting travel.
+
+Required sequence:
+
+```text
+HOME A
+→ PREPARING
+→ OUTBOUND
+→ commercial visit B
+→ RETURNING_HOME
+→ HOME A
+```
+
+Verify:
+
+- trader remains a member of Home A faction/community for the entire run;
+- the whole settlement faction is never converted into a mobile group;
+- the trader is unavailable for physical home trading while away;
+- exact stock survives all legs;
+- B visit performs one bounded exchange;
+- return target is exactly Home A;
+- home status/availability is restored on completion;
+- home cooldown prevents immediate repeat departure;
+- Follow Player/protected task can block automatic departure;
+- invalid/hostile destination triggers alternate/return/failure policy without stock reroll;
+- save/reload in every major phase remains coherent.
+
+### M10E semantic/public status
+
+At minimum:
+
+- AT_HOME yields truthful home/available public status;
+- PREPARING yields a bounded preparing/trading-run fact;
+- OUTBOUND/VISITING yields away/trading-run fact;
+- rough destination/ETA are exposed only when public/known;
+- RETURNING_HOME yields returning status;
+- a settlement local's semantic context can answer a "where is the trader?" fixture from Hoomans public/knowledge state;
+- an outsider fixture receives no privileged route information;
+- semantic/public queries cannot start, cancel, redirect, or mutate an excursion;
+- no fixed DynamicTrading movement sentence is authored inside the excursion service.
+
+### Future request seam
+
+Prove only the extension contract:
+
+- an external/semantic caller can submit a bounded commercial destination request/suggestion;
+- request does not directly mutate travel;
+- faction/trader policy returns accept/reject/defer or equivalent;
+- accepted request still enters the normal Hoomans excursion/route planner.
+
+A full player-facing invitation flow is not required.
+
+### M10 performance/regression failures
+
+Explicit failures:
+
+- per-frame global route solving;
+- full settlement-market scan for every NPC;
+- full MarketSense registry scan per route decision;
+- physical full-map caravan pathfinding requirement;
+- unbounded recent-route history;
+- duplicate excursion/public-state persistence;
+- DynamicTrading becoming the travel/encounter/LOD authority.
+
+### M10 final gate
+
+M10 is accepted only when both flagship lifecycles pass through production entrypoints, generic Hoomans non-admission/excursion contracts pass independently of DT, affected semantic tests consume public facts correctly, all previous market/event regressions remain green, and required cross-repo commits are safely published or a genuine blocker is documented.
+
+Only after M9E + M10 may native SP/MP be the sole remaining user-owned gate.
 
 ## Native acceptance
 
@@ -250,6 +399,10 @@ When normal Project Zomboid SP/MP is authorized/available:
 - event changes visible quote without magical stock mutation;
 - save/reload continuity;
 - MP server is authoritative;
-- reconnect does not double-apply visit/exchange.
+- reconnect does not double-apply visit/exchange;
+- roaming caravan can naturally complete non-admission commercial settlement hops;
+- resident trader can leave on a rare commercial excursion, be absent at home, and return to the exact home settlement;
+- faction/community membership remains correct for both trader types;
+- local semantic status truthfully reflects home/preparing/away/returning phases.
 
 If native testing is user-owned, Luna must finish every developer-side gate first and leave only the explicit native evidence pending.
