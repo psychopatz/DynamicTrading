@@ -18,10 +18,11 @@ Legacy behavioral reference:
 
 Current Project Hoomans re-audit:
 
-- local and remote `main`: `f0eb0384` (`feat: diagnose settlement arrival observers`);
-- required generic settlement-arrival observer `2200b866` is contained by `origin/main`;
-- the diagnostic commit was published as a single fast-forward in-scope change;
-- unrelated local semantic-document edits remain uncommitted and were not staged or pushed.
+- local `main`: `776c7d07` (`feat: add generic community excursions`);
+- remote `origin/main`: `fb5c7566` (`feat: add generic settlement visits`);
+- required generic settlement-arrival observer `2200b866` remains contained by `origin/main`;
+- local `main` also contains unrelated semantic-runtime commits `b6ab4f49` and `a16a9f3d`, so the M10B commit is not fast-forward-publishable without publishing unrelated history;
+- unrelated local semantic adapter work remains uncommitted and is preserved unstaged.
 
 DynamicTrading remains concurrently changing; recheck both repositories before each publication.
 
@@ -107,65 +108,48 @@ The claim that native SP/MP was the only remaining step is superseded.
 ## Remaining developer gaps
 
 1. **Roaming caravan destination lifecycle**
-   DT generates caravans with `mobileControlMode = strategic` and `mobilePathMode = random`. Hoomans' ordinary settlement-departure scheduler requires ambient street-roaming groups, so production DT caravans do not naturally use that settlement-to-settlement selector.
+   DT generates caravans with `mobileControlMode = strategic` and `mobilePathMode = random`, but production Hoomans still needs a generic commercial-mobility destination-scoring seam for those groups.
 
-2. **Unsafe admission semantics**
-   Hoomans currently distinguishes `settlement_admission` and `hostile_contact`, not a generic temporary non-admission settlement visit. AI admission has a configured 35% default member join chance. Commercial visitors must never use that path.
+2. **Resident excursion production policy**
+   Generic excursion persistence now exists, but resident traders still need a rare purposeful departure policy, exact-home travel integration, and home availability restoration.
 
-3. **Resident excursion lifecycle**
-   Resident traders have no generic PREPARING → OUTBOUND → VISITING → RETURNING_HOME lifecycle and no exact-home commercial return behavior.
+3. **Semantic/public absence integration**
+   Hoomans now exposes generic public excursion state, but semantic context still needs privacy-aware consumption and truthful trader-location presentation.
 
-4. **Semantic/public absence facts**
-   No generic Hoomans public excursion projection yet exposes authoritative "trader is away / trading run / rough destination / ETA" state for semantic consumers.
-
-5. **Stale caravan-base comments**
+4. **Stale caravan-base comments**
    Some DT caravan comments still claim a leader "stays at the base" or imply an idle-at-base variant. The approved roaming trader is base-less; do not implement a fake base to match stale comments.
 
 ## Current phase
 
-**M10B — Generic Community Excursion Foundation**
+**M10C — Base-less Roaming Commercial Caravan**
 
-## Next Chunk — M10B
+## Next Chunk — M10C
 
-M10A is accepted. Continue with the purpose-agnostic Hoomans excursion lifecycle.
+M10B is accepted. Continue with production commercial mobility for base-less DT caravans.
 
 ### Required work
 
-1. Read DynamicTrading root `AGENTS.md` and this job package in runbook order.
-2. Inspect DynamicTrading local/remote status, HEAD, dirty files, and worktrees.
-3. Before touching Project Hoomans, read its root `AGENTS.md` and inspect its local/remote status, ahead commits, dirty files, and worktrees.
-4. Re-audit the current resident settlement-trader binding path and canonical faction→community lookup.
-5. During resident binding:
-   - resolve active Hoomans `community.id`;
-   - idempotently provision its DT market;
-   - establish explicit resident home/current market pricing context;
-   - do **not** call `MarkSettlementVisit`;
-   - do **not** trigger exchange or pressure mutation;
-   - keep home identity distinct from last actual commercial visit.
-6. Add fail-first acceptance:
-   ```text
-   brand-new staffed settlement
-   + no mobile arrival
-   + no DT market
-   → bind resident trader
-   → exactly one market exists
-   → resident snapshot/quote uses local market
-   → stock/budget/pressure unchanged by binding
-   → repeat/save-reload remains idempotent
-   ```
-7. Re-audit required Hoomans observer commit `2200b866` against current history. Reconcile/publish safely; never blindly push unrelated unverified intervening work.
-8. Make generic arrival-listener clean `false, reason` results observable without allowing a consumer failure to break the Hoomans-owned arrival lifecycle.
-9. Run focused DynamicTrading and Project Hoomans regressions, Lua/Kahlua/static/diff checks, update this ledger, and commit/push coherent in-scope work when fast-forward-safe.
+1. Re-audit Hoomans mobile-group departure, destination, reachability, encounter, arrival, and abstract-travel APIs before modifying either repository.
+2. Add/reuse a generic Hoomans commercial-mobility/destination-scoring seam in which Hoomans owns candidate discovery, reachability, distance, danger, diplomacy/hostility, and final destination selection.
+3. Let Dynamic Trading register only a bounded economic opportunity score using carried stock, local supply/demand, scarcity, price opportunity, events, specialization, and bounded recent-visit history.
+4. Make production-configured base-less DT caravans participate through the generic seam without a Dynamic Trading-specific branch in Hoomans; player settlements use the same safety/opportunity contract.
+5. Add bounded recent-visit/cooldown memory to avoid immediate A↔B ping-pong, and preserve one authoritative DT exchange per commercial arrival.
+6. Correct stale DT comments that imply a caravan base or leader remaining at base; keep the roaming faction base-less with perpetual mobility.
+7. Add the flagship production test for caravan A→B→C, including non-admission visits, stock continuity, pressure logistics, save/reload, replay idempotence, and anti-ping-pong behavior.
+8. Run focused cross-repository regressions, Lua/Kahlua/static/persistence/diff checks, update this ledger, and commit/push coherent in-scope work only when fast-forward-safe.
 
-### M9E gate
+### M10C gate
 
-M9E is accepted only when:
+M10C is accepted only when:
 
-- a resident trader has correct local market context from first binding without a fake visit/exchange;
-- the required generic Hoomans observer is present in the safely published dependency graph, or a genuine publication blocker is precisely documented;
+- a production-configured base-less DT caravan enters the generic Hoomans commercial mobility lifecycle;
+- Hoomans owns final destination, safety, travel, encounters, and temporary visit lifecycle;
+- the Dynamic Trading contribution is bounded economic opportunity scoring only;
+- commercial visits never transfer members or invoke admission join chance;
+- one authoritative exchange occurs per arrival and recent-visit memory prevents immediate ping-pong;
 - unrelated local work remains preserved.
 
-After M9E, continue automatically into M10. Do not stop for another `/goal`.
+Continue automatically into M10D. Do not stop for another `/goal`.
 
 ## M10 — Community Excursions & Commercial Trader Mobility
 
@@ -257,4 +241,15 @@ Mandatory order:
 - Duplicate arrival revisions are idempotent; the focused Hoomans regression and full `929/929` suite pass.
 - Published Hoomans commit: `fb5c7566`.
 
-Immediate next chunk: M10B purpose-agnostic community excursion foundation. Continue automatically through M10F.
+## M10B validation ledger — accepted
+
+- Hoomans now owns a purpose-agnostic `CommunityExcursionService` persisted on the authoritative faction record.
+- The service enforces `AT_HOME → PREPARING → OUTBOUND → VISITING → RETURNING_HOME → AT_HOME`, with explicit `FAILED` and bounded retry transitions.
+- Canonical home faction/community identity, bounded participants/itinerary, purpose, timestamps, revisions, exact-home resolution, public status, and lifecycle notifications are persisted and normalized across reload.
+- Hoomans WorldDirector runs bounded reconciliation on an hourly scheduler job; no per-frame movement or economy loop was added.
+- Focused lifecycle, composition, MP loader, and settlement-arrival regressions pass; full Project Hoomans suite passes `932/932`.
+- Hoomans M10B commit: `776c7d07` (local `main` only; not published because unrelated local semantic-runtime commits are ahead of `origin/main`).
+- Hoomans changed Lua passed Kahlua checks; the pre-existing MP inventory test's `io.popen` warning remains outside this chunk.
+- Unrelated Hoomans semantic adapter work and the unrelated DynamicTrading conversation edit remain preserved and unstaged.
+
+Immediate next chunk: M10C base-less roaming commercial caravan. Continue automatically through M10F.
