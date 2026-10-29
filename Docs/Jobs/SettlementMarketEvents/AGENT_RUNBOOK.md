@@ -153,7 +153,7 @@ Do not solve missing arrival wiring by moving travel authority into DynamicTradi
 
 ## Community excursion and commercial-mobility discipline
 
-Read `COMMUNITY_EXCURSIONS.md` before mobility work and `SPATIAL_LANGUAGE.md` before M10G spatial/semantic work.
+Read `COMMUNITY_EXCURSIONS.md` before mobility work. For M10G/M10H spatial work, read `SPATIAL_LANGUAGE.md`; for M10H production semantic integration, also read `M10H_TACTICAL_SEMANTIC_INTEGRATION.md` before changing Core/Hoomans code.
 
 Mandatory rules:
 
@@ -171,6 +171,11 @@ Mandatory rules:
 - world-cardinal and observer-heading reference frames remain explicit; never derive clock time without a trustworthy heading;
 - tactical clock bearings are ephemeral and recomputed from current observer/target geometry rather than persisted as durable knowledge;
 - Hoomans owns live facing extraction and threat selection; Core owns only generic vector math;
+- M10H must enrich the existing combat-awareness `DANGER_CHANGED` → Semantic Scene / ambient semantic-reaction paths; do not create a parallel clock-bark engine;
+- reuse current Perception caches, selected targets, group-alert coordinates, and the existing bounded zombie centroid; do not add a dialogue-only zombie scan;
+- hostile-human callouts may observe authoritative target-change notifications, but Combat must not depend on Semantics and semantic code must not live inside target mutation;
+- reuse existing `CombatBanterArbiter`/cooldowns; no per-tick tactical chatter loop;
+- extend existing Combat/Scene Observatory + Semantic Harness for explanation; no transcript persistence;
 - future "visit my settlement" requests are requests/suggestions evaluated by faction/trader AI, never direct semantic movement commands.
 
 ## Scope discipline

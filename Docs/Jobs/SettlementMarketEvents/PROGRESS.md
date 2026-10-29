@@ -2,266 +2,318 @@
 
 ## Parent status
 
-**IN PROGRESS — M0–M10G is accepted and published; M10H Observer-Relative Tactical Bearings is mandatory before native SP/MP is again the sole remaining gate.**
+**IN PROGRESS — M0–M10G remains accepted; M10H Observer-Relative Tactical Bearings + Semantic Scene Integration is mandatory before native SP/MP is again the sole remaining gate.**
 
-M10H is a bounded extension of the accepted reusable spatial foundation. It does not reopen trader mobility, markets, or settlement semantics.
+M10H is a bounded extension of the accepted spatial/semantic foundation. It does not reopen market simulation, trader mobility, or M10G trader whereabouts unless a regression is proven.
 
-## Current repository audit
+## Current repository truth
 
 ### DynamicTrading
 
-- local `main` = `origin/main` at `20d59aad7d81116e10fc5a19262e1b1eb3dd186d`;
-- unrelated local `DTHoomans_Conversation.lua` edit remains preserved and unstaged.
+- local `main` = `origin/main` at `704943d121ddb625586acd9a8f11c9d3fb7778ae`;
+- unrelated local `Contents/mods/DTHoomans/42.20/media/lua/shared/DTHoomans/DTHoomans_Conversation.lua` edit remains preserved and unstaged.
 
 ### PsychopatzCore
 
 - local `main` = `origin/main` at `5c5998087b4c7a91d0e57f9667dc911cf1eb061f`;
-- published `PsychopatzCore.SpatialRelation.Between(...)` already owns world-cardinal relation, distance, SAME_AREA, optional distance bands, and translation-safe labels.
+- published `PsychopatzCore.SpatialRelation.Between(...)` already owns world-cardinal relation, distance, SAME_AREA, optional distance bands, and translation-safe labels;
+- observer-relative/clock relation is not yet implemented.
 
 ### Project Hoomans
 
-- published `origin/main`: `656dddf42acec857a7a58ad55c4228c36250b051`;
-- local `main`: `ac4fa3f8dae5890057190cfa0694690188010f1f`;
-- local `main` is clean and 2 commits ahead with unrelated semantic-scene observatory/acceptance work:
-  - `9231b6a1 feat: add semantic scene observatory`
-  - `ac4fa3f8 feat: complete semantic scene runtime acceptance`
+- local `main` = `origin/main` at `ac4fa3f8dae5890057190cfa0694690188010f1f`;
+- Semantic Scene Observatory/runtime-acceptance work is now published;
+- current Hoomans worktree is clean.
 
-Do not blindly publish those commits merely to integrate M10H.
+Recheck publication state before every cross-repo commit because concurrent work may advance this head.
 
 ## Accepted M0–M10G foundation
 
-Accepted published behavior includes:
+Preserve:
 
 - persistent exact merchant stock;
-- settlement market pressure, recovery, typed events, and partial exchange;
-- two trader lifecycles: resident and base-less caravan;
-- generic non-admission settlement visits;
-- purpose-agnostic Hoomans community excursions;
-- exact-home return;
-- published cross-repo dependency graph;
+- settlement market pressure/recovery/events/exchange;
+- resident + base-less caravan trader lifecycles;
+- Hoomans-owned non-admission settlement visits/excursions;
+- exact-home resident return;
 - production semantic trader whereabouts;
-- authoritative destination settlement names;
-- world-cardinal spatial language;
-- privacy-aware place/direction/ETA realization.
+- authoritative settlement names;
+- world-cardinal spatial relation;
+- privacy-aware destination/direction/ETA realization;
+- published dependency discipline.
 
-M10G published-head evidence recorded previously:
+Do not redo M0–M10G without evidence of regression.
 
-- Project Hoomans full suite: `942/942`;
-- focused Hoomans excursion/mobility/semantic set: `14/14`;
-- DynamicTrading full suite: `41/41`;
-- focused DynamicTrading resident/caravan/market set: `16/16`;
-- Core spatial/composition/core/translation regressions passed;
-- Lua/Kahlua/static/translation/diff checks passed.
+## New audit — current semantic/combat integration
 
-Do not redo M0–M10G unless current code proves a regression.
+Detailed design: `M10H_TACTICAL_SEMANTIC_INTEGRATION.md`.
 
-## New user-approved extension
+The newly accepted Project Hoomans Semantic Interaction Scene Runtime already owns the correct multi-NPC conversation surface.
 
-The reusable spatial system must also support **observer-relative tactical clock bearings** for immediate local callouts.
-
-Examples:
-
-> "Zombies, eight o'clock!"
-
-> "Hostiles at three o'clock!"
-
-This is distinct from world-cardinal direction:
+Current production horde path:
 
 ```text
-WORLD_CARDINAL
-    used for stable places/world relations
-    "Riverside is northeast of us."
-
-OBSERVER_HEADING
-    used for immediate egocentric/tactical relations
-    "Zombies, eight o'clock!"
+PNC_ZombieObservation
+    ↓
+SocialEventHooks.ObserveZombieHorde
+    ↓
+InteractionSceneAdopters.OnHordeTransition
+    ↓
+DANGER_CHANGED
+    ↓
+projecthoomans.scene.combat_horde
+    ↓
+COMBAT_HORDE_ALERT
+    ↓
+Semantic Interaction Scene
 ```
 
-Clock bearing is relative to the observer's **current facing**, not north.
+The same horde transition also drives the existing nearby-player ambient semantic reaction path.
+
+Therefore:
+
+> **M10H must enrich the existing danger event with an ephemeral tactical spatial descriptor. It must not add another clock-bark engine.**
+
+## Verified reusable Hoomans seams
+
+### Threat geometry
+
+Existing bounded data/helpers already include:
+
+- `record.runtime.target` for selected immediate targets;
+- proximity/group-alert target coordinates;
+- `CombatTactics.Internal.BuildZombieThreatCentroid(record, radius)`;
+- existing Perception frames/candidate caches.
+
+Do not add another zombie scan.
+
+### Heading
+
+Materialized bodies expose:
+
+```lua
+body:getForwardDirection()
+```
+
+Existing pathing/facing state also has bounded last-facing data.
+
+Centralize one Hoomans-owned facing resolver.
+
+### Existing semantic continuation
+
+The horde Scene already provides:
+
+- `COMBAT_HORDE_ALERT`;
+- brave/cautious/steady continuation;
+- style/personality-aware speech behavior;
+- bounded opportunity admission/cooldowns;
+- observer-only nearby players;
+- Scene Observatory diagnostics.
+
+M10H grounds the threat direction; it does not replace this conversation model.
+
+### Hostile-human gap
+
+The audit found hostile-human kill reactions, but no equivalent production semantic **hostile acquired/spotted** transition.
+
+`BehaviorCommon.SetCombatTarget(...)` is the authoritative combat-target write seam and already detects target changes.
+
+Do not place semantic dialogue logic inside it.
+
+If no generic target-change notification exists when implementation begins, add the smallest generic observer/listener notification around that authority so semantic combat-awareness can react without Combat depending on Semantics.
 
 ## Critical invariants
 
-- 12 o'clock = directly ahead.
-- 3 o'clock = right.
-- 6 o'clock = behind.
-- 9 o'clock = left.
-- Twelve equal 30-degree sectors.
-- Clock direction requires a trustworthy observer heading.
-- No heading → no fabricated clock result.
-- Clock bearing is ephemeral; do not persist `8 o'clock` as durable threat knowledge.
-- Current observer facing and current target position determine the live callout.
-- Core does not detect zombies or choose targets.
-- Hoomans perception/combat owns target detection, salience, grouping, freshness, and combat eligibility.
-- Semantic realization decides whether to use tactical clock wording or coarse civilian wording.
-- Abstract/offscreen actors normally do not use clock language without authoritative heading state.
-
-## Existing Hoomans orientation seam
-
-Hoomans already reads the live materialized body's forward vector through:
-
-```lua
-zombie:getForwardDirection()
-```
-
-Existing pathing/facing code also has bounded last-facing state.
-
-M10H should extract/reuse one authoritative Hoomans-facing adapter rather than copy this logic into every callout consumer.
+- 12 = ahead, 3 = right, 6 = behind, 9 = left.
+- Twelve deterministic 30-degree sectors.
+- Clock bearing requires a trustworthy current heading.
+- No heading → no fabricated clock.
+- Clock direction is ephemeral; do not persist `CLOCK_08` as durable threat knowledge.
+- Recompute from current observer point + current heading + current target/centroid point.
+- Core never detects/selects threats.
+- Hoomans perception/combat owns target selection/grouping/freshness.
+- Reuse existing Perception caches/centroid helper.
+- No global zombie scan.
+- No semantic per-tick polling loop.
+- No third callout transport/presentation engine.
+- Scene + ambient semantic reaction consume the same canonical relation snapshot for one event/speaker.
+- Callout generation is read-only toward combat target, movement, attack and retreat state.
+- Clock vs coarse wording is semantic presentation policy.
+- Do not create twelve separate semantic concepts for twelve hours.
+- Generated conversation Lua remains CodeBuilder-owned.
+- Reuse `CombatBanterArbiter`/existing cooldown semantics for anti-spam.
+- Observatory remains bounded/read-only/transcript-free.
 
 ## Current phase
 
-**M10H — Observer-Relative Tactical Bearings**
+**M10H — Observer-Relative Tactical Bearings + Semantic Scene Integration**
 
-## Next Chunk — M10H-A: Core heading-relative clock relation
+## Next Chunk — M10H-A: Core observer-relative relation
 
 Start in PsychopatzCore.
 
 ### Required work
 
-1. Read PsychopatzCore root `AGENTS.md`.
-2. Recheck Core local/remote status and worktrees.
-3. Extend the existing published `PsychopatzCore.SpatialRelation` rather than creating a second spatial module.
-4. Add a public generic observer-heading relation API, conceptually:
-   ```lua
-   SpatialRelation.RelativeToHeading(
-       observerPoint,
-       targetPoint,
-       headingVector,
-       options
-   )
-   ```
-5. Normalize valid non-zero heading vectors.
-6. Compute a clockwise relative angle from observer forward to target.
-7. Emit:
+1. Read Core root `AGENTS.md`.
+2. Recheck branch/HEAD/upstream/worktrees before edits.
+3. Extend existing `PsychopatzCore.SpatialRelation`, not a second spatial module.
+4. Add a generic public observer-heading relation API.
+5. Normalize valid non-zero headings.
+6. Emit:
+   - relative angle;
    - `clockHour`;
-   - `clockToken = CLOCK_01 ... CLOCK_12`;
-   - coarse `relativeSector8`;
-   - distance/same-area data.
-8. Preserve the already-verified Project Zomboid world coordinate convention.
-9. Add translation/presentation-safe clock tokens/labels.
-10. Add fail-first tests for:
-    - 12/3/6/9 principal axes;
-    - representative intermediate hours including 8;
-    - all twelve sectors/boundaries;
-    - arbitrary/scaled heading vectors;
-    - observer rotation;
-    - invalid/zero heading;
-    - same-area suppression;
-    - coarse-sector agreement.
-11. Run Core spatial/composition/translation regressions and static checks.
-12. Publish Core before downstream Hoomans depends on the new API.
+   - `CLOCK_01 ... CLOCK_12`;
+   - coarse egocentric sector;
+   - distance/same-area;
+   - optional existing distance-band behavior where appropriate.
+7. Preserve verified PZ axis convention.
+8. Keep clock/direction labels translation-safe and centralized.
+9. Add fail-first tests for:
+   - 12/3/6/9 axes;
+   - all twelve sectors/boundaries;
+   - `CLOCK_08`;
+   - arbitrary/scaled headings;
+   - observer rotation;
+   - invalid/zero heading;
+   - same-area suppression;
+   - coarse-sector agreement.
+10. Run Core spatial/composition/translation/static checks.
+11. Publish Core before Hoomans depends on the new API.
 
 ### M10H-A gate
 
-Published Core provides one dependency-safe O(1) spatial service supporting both world-cardinal and observer-heading relations, with complete deterministic clock geometry tests.
+Published Core supplies one dependency-safe O(1) service for both world-cardinal and observer-heading relations.
 
-After M10H-A, continue automatically to M10H-B. Do not stop for another `/goal`.
+After acceptance, update this ledger and continue automatically to M10H-B. Do not stop for another `/goal`.
 
-## Remaining mandatory M10H work
+## Remaining mandatory work
 
-### M10H-B — Hoomans live heading authority
+### M10H-B — Hoomans authoritative facing adapter
 
-- read/reuse actual materialized body `getForwardDirection()`;
-- centralize one Hoomans-facing resolver/adapter;
-- only use cached facing when Hoomans considers it trustworthy/current;
-- no reliable heading → omit clock relation;
-- abstract/offscreen actors do not fabricate heading;
-- preserve unrelated local semantic-scene commits/work.
+- centralize live `getForwardDirection()`;
+- expose heading source/trustworthiness;
+- use cached/last-facing state only when current/trustworthy;
+- no reliable heading → omit clock;
+- abstract/offscreen NPCs do not fabricate orientation.
 
-### M10H-C — tactical target spatial projection
+### M10H-C — tactical threat spatial projection
 
-For an already-selected perceived target:
+- consume already-selected/current threat geometry;
+- reuse immediate target, group alert and existing zombie centroid;
+- no new scan;
+- emit bounded target/position/heading/freshness + Core relation data;
+- do not mutate gameplay.
+
+### M10H-D — existing combat-awareness event enrichment
+
+For horde production flow:
 
 ```text
-observer position
-+ authoritative observer heading
-+ current target position
-→ Core observer-relative relation
+ZombieObservation
+→ ObserveZombieHorde
+→ DANGER_CHANGED
+→ existing scene/ambient semantic surfaces
 ```
 
-Hoomans perception/combat remains authority for:
+Attach one bounded ephemeral spatial descriptor at the authoritative event boundary.
 
-- perceived zombies/hostiles;
-- target salience;
-- multiple-threat grouping/centroid choice;
-- visibility/freshness;
-- combat/alert eligibility.
+The existing `projecthoomans.scene.combat_horde` and ambient semantic reaction paths must consume the same canonical relation snapshot.
 
-Do not add threat scanning to Core.
+### M10H-E — semantic realization + Scene continuation
 
-Do not persist the live clock hour as durable knowledge.
+Support grounded output equivalent to:
 
-### M10H-D — semantic tactical callouts
+> "Zombies, eight o'clock! Fight or fall back?"
 
-Expose reusable facts so production semantic/combat callout realization can support:
+while preserving existing brave/cautious/steady semantic continuation.
 
-> "Zombies, eight o'clock!"
+Reuse current `CombatReactionProfile`, `SpeechStyleContext`, traits, urgency and authoritative role/archetype context.
 
-> "Hostiles at three o'clock!"
-
-Clock wording is not universal.
-
-Tactical/guard/military/raider/urgent coordinated contexts may prefer clock-face speech.
-
-Other speakers may consume the same fact as:
+Non-tactical context may realize the same fact as:
 
 > "Zombies behind us, left side!"
 
-The style system decides wording. Core provides no zombie/hostile/personality sentence.
+Use dynamic translated arguments, not twelve independent hour concepts.
 
-Callout generation is read-only and must not retarget, move, or change combat authority.
+### M10H-F — hostile-human + anti-spam coverage
 
-### M10H-E — published-head acceptance
+If no target-transition observer exists, add the smallest generic notification around authoritative target acquisition/change.
 
-From clean published repository heads:
+Requirements:
 
-- Core clock-bearing tests pass;
-- Hoomans heading adapter tests pass;
-- Hoomans threat spatial projection tests pass;
-- production semantic/combat callout tests pass;
-- existing M10G trader-place cardinal tests remain green;
-- DynamicTrading full/focused market/mobility tests remain green;
-- Lua/Kahlua/static/translation/diff checks pass.
+- Combat does not depend on Semantics;
+- newly acquired hostile human can ground a semantic callout;
+- stable repeated target ticks do not spam;
+- reuse existing `CombatBanterArbiter`/cooldowns;
+- no per-tick semantic polling.
 
-Record exact published SHAs.
+### M10H-G — Observatory + Semantic Harness
+
+Expose bounded canonical diagnostics:
+
+- target kind/ref;
+- target-position source;
+- heading source;
+- clock token;
+- coarse sector;
+- distance band;
+- freshness;
+- clock/coarse/omitted presentation mode;
+- suppression reason.
+
+Add deterministic worker fixtures capable of explaining `CLOCK_08`, coarse fallback and omitted-clock cases without transcript storage.
+
+### M10H-H — published-head acceptance
+
+From exact published heads:
+
+- Core clock suite passes;
+- Hoomans heading/threat projection passes;
+- production horde Scene + ambient integration passes;
+- hostile-human/anti-spam coverage passes;
+- Scene/Combat Observatory + Semantic Harness passes;
+- M10G trader/cardinal regressions pass;
+- DynamicTrading market/mobility regressions pass;
+- deterministic CodeBuilder/translation checks pass if content changed;
+- Lua/Kahlua/static/diff checks pass.
+
+Record exact SHAs and publication state.
 
 ## Ownership
 
 ### PsychopatzCore
 
-Owns:
+Owns generic spatial math/tokens/translation-safe labels.
 
-- point/vector validation;
-- world-cardinal relation;
-- heading-relative angle;
-- clock sectors/tokens;
-- coarse egocentric sectors;
-- generic labels/translation keys.
+### Project Hoomans perception/combat
 
-Does not own threat detection, NPC state, combat, or wording.
+Owns current target/group selection, geometry source, visibility/freshness, target change and live heading source.
 
-### Project Hoomans
+### Project Hoomans semantic runtime
 
-Owns:
+Owns opportunity admission, Interaction Scene, ambient semantic reaction, continuation, style/trait presentation, anti-spam arbitration and observability.
 
-- live NPC facing;
-- perceived threat selection/freshness;
-- target position;
-- tactical spatial fact projection;
-- semantic/combat context.
+### DynamicTrading
 
-### Semantic realization
+No new M10H gameplay authority. Its role is regression validation because this goal/job remains the cross-repo parent.
 
-Owns:
+## Completion boundary
 
-- whether clock style is appropriate;
-- "zombie" vs "hostile" vocabulary;
-- urgency/personality/faction phrasing;
-- clock vs coarse-relative wording.
+M10H is **not** complete when Core math passes alone.
+
+M10H is **not** complete when a formatter fixture can print "eight o'clock."
+
+M10H is developer-complete only when the real production danger/combat transition feeds observer-relative facts into the existing semantic system, the Semantic Harness can explain the decision, and the exact published dependency graph passes regressions.
+
+Only then may native SP/MP again be the sole remaining user-owned gate.
 
 ## Stop conditions
 
-Do not return to native-only handoff until M10H-A through M10H-E pass from published heads.
+Stop early only for:
 
-Stop early only for a genuine Git/publication conflict, missing required engine-facing orientation API with no safe fallback, authorization boundary, or an unspecified product decision that prevents safe implementation.
+- genuine Git/publication conflict affecting required files;
+- missing required engine orientation/target API with no safe fallback;
+- authorization boundary;
+- unspecified product decision that prevents safe implementation.
 
-Native SP/MP becomes the sole remaining user-owned gate again **only after M10H is accepted**.
+A completed chunk is not a stop condition.

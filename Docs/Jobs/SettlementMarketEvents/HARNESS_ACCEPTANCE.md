@@ -476,9 +476,11 @@ After all required publication:
 - no missing-module failure is acceptable;
 - report exact published SHAs.
 
-### M10H observer-relative tactical-bearing acceptance
+### M10H observer-relative tactical-bearing + semantic integration acceptance
 
-#### Core clock geometry
+Detailed design: `M10H_TACTICAL_SEMANTIC_INTEGRATION.md`.
+
+#### A. Core clock geometry
 
 Prove:
 
@@ -487,57 +489,133 @@ Prove:
 - behind target → `CLOCK_06`;
 - left target → `CLOCK_09`;
 - representative intermediate hours including `CLOCK_08`;
-- all twelve 30-degree sectors are deterministic;
-- arbitrary non-cardinal heading vectors work;
-- scaled heading vectors produce identical results;
-- rotating observer changes clock hour correctly for a fixed target;
+- every 30-degree clock sector and boundary is deterministic;
+- arbitrary non-cardinal headings work;
+- scaled headings produce identical results;
+- rotating observer changes clock hour for a fixed target;
 - zero/invalid heading fails safely;
 - same-area target produces no misleading clock bearing;
 - coarse egocentric sector agrees with the clock result;
-- translation/presentation labels are reusable and not hard-coded in Hoomans consumers.
+- translation/presentation labels are reusable and not hard-coded in Hoomans consumers;
+- operation is O(1) and contains no Hoomans/combat dependency.
 
-#### Hoomans heading authority
+#### B. Hoomans heading authority
 
 Prove:
 
-- a materialized NPC's live `getForwardDirection()` is usable through one Hoomans-owned reusable adapter;
-- fallback/cached facing is used only when explicitly considered trustworthy;
+- materialized NPC live `getForwardDirection()` is resolved through one Hoomans-owned reusable adapter;
+- result records its heading source/trustworthiness;
+- cached/last-facing fallback is used only when explicitly current/trustworthy;
 - missing/unreliable facing yields no clock bearing;
-- abstract/offscreen NPCs do not fabricate tactical clock directions;
-- no individual combat/semantic module reimplements facing-vector extraction.
+- abstract/offscreen NPCs do not fabricate clock directions;
+- semantic/combat consumers do not reimplement facing extraction.
 
-#### Threat projection
+#### C. Tactical threat spatial projection
 
-Using an already-selected perceived target:
+Using current production threat inputs:
 
-- current observer position/facing + current target position produce the clock relation;
-- a target at the rear-left fixture produces `CLOCK_08`;
-- moving the target changes the callout relation;
-- turning the observer changes the callout relation;
-- the clock value is not persisted as durable threat knowledge;
-- target identity/selection remains Hoomans perception/combat authority.
+- immediate selected zombie target can provide its current point;
+- existing proximity/group-alert coordinates can be consumed without a new scan;
+- horde/group geometry reuses the existing bounded zombie threat centroid;
+- rear-left geometry yields `CLOCK_08`;
+- observer rotation updates the relation;
+- target/centroid movement updates the relation;
+- stale/missing geometry suppresses clock data;
+- the clock result is not persisted as durable knowledge;
+- spatial projection cannot choose/retarget a combat target.
 
-#### Semantic/callout realization
+Static/performance guard:
 
-At minimum prove:
+- no new global zombie enumeration;
+- no new semantic per-tick polling loop;
+- no second full-NPC scan.
 
-- tactical/guard/military-style context can realize grounded output equivalent to "Zombies, eight o'clock!";
-- hostile-human fixture can realize equivalent "Hostiles at three o'clock!";
-- non-tactical style can consume the same fact as coarse observer-relative language such as "behind us, left side";
-- Core has no zombie/hostile/personality wording;
-- callout generation cannot mutate target selection, movement, or combat state;
-- stale/no-longer-visible target does not receive a falsely current clock callout.
+#### D. Production horde-event integration
 
-#### Published-head acceptance
+Drive the real authority chain rather than calling a tactical formatter directly:
 
-From clean published heads:
+```text
+ZombieObservation / authoritative horde observation
+→ SocialEventHooks.ObserveZombieHorde
+→ DANGER_CHANGED
+→ existing semantic adopter
+```
 
-- Core clock tests pass;
-- Hoomans heading/threat projection tests pass;
-- semantic/combat callout tests pass;
+Prove:
+
+- current horde transition produces one bounded spatial descriptor;
+- the existing `projecthoomans.scene.combat_horde` path consumes it;
+- the existing nearby-player ambient semantic reaction consumes the same canonical relation snapshot;
+- both surfaces agree on clock/coarse relation for the same event/speaker;
+- the horde event still functions when heading/spatial detail is unavailable;
+- no third clock-specific transport/presentation engine exists.
+
+#### E. Semantic Scene realization + continuation
+
+Prove:
+
+- current `COMBAT_HORDE_ALERT` Scene remains the owner of the multi-NPC horde warning;
+- tactical context can realize grounded output equivalent to "Zombies, eight o'clock! Fight or fall back?";
+- non-tactical style can consume the same fact using coarse observer-relative wording;
+- existing brave/cautious/steady continuation still resolves through current semantic behavior predicates;
+- personality/trait response semantics are not replaced by fixed scripts;
+- generated content comes from CodeBuilder source, not hand-edited generated Lua;
+- twelve clock hours are dynamic arguments/tokens, not twelve separate semantic concepts;
+- Core contains no zombie/hostile/personality sentence logic.
+
+#### F. Hostile-human + anti-spam coverage
+
+If no existing generic target-change notification exists, prove the new smallest reusable seam:
+
+- is emitted at authoritative combat-target change/acquisition;
+- does not make Combat depend on Semantics;
+- allows a newly acquired hostile human at right-side geometry to produce `CLOCK_03`/coarse-right facts;
+- permits production semantic admission for a meaningful hostile callout;
+- repeated stable target ticks do not repeatedly speak;
+- existing `CombatBanterArbiter`/cooldown policy is reused;
+- semantic callout generation cannot mutate target selection, attack/retreat, or movement.
+
+#### G. Observatory + Semantic Harness
+
+Extend existing bounded read-only observability.
+
+At minimum inspect:
+
+- target kind/ref;
+- target-position source;
+- heading source;
+- clock token;
+- coarse sector;
+- distance band where configured;
+- spatial freshness;
+- presentation mode;
+- suppression reason.
+
+Prove through deterministic worker fixtures:
+
+- rear-left fixture explains `CLOCK_08`;
+- tactical style explains clock-mode selection;
+- civilian/non-tactical style explains coarse-mode selection;
+- missing heading explains omission rather than fabricated bearing;
+- stale target explains suppression;
+- Observatory stores no rendered transcript and owns no persistence.
+
+#### H. Published-head acceptance
+
+From exact clean published heads:
+
+- Core clock-bearing suite passes;
+- Hoomans facing + tactical projection tests pass;
+- production horde Scene/ambient integration tests pass;
+- hostile-human + anti-spam tests pass;
+- Scene/Combat Observatory and Semantic Harness worker tests pass;
 - existing M10G cardinal trader-whereabouts tests remain green;
-- DynamicTrading market/mobility suites remain green;
-- Lua/Kahlua/static/translation/diff checks remain clean.
+- DynamicTrading full/focused market/mobility suites remain green;
+- deterministic CodeBuilder generation and translation checks pass when content changes;
+- Lua/Kahlua/static/diff checks remain clean;
+- no missing-module failure exists in the published dependency graph.
+
+A direct Core geometry fixture is not M10H completion. A direct formatter fixture is not M10H completion. Production danger → semantic integration must be proven.
 
 ### M10 final gate
 

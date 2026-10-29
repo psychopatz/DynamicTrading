@@ -382,6 +382,8 @@ The exact sentence is not an acceptance requirement. Grounded fact availability 
 
 ## Observer-relative clock bearings
 
+Detailed production semantic integration is specified in `M10H_TACTICAL_SEMANTIC_INTEGRATION.md`. This file owns the reusable spatial contract; the M10H document owns the audited Hoomans combat-awareness/Scene integration.
+
 World-cardinal direction and clock direction are different reference frames and must remain explicit.
 
 ### World-relative

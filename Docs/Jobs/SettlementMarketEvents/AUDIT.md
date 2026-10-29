@@ -350,3 +350,95 @@ Clock language should be available to tactical/military/guard/raider or urgent c
 The same canonical relation supports both.
 
 Therefore the parent goal is reopened for bounded **M10H Observer-Relative Tactical Bearings**. M0–M10G remain accepted and must not be reworked without evidence of regression.
+
+
+## M10H pre-implementation semantic integration audit — 2026-10-29
+
+This audit was performed against the current local Project Hoomans semantic-scene runtime before implementation.
+
+### Existing Scene Runtime should be extended, not bypassed
+
+Current production horde awareness already reaches the generic Interaction Scene Runtime:
+
+```text
+PNC_ZombieObservation
+→ SocialEventHooks.ObserveZombieHorde
+→ InteractionSceneAdopters.OnHordeTransition
+→ DANGER_CHANGED
+→ projecthoomans.scene.combat_horde
+→ COMBAT_HORDE_ALERT
+```
+
+The current Scene then resolves the initial warning and brave/cautious/steady NPC continuation.
+
+The same horde transition also drives an existing nearby-player ambient semantic reaction path.
+
+Therefore observer-relative tactical facts should enrich the authoritative danger event and be consumed by both existing semantic surfaces. A new clock-specific bark subsystem would duplicate ownership and is rejected.
+
+### Current zombie observation is pressure-only
+
+`PNC_ZombieObservation` currently caches bounded pressure/count facts such as nearby/horde counts, band, source, and tactical-horde state.
+
+It does not currently expose a salient threat point for speech.
+
+That missing spatial point should not be solved with another world scan.
+
+### Existing threat geometry is reusable
+
+Current Hoomans already provides bounded sources:
+
+- selected `record.runtime.target` geometry;
+- proximity/group-alert coordinates;
+- `CombatTactics.Internal.BuildZombieThreatCentroid(record, radius)`;
+- existing Perception frame/candidate caches.
+
+The centroid helper is already used by combat tactics and is the preferred horde/group geometry source for initial M10H integration.
+
+### Existing live heading is reusable
+
+Materialized Hoomans bodies already expose engine forward direction via `getForwardDirection()`.
+
+Pathing/facing code already owns bounded facing state.
+
+Create one Hoomans-facing resolver rather than repeating engine extraction in Semantic Scene, combat reaction, or callout modules.
+
+### Hostile-human acquisition lacks a semantic detection transition
+
+The current semantic combat reaction service has hostile-human kill reactions, but the audit did not find a production equivalent of "hostile human newly spotted/acquired" feeding `DANGER_CHANGED`.
+
+`BehaviorCommon.SetCombatTarget(...)` is the authoritative combat-target write path and already identifies whether the target changed.
+
+Do not insert semantic speech into that function.
+
+If no generic target-change observer/listener exists at implementation time, add the smallest neutral target-transition notification there and let semantic combat-awareness subscribe downstream.
+
+### Dynamic realization is preferable to twelve authored concepts
+
+Current semantic content supports generated dynamic placeholders/arguments, and M10G whereabouts already demonstrates live fact-driven realization.
+
+Clock hours should therefore be dynamic canonical arguments/tokens within one tactical-threat alert concept, not twelve independent semantic concepts or twelve duplicated behavior families.
+
+### Observatory is the required debugging surface
+
+Project Hoomans now has both Combat Observatory and Scene Observatory surfaces plus Semantic Harness worker access.
+
+M10H should extend those existing bounded read-only projections with target/heading/clock/coarse/freshness/presentation/suppression diagnostics.
+
+Do not add transcript logging or a parallel debug store.
+
+### Revised phase shape
+
+The audited implementation order is now:
+
+```text
+M10H-A Core observer-relative relation
+M10H-B Hoomans facing authority
+M10H-C tactical threat spatial projection
+M10H-D combat-awareness event enrichment
+M10H-E semantic realization + Scene continuation
+M10H-F hostile-human + anti-spam coverage
+M10H-G Observatory + Semantic Harness
+M10H-H published-head acceptance
+```
+
+The parent goal remains developer-active until all eight chunks pass.

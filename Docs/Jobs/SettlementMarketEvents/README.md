@@ -38,7 +38,8 @@ If a famine begins, food prices may react immediately. A trader's existing inven
 - `AUDIT.md` — current implementation seams and legacy baseline.
 - `ARCHITECTURE.md` — ownership, state model, pricing, exchange, events, and mobility boundaries.
 - `COMMUNITY_EXCURSIONS.md` — detailed generic Hoomans excursion + two-trader mobility design.
-- `SPATIAL_LANGUAGE.md` — reusable Core coordinate→direction/distance contract and Hoomans semantic integration.
+- `SPATIAL_LANGUAGE.md` — reusable Core coordinate→direction/distance/clock-bearing contract.
+- `M10H_TACTICAL_SEMANTIC_INTEGRATION.md` — audited Hoomans combat-awareness → spatial fact → Semantic Scene / ambient reaction integration plan.
 - `ROADMAP.md` — complete implementation phases and acceptance gates.
 - `HARNESS_ACCEPTANCE.md` — required deterministic and integration verification.
 - `AGENT_RUNBOOK.md` — Luna execution rules and read order.

@@ -792,10 +792,12 @@ Movement/excursion services expose facts only. They do not author one fixed trad
 
 ### 18.7 Observer-relative tactical bearings
 
+Detailed production integration contract: `M10H_TACTICAL_SEMANTIC_INTEGRATION.md`.
+
 Core spatial relations support two explicit reference frames:
 
 ```text
-WORLD
+WORLD_CARDINAL
     → cardinal / intercardinal direction
 
 OBSERVER_HEADING
@@ -809,15 +811,73 @@ Clock bearing is relative to a supplied forward vector:
 - 6 = behind;
 - 9 = left.
 
-Project Hoomans owns the authoritative live observer heading. Core owns only the vector math/tokens.
+Project Hoomans owns the authoritative live observer heading. Core owns only generic point/vector math and canonical tokens.
 
-Clock bearings are ephemeral presentation facts. Do not persist "8 o'clock" as durable knowledge when the observer or target may move. Recompute from current observer position/facing and current target position at the time of an immediate callout.
+Clock bearings are ephemeral presentation facts. Do not persist "8 o'clock" as durable knowledge when the observer or target may move. Recompute from current observer position/facing and current target/centroid position at the immediate callout boundary.
 
-When no trustworthy facing exists, omit clock bearing rather than inventing it. World-cardinal direction may still be used where meaningful.
+When no trustworthy facing exists, omit clock bearing rather than inventing it.
 
-Threat selection/grouping remains Hoomans perception/combat authority. Core never scans or chooses zombies/hostiles.
+Threat selection/grouping/freshness remains Hoomans perception/combat authority. Core never scans or chooses zombies/hostiles.
 
-Semantic realization may select tactical clock language for appropriate speakers/contexts while other speakers use coarse relative phrases such as "behind us, left side."
+Reuse existing Hoomans threat geometry and caches:
+
+- current authoritative combat target;
+- proximity/group-alert coordinates;
+- existing bounded zombie threat centroid for horde/group geometry;
+- current Perception frame/candidates.
+
+Do not add a second zombie scan merely for dialogue.
+
+#### Existing semantic runtime is the presentation authority
+
+Observer-relative facts must enter the already-established semantic pipeline:
+
+```text
+authoritative combat/perception transition
+        ↓
+ephemeral tactical spatial projection
+        ↓
+existing DANGER_CHANGED / semantic opportunity
+        ↓
+existing Interaction Scene + semantic reaction
+        ↓
+semantic realization
+```
+
+For horde detection, preserve current ownership:
+
+- `PNC_ZombieObservation` owns pressure/count observation;
+- `SocialEventHooks.ObserveZombieHorde` owns horde-episode transitions;
+- `projecthoomans.scene.combat_horde` owns the existing multi-NPC Scene opportunity;
+- the current ambient semantic-reaction path remains the nearby player-heard presentation surface.
+
+The same bounded spatial relation snapshot should feed both existing semantic surfaces. Do not create a third clock-bark engine.
+
+The Scene keeps its current semantic continuation model. M10H grounds the warning line more precisely; it does not replace brave/cautious/steady behavior selection with fixed scripts.
+
+#### Hostile-human target transitions
+
+Human-hostile callouts should consume authoritative combat target transitions.
+
+If no reusable target-change notification exists, add the smallest generic observer/listener seam around the existing target-write authority. Combat must not depend on Semantics, and semantic callout logic must not live inside target mutation.
+
+No per-tick callout polling is permitted.
+
+#### Semantic realization policy
+
+Clock vs coarse wording is presentation policy, not Core truth.
+
+Reuse existing semantic style/trait/context owners such as `CombatReactionProfile` and `SpeechStyleContext`.
+
+One canonical relation may realize as:
+
+> "Zombies, eight o'clock!"
+
+or:
+
+> "Zombies behind us, left side!"
+
+Do not create twelve separate semantic concepts merely for twelve clock hours. Use dynamic translated arguments/tokens through the current CodeBuilder/content pipeline.
 
 ### 18.8 Publication invariant
 
