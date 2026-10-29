@@ -8,7 +8,7 @@ The immediate Next Chunk in `PROGRESS.md` is only the starting responsibility.
 
 > A chunk or phase completing is **not** completion of this job.
 
-Continue automatically through all mandatory M0–M8 roadmap work after each accepted chunk unless a genuine blocker or user-only native acceptance gate remains.
+Continue automatically through all mandatory M0–M9 roadmap work after each accepted chunk unless a genuine blocker or user-only native acceptance gate remains. M0–M8 built the engine; M9 runtime activation is now mandatory before native handoff.
 
 ## Read order
 
@@ -117,15 +117,30 @@ Preserve the current transaction executor. Settlement Exchange prepares merchant
 
 ## Event discipline
 
-Start with generic registry/resolver contracts before named events.
+The generic registry/resolver and Food Shortage/Agricultural Surplus definitions are already accepted M4–M5 engine work.
 
-Food Shortage and Agricultural Surplus are proof fixtures of the generic pipeline.
+M9 must add a **production producer**, not another event registry. The first producer should be bounded and grounded in authoritative market/world state. A deterministic market-condition producer is preferred over a large random event library. Keep named event rules outside the generic registry and prevent threshold flapping with hysteresis/cooldown/duration policy.
 
-Do not add ten bespoke event scripts before the resolver is verified.
+Do not add ten bespoke event scripts merely to make events appear.
+
+## Runtime activation discipline
+
+Do not confuse an API that tests can call with a gameplay path that production actually calls.
+
+For M9, prove call sites in production for all four runtime responsibilities:
+
+1. automatic settlement-market provisioning;
+2. Hoomans-owned normal settlement arrival → DT visit/exchange;
+3. elapsed-time market recovery;
+4. at least one real event producer → `MarketEvents.Register`.
+
+The M9 flagship test must begin without manually calling `SettlementMarket.GetOrCreate`, `MarketEvents.Register`, `SettlementExchange.Execute`, `SettlementMarket.Recover`, or `DTHoomans.Settlement.StartTraderTravel` from the test body. It may drive the public Hoomans lifecycle with deterministic engine fixtures.
+
+Do not solve missing arrival wiring by moving travel authority into DynamicTrading. If Hoomans needs a reusable notification/listener seam, make the smallest generic Hoomans change and cover it with Hoomans regressions.
 
 ## Scope discipline
 
-Mandatory M0–M8 only.
+Mandatory M0–M9 only.
 
 Do not expand into:
 
@@ -149,7 +164,7 @@ Stop early only for:
 - missing required dependency/API with no safe fallback;
 - a real product decision not specified by these docs;
 - authorization restriction;
-- completed developer-side M0–M8 with only explicit user-owned native acceptance remaining.
+- completed developer-side M0–M9, including the no-fixture runtime lifecycle gate, with only explicit user-owned native acceptance remaining.
 
 A passing phase is not a stop condition.
 

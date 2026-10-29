@@ -163,6 +163,83 @@ Run focused DynamicTrading tests plus any affected Core/Hoomans/MarketSense test
 
 Known unrelated failures must be reported precisely rather than silently treated as new regressions.
 
+## M9 runtime activation acceptance
+
+M9 exists because M0–M8 proved the engine with fixtures but did not prove that ordinary gameplay drives it.
+
+### No-manual-fixture rule
+
+The flagship M9 lifecycle test must begin with:
+
+- an eligible active Hoomans community/faction;
+- a bound/eligible trader or mobile trading group;
+- **no pre-created DT settlement market** for the target community;
+- **no pre-registered DT proof event**.
+
+The test body must not directly call:
+
+- `SettlementMarket.GetOrCreate`;
+- `SettlementExchange.Execute`;
+- `SettlementMarket.Recover`;
+- `MarketEvents.Register`;
+- `DTHoomans.Settlement.StartTraderTravel`;
+- the private DT arrival handler.
+
+It may drive the public/authoritative Hoomans lifecycle using deterministic PZ/Hoomans fixtures.
+
+### Required M9A evidence
+
+- settlement trader/community binding or first authoritative economic access provisions exactly one market;
+- provisioning is idempotent across repeated sweeps/accesses and save/reload;
+- the canonical key is Hoomans `community.id`;
+- profile selection reads bounded existing Hoomans metadata and safely falls back to `default`;
+- a **normal Hoomans-owned mobile settlement arrival** reaches DT exactly once and produces one visit/exchange;
+- no DT-owned journey is required for the production path;
+- duplicate/replayed Hoomans arrival cannot double-apply exchange.
+
+### Required M9B recovery evidence
+
+- mutate a market away from baseline through a normal economic action;
+- advance authoritative game time;
+- invoke the normal production runtime path;
+- verify pressure moves toward the profile baseline without a direct `Recover` test call;
+- verify revisions/timestamps advance coherently;
+- verify client/read-only paths do not become mutation authority;
+- verify recovery remains bounded and is not per-frame/all-market work.
+
+### Required M9C event-producer evidence
+
+- create market conditions that satisfy the producer using normal market mutation;
+- invoke the normal production producer/runtime path;
+- verify a proof event is registered without direct `MarketEvents.Register` from the test body;
+- verify the event uses the existing generic registry and data-only definition;
+- verify price/availability and WorldKnowledge/Radio presentation react;
+- verify exact trader stock does not mutate merely because the event starts;
+- verify expiry/clear/cooldown behavior prevents immediate flapping or duplicate recreation;
+- verify producer evaluation uses underlying persisted market pressure rather than its own event-modified effective pressure.
+
+### Flagship sequence
+
+```text
+Hoomans community exists
+→ DT binding/first access provisions market
+→ Hoomans-owned mobile trader/group arrives normally
+→ one DT partial exchange occurs
+→ stock and pressure persist/reload
+→ game time advances
+→ production recovery runs
+→ grounded market conditions trigger proof event
+→ quote + event presentation react
+→ event expires/clears normally
+→ duplicate arrival/producer pass causes no duplicate mutation
+```
+
+### M9 gate
+
+M9 passes only when the above no-fixture lifecycle is green with production integration entrypoints, all previous DynamicTrading regressions remain green, affected Project Hoomans/Core/MarketSense regressions pass, and production Lua/Kahlua/static/diff checks remain clean.
+
+Only then may native SP/MP be the sole remaining acceptance gate.
+
 ## Native acceptance
 
 When normal Project Zomboid SP/MP is authorized/available:

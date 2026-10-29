@@ -471,7 +471,67 @@ does not pay for timing or storage. Schema normalization is applied at every
 market/event envelope load, while representative persistence remains category
 and modifier data rather than item definitions.
 
-## 16. Non-goals
+## 16. Runtime activation
+
+M0–M8 establish the market/event engine. Production gameplay must also drive that engine without test-only setup.
+
+### 16.1 Settlement market provisioning
+
+An eligible active Hoomans settlement must acquire a DT market lazily/idempotently when it becomes economically relevant.
+
+```text
+Hoomans active community.id
+    ↓
+bounded market-profile resolver
+    ↓
+SettlementMarket.GetOrCreate
+```
+
+The resolver may consume existing community/faction/archetype/tags, but it must not create a parallel settlement identity or duplicate Hoomans state. Unknown/unsupported specialization resolves to the DT `default` profile.
+
+Existing saves must not require a destructive migration pass: first binding/access can provision the missing market once.
+
+### 16.2 Real Hoomans arrival ownership
+
+Normal trader logistics must originate from Project Hoomans' existing movement/mobile-settlement lifecycle.
+
+```text
+Hoomans chooses/travels/arrives
+    ↓
+generic arrival notification/listener
+    ↓
+DTHoomans resolves bound DT trader + community.id
+    ↓
+MarkSettlementVisit(exchange=true)
+```
+
+`DTHoomans.Settlement.StartTraderTravel` may remain as an explicit API/debug/test helper, but ordinary gameplay must not depend on DT starting the journey. If Hoomans lacks an observer API, add the smallest reusable non-DT-specific observer seam there rather than making DT own movement.
+
+### 16.3 Recovery runtime
+
+`SettlementMarket.Recover` is an engine primitive, not a complete runtime by itself. Production must invoke recovery through a bounded authoritative path based on elapsed game time.
+
+Acceptable shapes include lazy advance on authoritative market access or a low-frequency bounded scheduler. Forbidden shapes include per-frame recovery, full-world all-market scans, and client-authoritative mutation.
+
+### 16.4 Production event producer
+
+`MarketEvents.Register` is the generic registry boundary. At least one production producer must drive it.
+
+The first proof producer should be deterministic and grounded. For example, sustained underlying food shortage pressure can instantiate the existing `FOOD_SHORTAGE` definition, while sufficiently abundant opposite pressure can instantiate `AGRICULTURAL_SURPLUS`.
+
+The producer must:
+
+- read underlying persisted market pressure, not event-modified effective values;
+- use bounded evaluation;
+- use duration/cooldown/hysteresis to avoid flapping;
+- remain separate from the generic event registry;
+- never rewrite trader stock when an event starts.
+
+### 16.5 Runtime activation invariant
+
+A test/manual API call is not proof of gameplay activation. Parent completion requires production call sites for provisioning, real arrival exchange, recovery, and event production.
+
+## 17. Non-goals
 
 This job does not require:
 

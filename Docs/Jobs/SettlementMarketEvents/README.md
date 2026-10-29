@@ -15,7 +15,11 @@ The target system must make:
 - Dynamic Trading own supply/demand pressure, stock availability, market modifiers, event effects, trader economic policy, and settlement exchange;
 - Project Hoomans remain authoritative for physical NPC identity, movement, settlement presence, travel, and lifecycle;
 - events influence prices immediately through market context while influencing physical stock only through actual logistics/settlement exchange;
-- one settlement visit partially refresh or exchange stock rather than rerolling the trader inventory.
+- one settlement visit partially refresh or exchange stock rather than rerolling the trader inventory;
+- eligible Hoomans settlements provision their market state automatically in normal gameplay;
+- the existing Hoomans mobile-settlement arrival lifecycle drives trader exchange without a DT-owned travel loop;
+- market pressure actually recovers over game time through a bounded runtime path;
+- at least one grounded production event producer creates real market events without test/debug registration.
 
 ## Core gameplay principle
 

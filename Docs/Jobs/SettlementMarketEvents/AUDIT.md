@@ -154,3 +154,18 @@ The first proof must be deterministic and small:
 - local food pressure and price move in the expected directions;
 - no stock reroll occurs;
 - then a food-shortage event modifies the same pipeline without special-case transaction code.
+
+## Post-M8 runtime activation audit
+
+Audit baseline: `main` at `96303d91a1f44270c43b71581e92e619e2448541`.
+
+M0–M8 implemented and regression-tested the engine, but a repository audit found four production activation gaps that invalidate the claim that only native SP/MP remains:
+
+1. **Settlement markets are not provisioned by gameplay.** `SettlementMarket.GetOrCreate` has no production caller. The two-settlement tests explicitly pre-create their markets, while production exchange resolves with `SettlementMarket.Get` and can therefore return `market_not_found` for an ordinary Hoomans settlement.
+2. **The ordinary Hoomans mobile-settlement lifecycle does not drive DT exchange.** `DTHoomans.Settlement.StartTraderTravel` and the `dynamic_trading_settlement` arrival action are exercised by tests, but no production caller starts that DT-specific path. Project Hoomans already owns normal mobile settlement arrival through `PNC.MobileSettlementVisitService`; DT must observe that lifecycle rather than requiring DT-owned journey initiation.
+3. **Recovery is an unused engine primitive.** `SettlementMarket.Recover` has no production caller, so changed market pressure does not naturally return toward profile baselines during ordinary gameplay.
+4. **Events have no production producer.** `MarketEvents.Register` is called by tests but has no production caller, so Food Shortage/Agricultural Surplus definitions cannot arise on their own in a normal game.
+
+The existing `33/33` DT suite and `83/0` Hoomans bridge results are valid evidence for the engine they cover, but they do not close these runtime call-site gaps because the tests manually create/drive the missing state.
+
+Therefore the parent goal is reopened for mandatory **M9 Runtime Market Activation**. M0–M8 remain accepted engine work and must not be rewritten.

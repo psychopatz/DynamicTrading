@@ -2,14 +2,14 @@
 
 ## Parent status
 
-**IN PROGRESS — all developer-implementable M0–M8 requirements accepted; native SP/MP acceptance remains user-owned.**
+**IN PROGRESS — M0–M8 engine work accepted; M9 Runtime Market Activation is mandatory before native SP/MP handoff.**
 
-The complete M0–M8 roadmap remains the parent completion boundary. Finishing
+The complete M0–M9 roadmap is now the parent completion boundary. Finishing
 one chunk or phase does not complete the parent objective.
 
 ## Planning baseline
 
-Current DynamicTrading `main` baseline: `f4899384f4cffb2bfaaaa33a0846100e314d2b48`
+Current audited DynamicTrading `main` baseline: `96303d91a1f44270c43b71581e92e619e2448541`
 
 Legacy behavioral reference: `ee0a8dc6a6989fbbdbd943ec23aa3f1c54099415`
 
@@ -48,12 +48,14 @@ M0A verified the real integration seams before adding settlement market state:
 - Project Hoomans' active `community.id` is the canonical settlement identity.
   `factionID` identifies the owning faction and `siteID` identifies a physical
   location; neither replaces the community identity.
-- Hoomans exposes the authoritative arrival seam through
+- Hoomans exposes an explicit travel-arrival handler seam through
   `PNC.API.Travel.RegisterArrivalHandler` and `PNC.Travel.Arrivals.Dispatch`.
-  The new server-only `dynamic_trading_settlement` adapter resolves the active
+  The server-only `dynamic_trading_settlement` adapter resolves the active
   community, resolves the trader from the arriving NPC, and forwards one
-  idempotent server visit to DynamicTrading. It does not create movement or
-  invent a second settlement lifecycle.
+  idempotent server visit to DynamicTrading. Post-M8 audit later proved this
+  explicit DT arrival action is **not** the same as Hoomans' ordinary
+  `PNC.MobileSettlementVisitService` lifecycle and has no production caller;
+  M9 must close that activation gap without moving travel authority into DT.
 - MarketSense remains the intrinsic-value and taxonomy authority through
   `GetPriceDetails*`, `GetItemAvailability`, `GetAllKnownItems`, and `GetTags`;
   no DynamicTrading item taxonomy or manual intrinsic-price catalog was added.
@@ -150,7 +152,9 @@ M1B added data-driven profile baselines and the bounded market mutation path:
 
 ## Current phase
 
-**M8 — Performance, migration, and hardening accepted**
+**M9 — Runtime Market Activation REQUIRED**
+
+M0–M8 are accepted as engine implementation. Parent completion is reopened because production call-site audit found that ordinary gameplay does not yet provision settlement markets, consume the normal Hoomans mobile-settlement arrival lifecycle, advance recovery, or produce events.
 
 ## M2A — accepted bounded settlement exchange
 
@@ -377,11 +381,34 @@ M8 closes the developer-side correctness and bounded-runtime gate:
 - Native SP/MP acceptance was not executed because repository policy leaves
   native driving and live acceptance user-owned/authorization-gated.
 
-## Remaining gap after M8
+## Post-M8 audit correction
 
-Only the explicit native Project Zomboid SP/MP checklist remains: stock
-continuity, arrival exchange, travel, event-visible quotes, save/reload,
-server authority, and reconnect idempotency.
+The previous statement that only native SP/MP remained was incorrect. Repository inspection at `96303d91` found four developer-side activation gaps:
+
+1. `SettlementMarket.GetOrCreate` has no production caller; ordinary settlements can reach exchange with no market and fail `market_not_found`.
+2. `DTHoomans.Settlement.StartTraderTravel` / `dynamic_trading_settlement` are test/API paths with no production caller; the normal Hoomans `PNC.MobileSettlementVisitService` arrival lifecycle does not currently notify DT.
+3. `SettlementMarket.Recover` has no production caller; pressure recovery is test-driven only.
+4. `MarketEvents.Register` has no production caller; proof events are test/debug-driven only.
+
+The existing `33/33` DT suite and `83/0` bridge evidence remain accepted for M0–M8, but they manually create/drive the missing runtime state and therefore do not close M9.
+
+## Next Chunk — M9A Automatic provisioning + real Hoomans arrival
+
+Start with the production lifecycle, not another market algorithm.
+
+1. Re-audit the current Project Hoomans `PNC.MobileSettlementVisitService` and community/faction public APIs.
+2. Identify whether Hoomans already exposes a reusable observer/listener for normal settlement arrival. If not, add the smallest generic non-DynamicTrading-specific notification contract in Project Hoomans with focused Hoomans regressions.
+3. Add a bounded DTHoomans adapter that consumes that real arrival notification, resolves the arriving bound DT trader and canonical active `community.id`, and invokes one idempotent `MarkSettlementVisit(..., exchange=true)`.
+4. Before exchange, provision a missing settlement market idempotently through `SettlementMarket.GetOrCreate` using a bounded profile resolver over existing Hoomans community/faction/archetype/tags. Unknown mappings must use `default`.
+5. Preserve existing-save compatibility through lazy provisioning; do not perform a destructive world migration.
+6. Add a fail-first integration test that starts with an active Hoomans-style community and **no DT market**, then drives the public Hoomans arrival lifecycle. The test body must not call `SettlementMarket.GetOrCreate`, `StartTraderTravel`, the DT arrival handler, or `SettlementExchange.Execute` directly.
+7. Prove duplicate/replayed arrival cannot provision twice or transact twice.
+
+### M9A acceptance
+
+A normal Hoomans-owned settlement arrival from zero DT market state creates exactly one market and applies at most one exchange through production integration entrypoints. Hoomans remains movement/lifecycle authority.
+
+After M9A, continue automatically to M9B recovery runtime, M9C grounded production event producer, and M9D no-fixture lifecycle acceptance. Do not stop for another `/goal`.
 
 ## Known constraints
 
@@ -390,6 +417,6 @@ server authority, and reconnect idempotency.
 - Physical NPC identity, movement, settlement presence, and lifecycle remain
   Project Hoomans responsibilities.
 - Native Project Zomboid SP/MP acceptance is not yet complete and remains a
-  later user-owned/native gate after developer-side work is finished.
-- Continue automatically through M0–M8; do not stop for another `/goal` after
-  M0A, M0, or an individual phase.
+  later user-owned/native gate **after M9 developer-side activation is accepted**.
+- Continue automatically through M0–M9; do not stop for another `/goal` after
+  M9A, M9B, M9C, or an individual phase/chunk.
