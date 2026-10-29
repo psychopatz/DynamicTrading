@@ -340,6 +340,13 @@ all other event producers. Their availability multiplier is surfaced in the
 server quote explanation and bounds category candidate exposure during a
 settlement exchange; it does not remove or reroll existing exact trader stock.
 
+The M6 logistics proof exercises this boundary end to end: an authoritative
+Hoomans arrival resolves the active `community.id`, DTCommon partially
+exchanges the trader's existing serialized stock, persists stock and market
+revisions, and a later arrival applies the carried goods to a different local
+market. Replaying the same bounded visit ID is accepted as handled but cannot
+repeat the stock, budget, or pressure mutation.
+
 ## 11. Events
 
 Events contribute modifiers through a resolver.

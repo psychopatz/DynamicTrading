@@ -2,7 +2,7 @@
 
 ## Parent status
 
-**IN PROGRESS — M5 accepted; M6 is next.**
+**IN PROGRESS — M6 accepted; M7 is next.**
 
 The complete M0–M8 roadmap remains the parent completion boundary. Finishing
 one chunk or phase does not complete the parent objective.
@@ -150,7 +150,7 @@ M1B added data-driven profile baselines and the bounded market mutation path:
 
 ## Current phase
 
-**M5 — Proof events**
+**M6 — Two-settlement logistics accepted**
 
 ## M2A — accepted bounded settlement exchange
 
@@ -285,21 +285,43 @@ candidate exposure:
 - PZ Verify Kahlua checks reported zero errors across the 23-file DTCommon
   shared production tree; `luac -p` and `git diff --check` passed.
 
-## Next Chunk — M6
+## M6 — accepted deterministic two-settlement logistics
 
-Complete the deterministic two-settlement logistics propagation scenario:
+M6 proves the complete settlement-centered logistics path through the real
+Hoomans arrival adapter and DTCommon visit/exchange seam:
 
-1. Combine persistent exact trader stock, farm surplus and military shortage
-   markets with a validated arrival/exchange/travel sequence.
-2. Verify acquisition at the surplus settlement, persistence across reload,
-   travel, and partial disposal at the shortage settlement.
-3. Prove both market revisions and stock versions move only on completed
-   logistics, with duplicate arrival IDs unable to double-apply exchange.
+- a persistent trader acquires one MarketSense-backed food unit at a farm
+  surplus, keeps unrelated stock, and records the canonical farm settlement;
+- the exact stock and farm pressure survive a fresh storage/market reload;
+- Hoomans-owned travel delegates the same physical NPC to a military
+  settlement, where the carried food is partially disposed and the canonical
+  settlement context moves to the destination;
+- local farm and military quotes react to their own completed pressure changes;
+- stock versions, market revisions, budget, and visit IDs advance only on
+  completed exchanges; replaying the same arrival ID does not transact twice.
 
-## Remaining gap after M5
+## M6 evidence
 
-The flagship logistics evidence, grounded presentation, and the later roadmap
-phases remain incomplete.
+- `python3 tests/run_tests.py`: `PASS 32/32`.
+- Focused M6/regression run: `PASS 3/3` for the logistics, arrival-contract,
+  and two-settlement exchange harnesses.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- PZ Verify Kahlua reported zero errors for the 23-file DTCommon shared
+  production tree and the new logistics harness; `luac -p` and
+  `git diff --check` passed.
+
+## Next Chunk — M7
+
+Build grounded market/event presentation over authoritative state: publish
+event facts through the existing world-knowledge/radio seams, expose bounded
+market and event explanations to supported presentation consumers, and keep
+presentation read-only with no stock mutation.
+
+## Remaining gap after M6
+
+Grounded presentation, later roadmap phases, and native Project Zomboid
+acceptance remain incomplete.
 
 ## Known constraints
 
