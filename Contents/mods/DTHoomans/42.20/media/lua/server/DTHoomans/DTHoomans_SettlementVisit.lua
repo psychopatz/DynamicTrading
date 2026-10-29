@@ -28,6 +28,75 @@ local function bounded(value, maximum)
     return value
 end
 
+local function lowerText(value)
+    value = text(value)
+    return value and string.lower(value) or nil
+end
+
+local function hasProfileTag(tags, candidates)
+    local key
+    local value
+    local candidate
+    local normalizedKey
+    local normalizedValue
+    if type(tags) ~= "table" then return false end
+    for _, candidate in ipairs(candidates) do
+        value = tags[candidate]
+        if value == true then return true end
+        if lowerText(value) == candidate then return true end
+    end
+    -- Project Hoomans tags are a bounded key/value map. Accept a matching
+    -- value as well as a matching key so existing faction metadata can drive
+    -- the profile without adding a DynamicTrading taxonomy to Hoomans.
+    for key, value in pairs(tags) do
+        normalizedKey = lowerText(key)
+        normalizedValue = lowerText(value)
+        for _, candidate in ipairs(candidates) do
+            if normalizedKey == candidate or normalizedValue == candidate then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local FARM_PROFILE_TAGS = {
+    "farm", "farming", "agriculture", "agricultural",
+}
+local MILITARY_PROFILE_TAGS = {
+    "military", "armed", "security", "ammunition", "weapons",
+}
+
+-- Resolve only bounded, already-persisted Hoomans metadata. DynamicTrading
+-- does not create a parallel faction/settlement taxonomy; unsupported
+-- classifications deliberately fall back to the neutral profile.
+local function marketProfileForCommunity(community)
+    local factions = PNC and PNC.Factions or nil
+    local faction
+    local archetype
+    local mode
+    local tags
+    if type(community) ~= "table" then return "default" end
+    faction = factions and type(factions.Get) == "function"
+        and factions.Get(community.factionID) or nil
+    tags = faction and faction.tags or nil
+    archetype = lowerText(faction and faction.archetypeID)
+    mode = lowerText(community.mode)
+    if hasProfileTag(tags, MILITARY_PROFILE_TAGS)
+        or archetype == "military"
+    then
+        return "military"
+    end
+    if hasProfileTag(tags, FARM_PROFILE_TAGS)
+        or archetype == "farm"
+        or archetype == "agricultural"
+        or mode == "farm"
+    then
+        return "farm"
+    end
+    return "default"
+end
+
 local function worldAge()
     local gameTime = getGameTime and getGameTime() or nil
     if gameTime and type(gameTime.getWorldAgeHours) == "function" then
@@ -72,6 +141,32 @@ function Settlement.SettlementIDForFaction(factionID)
     end
     return nil, "settlement_not_found"
 end
+
+local function provisionMarket(community)
+    local markets = DTCommon and DTCommon.SettlementMarket or nil
+    local profileID
+    local market
+    local createdOrReason
+    if type(community) ~= "table" or not text(community.id) then
+        return nil, "settlement_required"
+    end
+    -- Older isolated bridge harnesses do not load the market module. Keep the
+    -- explicit legacy helper usable there; production DTCommon always exposes
+    -- the registry and therefore takes the provisioning path below.
+    if not markets or type(markets.GetOrCreate) ~= "function" then
+        return true, false
+    end
+    profileID = marketProfileForCommunity(community)
+    market, createdOrReason = markets.GetOrCreate(
+        bounded(community.id),
+        { profileID = profileID }
+    )
+    if not market then return nil, createdOrReason end
+    return market, createdOrReason
+end
+
+Settlement.MarketProfileForCommunity = marketProfileForCommunity
+Settlement.ProvisionMarket = provisionMarket
 
 local function settlementIDFor(action, journey)
     local metadata = journey and journey.metadata or nil
@@ -120,6 +215,61 @@ local function traderIDForNPC(npcID, requestedTraderID)
     return nil, requested and "trader_npc_mismatch" or "trader_not_found"
 end
 
+local function arrivalMemberIDs(details)
+    local output = {}
+    local seen = {}
+    local group = details and details.group or nil
+    local faction = details and details.faction or nil
+    local source = group and (group.memberIds or group.memberIDs) or nil
+    local key
+    local value
+    local npcID
+    if type(source) == "table" then
+        for key, value in pairs(source) do
+            npcID = type(key) == "number" and value or key
+            if npcID and not seen[tostring(npcID)] then
+                seen[tostring(npcID)] = true
+                output[#output + 1] = tostring(npcID)
+            end
+        end
+    end
+    if #output == 0 and type(faction and faction.memberIDs) == "table" then
+        for npcID, present in pairs(faction.memberIDs) do
+            if present == true and not seen[tostring(npcID)] then
+                seen[tostring(npcID)] = true
+                output[#output + 1] = tostring(npcID)
+            end
+        end
+    end
+    table.sort(output)
+    while #output > 24 do table.remove(output) end
+    return output
+end
+
+local function traderIDForFaction(factionID, details)
+    local requested
+    local record
+    local memberIDs
+    local index
+    local traderID
+    if not text(factionID) then return nil, "faction_required" end
+    requested = Settlement.TraderIDForFaction
+        and Settlement.TraderIDForFaction(factionID)
+        or "dt_" .. tostring(factionID)
+    if requested and Service and type(Service.GetRecord) == "function" then
+        record = Service.GetRecord(requested)
+        if record and tostring(record.g or "") == tostring(factionID) then
+            return requested
+        end
+    end
+    memberIDs = arrivalMemberIDs(details)
+    for index = 1, #memberIDs do
+        traderID = traderIDForNPC(memberIDs[index])
+        if traderID then return traderID end
+    end
+    return nil, "trader_not_found"
+end
+
 local function visitIDFor(action, journey, traderID, settlementID)
     local requested = action and action.visitID or nil
     requested = requested or journey and journey.journeyId or nil
@@ -143,6 +293,7 @@ function Settlement.MarkTraderVisit(traderID, settlementID, options)
     local resolved
     local reason
     local key
+    local market
     if not Service or type(Service.MarkSettlementVisit) ~= "function" then
         return nil, "trader_service_unavailable"
     end
@@ -156,6 +307,8 @@ function Settlement.MarkTraderVisit(traderID, settlementID, options)
     if not resolved then return nil, "settlement_required" end
     resolved, reason = activeCommunity(resolved)
     if not resolved then return nil, reason end
+    market, reason = provisionMarket(resolved)
+    if not market then return nil, reason end
     for key, value in pairs(options) do request[key] = value end
     request.authority = "server"
     request.atSettlement = true
@@ -163,6 +316,58 @@ function Settlement.MarkTraderVisit(traderID, settlementID, options)
     request.communityID = nil
     return Service.MarkSettlementVisit(traderID, request)
 end
+
+local function arrivalVisitID(details, traderID, settlementID)
+    local travel = details and details.travel or nil
+    local faction = details and details.faction or nil
+    local visit = faction and faction.mobile and faction.mobile.visit or nil
+    local key = details and details.visitID or nil
+    key = key or travel and (travel.visitID or travel.id
+        or travel.journeyId or travel.revision) or nil
+    key = key or visit and visit.id or nil
+    if not key then return nil end
+    return bounded("dt_settlement:" .. tostring(traderID)
+        .. ":" .. tostring(settlementID) .. ":" .. tostring(key), 128)
+end
+
+local function handleHoomansSettlementArrival(details)
+    local faction = details and details.faction or nil
+    local community = details and details.community or nil
+    local settlementID
+    local traderID
+    local visitID
+    local result
+    local reason
+    if type(details) ~= "table" then return false, "arrival_context_missing" end
+    if type(community) ~= "table" then
+        return false, "settlement_community_missing"
+    end
+    settlementID, reason = activeCommunity(community.id)
+    if not settlementID then return false, reason end
+    if type(faction) ~= "table" or not faction.id then
+        return false, "mobile_faction_missing"
+    end
+    traderID, reason = traderIDForFaction(faction.id, details)
+    if not traderID then return false, reason end
+    visitID = arrivalVisitID(details, traderID, settlementID.id)
+    if not visitID then return false, "arrival_identity_missing" end
+    result, reason = Settlement.MarkTraderVisit(
+        traderID,
+        settlementID.id,
+        {
+            visitID = visitID,
+            now = details.at or worldAge(),
+            exchange = true,
+        }
+    )
+    if not result and reason == "duplicate_visit" then
+        return true, reason
+    end
+    if not result then return false, reason end
+    return true, "settlement_visit"
+end
+
+Settlement.HandleHoomansSettlementArrival = handleHoomansSettlementArrival
 
 function Settlement.StartTraderTravel(traderID, settlementID, request)
     local api = PNC and PNC.API and PNC.API.Travel or nil
@@ -250,7 +455,27 @@ function Settlement.RegisterArrivalHandler()
         registered and nil or "travel_arrival_registration_failed"
 end
 
+local function onHoomansSettlementArrival(details)
+    return handleHoomansSettlementArrival(details)
+end
+
+Settlement.HoomansArrivalListener = onHoomansSettlementArrival
+
+function Settlement.RegisterHoomansArrivalListener()
+    local service = PNC and PNC.MobileSettlementVisitService or nil
+    local registered
+    if not service or type(service.RegisterArrivalListener) ~= "function" then
+        return false, "mobile_settlement_arrival_api_unavailable"
+    end
+    if Settlement.HoomansArrivalListenerRegistered then return true end
+    registered = service.RegisterArrivalListener(onHoomansSettlementArrival)
+    Settlement.HoomansArrivalListenerRegistered = registered == true
+    return registered == true,
+        registered and nil or "mobile_settlement_arrival_registration_failed"
+end
+
 Settlement.RegisterArrivalHandler()
+Settlement.RegisterHoomansArrivalListener()
 
 if Events and Events.OnGameStart
     and type(Events.OnGameStart.Add) == "function"
@@ -258,6 +483,12 @@ if Events and Events.OnGameStart
 then
     Settlement.ArrivalStartHookRegistered = true
     Events.OnGameStart.Add(function() Settlement.RegisterArrivalHandler() end)
+    if not Settlement.HoomansArrivalStartHookRegistered then
+        Settlement.HoomansArrivalStartHookRegistered = true
+        Events.OnGameStart.Add(function()
+            Settlement.RegisterHoomansArrivalListener()
+        end)
+    end
 end
 
 return Settlement

@@ -408,6 +408,31 @@ Start with the production lifecycle, not another market algorithm.
 
 A normal Hoomans-owned settlement arrival from zero DT market state creates exactly one market and applies at most one exchange through production integration entrypoints. Hoomans remains movement/lifecycle authority.
 
+### M9A evidence
+
+- `python3 tests/run_tests.py`: `PASS 34/34`, including the no-manual-fixture
+  `dt_m9a_runtime_activation_smoke`.
+- M9A smoke starts an active Hoomans-style mobile group and target community
+  with no DT market, loads the real `PNC.MobileSettlementVisitService`, and
+  drives its public `OnSettlementArrival` entrypoint. The observer provisions
+  the canonical `community.id` market, selects the bounded farm profile from
+  Hoomans faction tags, forwards one exchange, preserves unrelated stock, and
+  ignores a replayed travel revision.
+- Project Hoomans focused regressions passed for mobile settlement admission
+  and abstract-world arrival. The broader composition smoke remains affected
+  by unrelated local combat-observatory work and is not attributed to M9A.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- Changed DT/Hoomans production and test Lua files passed `luac -p`, PZ Verify
+  Kahlua error scans, and `git diff --check`.
+
+## Current next chunk — M9B Production recovery runtime
+
+M9A is accepted. Wire elapsed-time `SettlementMarket.Recover` through a
+bounded authoritative production entrypoint; no per-frame or full-world
+simulation. Continue automatically to M9C and M9D after the focused recovery
+gate passes.
+
 After M9A, continue automatically to M9B recovery runtime, M9C grounded production event producer, and M9D no-fixture lifecycle acceptance. Do not stop for another `/goal`.
 
 ## Known constraints
