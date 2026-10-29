@@ -100,6 +100,7 @@ end
 local restocked, restockReason = Policy.Restock(record, stock, {
     authority = "server",
     atSettlement = true,
+    settlementID = "community_p7",
     earned = true,
     now = 24,
 })
@@ -108,19 +109,22 @@ T.equal(restocked.added, 3, "earned restock adds policy stock")
 T.equal(#stock.records, 1, "restock uses DT stock only")
 T.equal(record.ca.restock.nextAt, 48, "restock cooldown persists")
 local notDue, notDueReason = Policy.Restock(record, stock, {
-    authority = "server", atSettlement = true, earned = true, now = 30,
+    authority = "server", atSettlement = true,
+    settlementID = "community_p7", earned = true, now = 30,
 })
 T.equal(notDue, nil, "restock cooldown enforced")
 T.equal(notDueReason, "restock_not_due", "restock cooldown reason")
 
 local visit, visitReason = Policy.MarkVisit(record, {
     authority = "server", atSettlement = true, now = 48,
+    settlementID = "community_p7",
     visitID = "journey:p7:arrival",
 })
 T.truthy(visit, visitReason)
 T.equal(visit.visitCount, 1, "settlement visit recorded")
 local duplicate, duplicateReason = Policy.MarkVisit(record, {
     authority = "server", atSettlement = true, now = 48,
+    settlementID = "community_p7",
     visitID = "journey:p7:arrival",
 })
 T.equal(duplicate, nil, "arrival visit applied once")

@@ -78,6 +78,7 @@ T.equal(record.ca.providerLeaseID, "lease:npc:p7:service",
 local visit, visitReason = Service.MarkSettlementVisit("trader:p7", {
     authority = "server",
     atSettlement = true,
+    settlementID = "community_p7",
     earned = true,
     restock = true,
     now = 24,
@@ -104,6 +105,7 @@ T.equal(mapEntry.capabilities.trade, true, "DT trade capability projection")
 
 local duplicate, duplicateReason = Service.MarkSettlementVisit("trader:p7", {
     authority = "server", atSettlement = true, earned = true,
+    settlementID = "community_p7",
     visitID = "journey:p7:service", now = 24,
 })
 T.equal(duplicate, nil, "service rejects duplicate arrival")

@@ -48,6 +48,7 @@ function Service.Get(traderID)
         coreProviderState = record.ca and record.ca.providerState or nil,
         coreProviderLeaseID = record.ca and record.ca.providerLeaseID or nil,
         coreProviderBodyID = record.ca and record.ca.providerBodyID or nil,
+        lastSettlementID = record.ca and record.ca.lastSettlementID or nil,
     }
 end
 

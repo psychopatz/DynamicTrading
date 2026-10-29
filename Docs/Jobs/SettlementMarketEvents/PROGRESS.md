@@ -2,96 +2,110 @@
 
 ## Parent status
 
-**IN PROGRESS — documentation/architecture established; production implementation not started under this job.**
+**IN PROGRESS — M0A accepted; M0 remains in progress.**
 
-The full M0–M8 roadmap is the completion boundary.
+The complete M0–M8 roadmap remains the parent completion boundary. Finishing
+one chunk or phase does not complete the parent objective.
 
 ## Planning baseline
 
-DynamicTrading remote/current baseline inspected at:
+Current DynamicTrading `main` baseline: `f4899384f4cffb2bfaaaa33a0846100e314d2b48`
 
-`e6012c27de66f299e019c7aa62db4dc4c986e089`
+Legacy behavioral reference: `ee0a8dc6a6989fbbdbd943ec23aa3f1c54099415`
 
-Legacy behavioral reference:
-
-`ee0a8dc6a6989fbbdbd943ec23aa3f1c54099415`
-
-Local planning checkout matched `origin/main` at the baseline but had an unrelated modified:
+The working tree contains the unrelated pre-existing edit to:
 
 `Contents/mods/DTHoomans/42.20/media/lua/shared/DTHoomans/DTHoomans_Conversation.lua`
 
-Preserve it.
+That file remains preserved and is not part of this work.
 
 ## Accepted existing foundation
 
-- stable trader registry and persistent stock;
+- stable trader registry and persistent exact merchant stock;
 - bounded initial MarketSense-backed stock seed;
 - MarketSense definition/instance pricing;
 - server-authoritative buy/sell basket settlement;
-- exact identity/replay/stale-version security;
+- exact item identity, replay, stale-version, and transaction rollback guards;
 - trader budget and stock revisions;
-- Core actor policy with settlement-gated `MarkVisit` and `Restock`;
+- Core actor policy settlement-gated `MarkVisit` and `Restock`;
 - Hoomans physical trader/faction binding;
 - DTAbstract remote access;
-- Talk service;
-- WorldKnowledge adapter;
-- reusable Radio OS integration.
+- Talk, WorldKnowledge, and reusable Radio OS presentation seams.
 
-These are foundations to preserve, not work to rewrite.
+These foundations are preserved; the market/event work must evolve them rather
+than replace them.
 
-## Current gap
+## M0A — accepted source-audit contracts
 
-No current production domain owns:
+M0A verified the real integration seams before adding settlement market state:
 
-- settlement market profiles;
-- local supply/demand pressure;
-- recovery to baseline;
-- market-aware availability;
-- market-aware quote modifiers;
-- generic scoped market events;
-- event-driven price/availability modifiers;
-- bounded settlement exchange that partially transforms persistent trader stock;
-- two-settlement logistics propagation through a trader.
+- `DTCommon_TraderService.Snapshot` loads the persisted serialized inventory
+  through `TraderStock.SnapshotItems`; it does not call `TraderStock.New`, so
+  reopening a trader does not reroll exact stock.
+- `DTCommon_TraderService.MarkSettlementVisit` remains the server-authoritative
+  visit seam. The Core actor policy now requires an explicit settlement
+  identity, records `lastSettlementID`, and retains duplicate visit protection.
+- Project Hoomans' active `community.id` is the canonical settlement identity.
+  `factionID` identifies the owning faction and `siteID` identifies a physical
+  location; neither replaces the community identity.
+- Hoomans exposes the authoritative arrival seam through
+  `PNC.API.Travel.RegisterArrivalHandler` and `PNC.Travel.Arrivals.Dispatch`.
+  The new server-only `dynamic_trading_settlement` adapter resolves the active
+  community, resolves the trader from the arriving NPC, and forwards one
+  idempotent server visit to DynamicTrading. It does not create movement or
+  invent a second settlement lifecycle.
+- MarketSense remains the intrinsic-value and taxonomy authority through
+  `GetPriceDetails*`, `GetItemAvailability`, `GetAllKnownItems`, and `GetTags`;
+  no DynamicTrading item taxonomy or manual intrinsic-price catalog was added.
+- No settlement market state, event state, or per-visit item-registry scan was
+  introduced in M0A.
+
+## M0A evidence
+
+- `python3 tests/run_tests.py`: `PASS 22/22`.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- `luac -p` passed for every changed production and contract-test Lua file.
+- `git diff --check` passed.
+- PZ Verify Kahlua checks reported zero errors for the affected DTCommon and
+  DTHoomans server trees and both new contract tests.
+- Codebase-memory graph status and coverage were checked first for the
+  Project Hoomans and MarketSense source paths. DynamicTrading media paths are
+  excluded from the current graph index, so those exact production files were
+  verified by direct source inspection as required by the coverage result.
 
 ## Current phase
 
-**M0 — Source audit and contracts**
+**M0 — Source audit contracts**
 
-## Next Chunk — M0A
+## Next Chunk — M0B
 
-Luna must start by proving the exact current lifecycle seam before adding market state.
+Finalize the versioned compact contract/schema boundary for settlement market
+and event records without adding market behavior yet.
 
-### Required work
+Required work:
 
-1. Recheck DynamicTrading local `main`, upstream, dirty files and worktrees.
-2. Inspect current:
-   - `DTCommon_TraderRegistry.lua`
-   - `DTCommon_TraderStock.lua`
-   - `DTCommon_TraderService.lua`
-   - `DTCommon_CoreActorPolicy.lua`
-   - `DTCommon_Storage.lua`
-3. Trace the actual current Project Hoomans/DTHoomans path that represents:
-   - trader enters/arrives at settlement;
-   - settlement identity;
-   - call site or missing call site for `MarkSettlementVisit`.
-4. Identify the canonical stable settlement ID contract. Do not invent one until this audit is complete.
-5. Inspect current MarketSense public taxonomy/tag APIs suitable for bounded category indexing.
-6. Add fail-first/guardrail tests proving:
-   - trader stock persists across repeated snapshots;
-   - UI/snapshot does not reroll stock;
-   - settlement visit requires settlement context;
-   - duplicate visit ID does not apply twice;
-   - current transaction path remains unchanged.
-7. Record exact current seams and any required narrow adapter in this ledger.
+1. Define bounded persisted defaults and revision fields for future settlement
+   market and event records at the existing storage boundary.
+2. Add migration/default contract tests for absent, partial, and unknown fields.
+3. Keep the schemas data-only and generic so M1–M4 can consume them without
+   hard-coded food/event branches.
+4. Re-run the focused regression, Kahlua, and syntax checks before accepting
+   M0 and moving to M1.
 
-### M0A acceptance
+## Remaining gap after M0A
 
-M0A is accepted only when Luna can point to the real production settlement/trader lifecycle and stable settlement identity, with tests protecting the persistent-stock baseline.
-
-After M0A acceptance, continue automatically to the remaining M0 work and then M1–M8. Do not stop for another /goal.
+No production domain yet owns settlement market profiles, local pressure,
+recovery, market-aware availability/quotes, generic scoped events, bounded
+partial settlement exchange, or logistics propagation between settlements.
 
 ## Known constraints
 
-- Legacy is reference only; no wholesale port.
-- The old trading MVP docs explicitly excluded market simulation. That exclusion does **not** apply to this new job; however, the safe trading MVP foundation remains mandatory.
-- Native PZ acceptance is not a prerequisite for starting implementation. Finish all safe developer-side work first.
+- Legacy Dynamic Trading is a behavioral reference only; do not wholesale-port
+  its DTNPC runtime, manual item catalog, or monolithic dialogue system.
+- Physical NPC identity, movement, settlement presence, and lifecycle remain
+  Project Hoomans responsibilities.
+- Native Project Zomboid SP/MP acceptance is not yet complete and remains a
+  later user-owned/native gate after developer-side work is finished.
+- Continue automatically through M0–M8; do not stop for another `/goal` after
+  M0A, M0, or an individual phase.

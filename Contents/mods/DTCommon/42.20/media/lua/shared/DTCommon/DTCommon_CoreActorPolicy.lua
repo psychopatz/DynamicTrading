@@ -98,6 +98,8 @@ function Policy.New(spec)
         visitCount = math.max(0, math.floor(number(spec.visitCount, 0))),
         lastVisitAt = number(spec.lastVisitAt, 0),
         lastVisitID = text(spec.lastVisitID, nil),
+        lastSettlementID = text(spec.lastSettlementID
+            or spec.settlementID or spec.communityID, nil),
     }
 end
 
@@ -206,7 +208,10 @@ function Policy.MarkVisit(record, options)
     if options.authority ~= "server" then
         return nil, "server_authority_required"
     end
-    if options.atSettlement ~= true then return nil, "settlement_required" end
+    local settlementID = text(options.settlementID or options.communityID, nil)
+    if options.atSettlement ~= true or not settlementID then
+        return nil, "settlement_required"
+    end
     local policy = Policy.Get(record)
     local visitID = text(options.visitID, nil)
     if visitID and policy.lastVisitID == visitID then
@@ -217,6 +222,7 @@ function Policy.MarkVisit(record, options)
     policy.visitCount = policy.visitCount + 1
     policy.lastVisitAt = number(options.now, policy.lastVisitAt)
     policy.lastVisitID = visitID
+    policy.lastSettlementID = settlementID
     record.ca = policy
     return policy
 end
@@ -226,7 +232,10 @@ function Policy.Restock(record, stock, options)
     if options.authority ~= "server" then
         return nil, "server_authority_required"
     end
-    if options.atSettlement ~= true then return nil, "settlement_required" end
+    local settlementID = text(options.settlementID or options.communityID, nil)
+    if options.atSettlement ~= true or not settlementID then
+        return nil, "settlement_required"
+    end
     if options.earned ~= true and Policy.Get(record).restock.earnedOnly then
         return nil, "restock_not_earned"
     end

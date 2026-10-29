@@ -298,7 +298,12 @@ check(Caravan.ResolveTraderDisplayName({ m = { "npcMerchant" } }) == "npcMerchan
     "member list fallback works")
 
 print("== 6. shared snapshot applies the canonical name ==")
-local requireStub = function() return { getWeight = function() return 0 end } end
+local requireStub = function(moduleName)
+    if moduleName == "DTCommon/DTCommon_CoreActorPolicy" then
+        return { PriceContext = function() return {} end }
+    end
+    return { getWeight = function() return 0 end }
+end
 _G.require = requireStub
 local Service = dofile(ROOT .. "/DTCommon/42.20/media/lua/shared/DTCommon/DTCommon_TraderService.lua")
 local savedGetRecord = Service.GetRecord

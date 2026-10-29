@@ -5,13 +5,38 @@
 Repository: `psychopatz/DynamicTrading`
 
 - Legacy reference: `legacy` at `ee0a8dc6a6989fbbdbd943ec23aa3f1c54099415`
-- Current planning baseline: `main` at `e6012c27de66f299e019c7aa62db4dc4c986e089`
+- Current planning baseline: `main` at `f4899384f4cffb2bfaaaa33a0846100e314d2b48`
 
 The current working tree also contains an unrelated local edit to:
 
 `Contents/mods/DTHoomans/42.20/media/lua/shared/DTHoomans/DTHoomans_Conversation.lua`
 
 This job must preserve that work and never fold it into market/event commits unless the change is independently verified as required.
+
+## M0A source-audit result
+
+M0A verified the current lifecycle and guardrails before introducing market
+state:
+
+- `DTCommon_TraderService.Snapshot` reloads the persisted trader inventory and
+  never seeds stock on UI open or reopen.
+- `DTCommon_TraderService.MarkSettlementVisit` is the existing authoritative
+  visit seam. The policy now requires an explicit settlement identity and
+  records the last canonical settlement while retaining duplicate visit
+  protection.
+- Project Hoomans' active `community.id` is the canonical settlement identity;
+  `factionID` is the owner and `siteID` is the physical location.
+- Hoomans' registered arrival handlers are the lifecycle integration point. A
+  server-only `dynamic_trading_settlement` adapter resolves the active
+  community and arriving trader NPC, then forwards one idempotent visit to DT.
+  It does not own movement, staffing, or a second settlement identity.
+- MarketSense `GetTags`, `GetItemAvailability`, and `GetPriceDetails*` remain
+  the bounded taxonomy and intrinsic-value seams. No DT manual item catalog was
+  added.
+
+The M0A contract tests cover persistent snapshots, settlement identity,
+duplicate visits, arrival forwarding, and server authority. M0A intentionally
+does not add settlement market or event state.
 
 ## Legacy behavior used as reference
 
