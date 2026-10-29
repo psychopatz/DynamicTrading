@@ -2,7 +2,7 @@
 
 ## Parent status
 
-**IN PROGRESS — M0 accepted; M1 is next.**
+**IN PROGRESS — M1 accepted; M2 is next.**
 
 The complete M0–M8 roadmap remains the parent completion boundary. Finishing
 one chunk or phase does not complete the parent objective.
@@ -109,6 +109,31 @@ M1A added the first production settlement market foundation:
 - PZ Verify Kahlua checks reported zero errors for all 16 DTCommon shared files.
 - `luac -p` and `git diff --check` passed.
 
+## M1B — accepted profiles, pressure, and recovery
+
+M1B added data-driven profile baselines and the bounded market mutation path:
+
+- `default`, `farm`, and `military` profiles provide distinct normalized
+  MarketSense category baselines without defining item identities.
+- `SettlementMarket.ApplyDelta` is the single server-owned bounded supply,
+  demand, and wealth mutation path. It advances market and storage revisions,
+  records update time, and rejects stale revisions.
+- `SettlementMarket.Recover` moves category pressure and wealth toward the
+  selected profile in one deterministic bounded calculation, with no periodic
+  or per-frame loop.
+- the registry returns normalized copies and persists/reloads two-settlement
+  state through the separate market envelope; trader inventory remains
+  untouched.
+
+## M1B evidence
+
+- `python3 tests/run_tests.py`: `PASS 26/26`.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- PZ Verify Kahlua checks reported zero errors for all 17 DTCommon shared files
+  and the M1B pressure smoke test.
+- `luac -p` and `git diff --check` passed.
+
 ## M0A evidence
 
 - `python3 tests/run_tests.py`: `PASS 22/22`.
@@ -125,28 +150,30 @@ M1A added the first production settlement market foundation:
 
 ## Current phase
 
-**M1 — Settlement Market foundation**
+**M2 — Settlement Exchange**
 
-## Next Chunk — M1B
+## Next Chunk — M2A
 
-Add deterministic settlement profiles, baseline category defaults, bounded
-pressure mutation, and recovery toward baseline using the accepted registry.
+Implement a bounded settlement-exchange planner over the existing persistent
+trader stock and the M1 market/catalog foundations.
 
 Required work:
 
-1. Define at least two distinct profile fixtures using MarketSense category
-   vocabulary without a DT item taxonomy.
-2. Apply bounded supply/demand deltas through one server-owned mutation path.
-3. Recover deterministically toward each profile baseline and persist revisions.
-4. Add two-settlement reload/diagnostic tests; do not change trade quotes or
-   stock until the M1 gate is met.
+1. Plan disposal/acquisition only for bounded MarketSense-backed category
+   candidates; keep unrelated exact stock untouched.
+2. Integrate the plan with the authoritative settlement visit seam, with one
+   duplicate-safe operation and one coherent persistence/rollback boundary.
+3. Apply market deltas only for goods actually exchanged; do not reroll or
+   replace trader stock on UI open or event start.
+4. Add persistent-stock, stock-version, budget, market-revision, and duplicate
+   visit acceptance tests before accepting M2A.
 
-## Remaining gap after M1A
+## Remaining gap after M1B
 
-Settlement profiles, pressure mutation/recovery, market-aware availability and
-quotes, generic scoped event resolution, bounded partial settlement exchange,
-and logistics propagation between settlements remain incomplete. M1A only
-provides the persistent registry and catalog foundation.
+Bounded partial settlement exchange, market-aware availability and quotes,
+generic scoped event resolution, and logistics propagation between settlements
+remain incomplete. M1 now provides only compact market pressure and catalog
+foundations; it does not change commercial quotes.
 
 ## Known constraints
 
