@@ -57,6 +57,7 @@ A settlement owns compact category-level state:
 
 ```lua
 SettlementMarket = {
+    schemaVersion = 1,
     settlementID = "...",
     profileID = "farm",
     revision = 12,
@@ -74,6 +75,25 @@ SettlementMarket = {
 ```
 
 Exact schema may be made more compact, but semantics must remain explicit and versioned.
+
+The M0B contract fixes the first persisted schema version and bounded defaults:
+
+- `settlementID` is required and is the Hoomans `community.id` value;
+- `profileID` defaults to `default`, `wealth` defaults to `0.5`, and missing
+  category supply/demand defaults to `0.5`;
+- supply, demand, and wealth are clamped to `0..1`;
+- a market stores at most 32 category records and its envelope stores at most
+  256 settlement records;
+- `revision` and `lastUpdateAt` are non-negative bounded values;
+- unknown fields are dropped during normalization, and future schema versions
+  are rejected rather than silently rewritten.
+
+The event schema uses the same data-only boundary with at most 16 modifiers per
+event and 128 events per envelope. Event scopes are generic `global`, `region`,
+`faction`, or `settlement` records; non-global scopes require an ID. Modifier
+values are bounded, event expiry cannot precede its start, and presentation
+fields contain localization keys only. These limits bound persistence without
+creating an item ledger or hard-coded event branches.
 
 ### Trader
 
@@ -97,6 +117,7 @@ Do not replace stock on UI open or on every session.
 
 ```lua
 MarketEvent = {
+    schemaVersion = 1,
     eventID = "...",
     type = "food_shortage",
     startsAt = ...,

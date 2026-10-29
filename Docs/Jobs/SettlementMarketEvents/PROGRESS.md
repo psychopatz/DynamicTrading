@@ -2,7 +2,7 @@
 
 ## Parent status
 
-**IN PROGRESS — M0A accepted; M0 remains in progress.**
+**IN PROGRESS — M0 accepted; M1 is next.**
 
 The complete M0–M8 roadmap remains the parent completion boundary. Finishing
 one chunk or phase does not complete the parent objective.
@@ -60,6 +60,27 @@ M0A verified the real integration seams before adding settlement market state:
 - No settlement market state, event state, or per-visit item-registry scan was
   introduced in M0A.
 
+## M0B — accepted versioned schemas
+
+M0B added `DTCommon.MarketSchema` as a shared, data-only contract for future
+market and event registries. It defines version 1 envelopes and normalizers for
+settlement markets, market events, and their bounded stores. It provides
+defaults and migration handling for absent/partial records, clamps invalid
+numeric values, rejects future schema versions, drops unknown fields, and
+preserves generic MarketSense category/tag keys without an item ledger.
+
+The schema boundary does not resolve prices, run recovery, activate events,
+scan all items, or mutate trader stock.
+
+## M0B evidence
+
+- `python3 tests/run_tests.py`: `PASS 23/23`.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- PZ Verify Kahlua checks reported zero errors for all 14 DTCommon shared files,
+  all 6 DTHoomans server files, and the schema smoke test.
+- `luac -p` and `git diff --check` passed.
+
 ## M0A evidence
 
 - `python3 tests/run_tests.py`: `PASS 22/22`.
@@ -76,28 +97,28 @@ M0A verified the real integration seams before adding settlement market state:
 
 ## Current phase
 
-**M0 — Source audit contracts**
+**M1 — Settlement Market foundation**
 
-## Next Chunk — M0B
+## Next Chunk — M1A
 
-Finalize the versioned compact contract/schema boundary for settlement market
-and event records without adding market behavior yet.
+Implement the bounded SettlementMarket registry and MarketSense-backed catalog
+adapter using the accepted M0B schemas.
 
 Required work:
 
-1. Define bounded persisted defaults and revision fields for future settlement
-   market and event records at the existing storage boundary.
-2. Add migration/default contract tests for absent, partial, and unknown fields.
-3. Keep the schemas data-only and generic so M1–M4 can consume them without
-   hard-coded food/event branches.
-4. Re-run the focused regression, Kahlua, and syntax checks before accepting
-   M0 and moving to M1.
+1. Resolve canonical settlement IDs through the existing Hoomans identity seam.
+2. Persist bounded market envelopes without duplicating MarketSense item
+   definitions or trader inventory.
+3. Expose deterministic profile/category defaults and bounded diagnostics; do
+   not change trade quotes or stock until the M1 gate is met.
+4. Re-run focused regression, Kahlua, and syntax checks before accepting M1A.
 
-## Remaining gap after M0A
+## Remaining gap after M0B
 
-No production domain yet owns settlement market profiles, local pressure,
-recovery, market-aware availability/quotes, generic scoped events, bounded
-partial settlement exchange, or logistics propagation between settlements.
+No production domain yet owns active settlement market profiles, local pressure,
+recovery, market-aware availability/quotes, generic scoped event resolution,
+bounded partial settlement exchange, or logistics propagation between
+settlements. M0B only defines their persistence boundary.
 
 ## Known constraints
 
