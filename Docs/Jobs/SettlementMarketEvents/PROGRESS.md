@@ -81,6 +81,34 @@ scan all items, or mutate trader stock.
   all 6 DTHoomans server files, and the schema smoke test.
 - `luac -p` and `git diff --check` passed.
 
+## M1A — accepted market registry and catalog
+
+M1A added the first production settlement market foundation:
+
+- `DTCommon.Storage` now owns a separate `DTCommon.SettlementMarkets`
+  persistence envelope; trader inventory data remains in its existing key and
+  serializer.
+- `DTCommon.SettlementMarket` creates, reads, lists, and commits bounded
+  category-pressure records through the M0B schema. Creation and commits are
+  server-authoritative, increment the envelope revision, preserve stale-revision
+  protection, and return normalized copies rather than exposing ModData tables.
+- market creation validates an active Hoomans `community.id` when the Hoomans
+  community service is available; no faction or site identity is substituted.
+- `DTCommon.MarketCatalog` consumes MarketSense category, tag, availability,
+  and price facts into a bounded runtime index. It builds once at game start,
+  supports explicit invalidation, and exposes deterministic category candidates
+  without persisting an item universe.
+- M1A does not change trader quotes, exchange behavior, event activation, or
+  physical stock.
+
+## M1A evidence
+
+- `python3 tests/run_tests.py`: `PASS 25/25`.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- PZ Verify Kahlua checks reported zero errors for all 16 DTCommon shared files.
+- `luac -p` and `git diff --check` passed.
+
 ## M0A evidence
 
 - `python3 tests/run_tests.py`: `PASS 22/22`.
@@ -99,26 +127,26 @@ scan all items, or mutate trader stock.
 
 **M1 — Settlement Market foundation**
 
-## Next Chunk — M1A
+## Next Chunk — M1B
 
-Implement the bounded SettlementMarket registry and MarketSense-backed catalog
-adapter using the accepted M0B schemas.
+Add deterministic settlement profiles, baseline category defaults, bounded
+pressure mutation, and recovery toward baseline using the accepted registry.
 
 Required work:
 
-1. Resolve canonical settlement IDs through the existing Hoomans identity seam.
-2. Persist bounded market envelopes without duplicating MarketSense item
-   definitions or trader inventory.
-3. Expose deterministic profile/category defaults and bounded diagnostics; do
-   not change trade quotes or stock until the M1 gate is met.
-4. Re-run focused regression, Kahlua, and syntax checks before accepting M1A.
+1. Define at least two distinct profile fixtures using MarketSense category
+   vocabulary without a DT item taxonomy.
+2. Apply bounded supply/demand deltas through one server-owned mutation path.
+3. Recover deterministically toward each profile baseline and persist revisions.
+4. Add two-settlement reload/diagnostic tests; do not change trade quotes or
+   stock until the M1 gate is met.
 
-## Remaining gap after M0B
+## Remaining gap after M1A
 
-No production domain yet owns active settlement market profiles, local pressure,
-recovery, market-aware availability/quotes, generic scoped event resolution,
-bounded partial settlement exchange, or logistics propagation between
-settlements. M0B only defines their persistence boundary.
+Settlement profiles, pressure mutation/recovery, market-aware availability and
+quotes, generic scoped event resolution, bounded partial settlement exchange,
+and logistics propagation between settlements remain incomplete. M1A only
+provides the persistent registry and catalog foundation.
 
 ## Known constraints
 

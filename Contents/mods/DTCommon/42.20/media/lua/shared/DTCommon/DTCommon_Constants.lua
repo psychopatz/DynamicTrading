@@ -3,6 +3,7 @@ DTCommon = DTCommon or {}
 DTCommon.VERSION = 1
 DTCommon.MOD_ID = "DTCommon"
 DTCommon.MODDATA_KEY = "DTCommon.Traders"
+DTCommon.MARKET_MODDATA_KEY = "DTCommon.SettlementMarkets"
 DTCommon.MONEY_FULL_TYPE = "Base.Money"
 -- Degraded fallback labels only. The canonical trader name and role come from
 -- Project Hoomans (DTHoomans.Caravan.ResolveTraderDisplayName plus the NPC
