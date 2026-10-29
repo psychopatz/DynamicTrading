@@ -435,6 +435,26 @@ gate passes.
 
 After M9A, continue automatically to M9B recovery runtime, M9C grounded production event producer, and M9D no-fixture lifecycle acceptance. Do not stop for another `/goal`.
 
+### M9B evidence
+
+- `python3 tests/run_tests.py`: `PASS 35/35`, including
+  `dt_m9b_recovery_runtime_smoke` and all M0–M8 regressions.
+- The production `DTCommon.TraderService.MarkSettlementVisit` seam now
+  advances only the visited market toward its profile baseline when an
+  authoritative elapsed world timestamp is supplied. The focused test changes
+  pressure, advances time, uses the visit seam without calling recovery
+  directly, verifies revision/timestamp/baseline movement, and proves a client
+  call cannot mutate it.
+- Recovery is lazy and access-scoped; no per-frame hook or all-market loop was
+  added. Changed Lua passed `luac -p`, PZ Verify Kahlua error scanning, and
+  `git diff --check`.
+
+## Current next chunk — M9C Grounded production event producer
+
+Add one bounded, hysteresis/cooldown-gated producer that reads underlying
+persisted market pressure and registers the generic proof event through normal
+production runtime. Continue automatically to M9D after its focused gate.
+
 ## Known constraints
 
 - Legacy Dynamic Trading is a behavioral reference only; do not wholesale-port

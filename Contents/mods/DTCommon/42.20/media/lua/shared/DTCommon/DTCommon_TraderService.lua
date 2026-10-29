@@ -743,6 +743,35 @@ function Service.SetCoreActorAvailability(traderID, available, reason)
     return true
 end
 
+-- Settlement recovery is an authoritative, lazy access path. It advances only
+-- the market attached to this visit and only when the caller supplies an
+-- elapsed-world timestamp; clients and read-only snapshots never mutate
+-- market state and there is no per-frame economy loop.
+local function recoverSettlementMarket(settlementID, options)
+    local marketService = DTCommon and DTCommon.SettlementMarket or nil
+    local current
+    local recovered
+    local reason
+    local now
+    if not marketService
+        or type(marketService.Get) ~= "function"
+        or type(marketService.Recover) ~= "function"
+    then
+        return true
+    end
+    now = tonumber(options and options.now)
+    if not now then return true end
+    current = marketService.Get(settlementID)
+    if not current then return nil, "market_not_found" end
+    if now <= (tonumber(current.lastUpdateAt) or 0) then return true end
+    recovered, reason = marketService.Recover(settlementID, nil, {
+        now = now,
+        recoveryRate = options and options.recoveryRate,
+    })
+    if not recovered then return nil, reason end
+    return true
+end
+
 function Service.Restock(traderID, options)
     if not authority() then return nil, "server_authority_required" end
     local record = Service.GetRecord(traderID)
@@ -768,10 +797,18 @@ function Service.MarkSettlementVisit(traderID, options)
     local exchangeResult
     local restockResult
     local exchange
+    local recovered
+    local reason
     if not record then return nil, "trader_not_found" end
+    recovered, reason = recoverSettlementMarket(
+        options and (options.settlementID or options.communityID),
+        options
+    )
+    if not recovered then return nil, reason end
     previousPolicy = Policy.Get(record)
     previousStatus = record.s
-    local policy, reason = Policy.MarkVisit(record, options)
+    local policy
+    policy, reason = Policy.MarkVisit(record, options)
     if not policy then return nil, reason end
     record.s = DTCommon.STATUS_READY
     if options and options.exchange == true then
