@@ -8,7 +8,7 @@ The immediate Next Chunk in `PROGRESS.md` is only the starting responsibility.
 
 > A chunk or phase completing is **not** completion of this job.
 
-Continue automatically through all mandatory M0–M10 roadmap work after each accepted chunk unless a genuine blocker or user-only native acceptance gate remains. M0–M10F built the market/event and trader-mobility systems; M10G now closes cross-repo publication, reusable spatial-language, and production semantic integration before native handoff.
+Continue automatically through all mandatory M0–M10H roadmap work after each accepted chunk unless a genuine blocker or user-only native acceptance gate remains. M0–M10G is accepted and published; M10H now extends the reusable spatial foundation with observer-relative tactical clock bearings before native handoff.
 
 ## Read order
 
@@ -168,11 +168,14 @@ Mandatory rules:
 - public semantic excursion state is a projection/query, not a duplicate persistence store;
 - destination names/directions are resolved on demand from authoritative place IDs and coordinates, not persisted as stale excursion copies;
 - Core spatial math emits canonical data/tokens; semantic realization owns natural-language phrasing/localization;
+- world-cardinal and observer-heading reference frames remain explicit; never derive clock time without a trustworthy heading;
+- tactical clock bearings are ephemeral and recomputed from current observer/target geometry rather than persisted as durable knowledge;
+- Hoomans owns live facing extraction and threat selection; Core owns only generic vector math;
 - future "visit my settlement" requests are requests/suggestions evaluated by faction/trader AI, never direct semantic movement commands.
 
 ## Scope discipline
 
-Mandatory M0–M10 only.
+Mandatory M0–M10H only.
 
 Do not expand into:
 
@@ -198,7 +201,7 @@ Stop early only for:
 - missing required dependency/API with no safe fallback;
 - a real product decision not specified by these docs;
 - authorization restriction;
-- completed developer-side M0–M10G, including clean cross-repo publication, reusable Core spatial relation/language, production semantic whereabouts integration, and both trader flagship lifecycles, with only explicit user-owned native acceptance remaining.
+- completed developer-side M0–M10H, including clean cross-repo publication, reusable Core world-cardinal + observer-relative clock spatial relations, production semantic whereabouts/tactical callout integration, and both trader flagship lifecycles, with only explicit user-owned native acceptance remaining.
 
 A passing phase is not a stop condition.
 

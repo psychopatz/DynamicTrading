@@ -2,112 +2,266 @@
 
 ## Parent status
 
-**Developer-complete through M10G-E.** M0–M10G is implemented and validated from the published repository heads. Native Project Zomboid SP/MP acceptance remains the sole user-owned gate.
+**IN PROGRESS — M0–M10G is accepted and published; M10H Observer-Relative Tactical Bearings is mandatory before native SP/MP is again the sole remaining gate.**
 
-The phase boundary is the full M0–M10 roadmap; completing an individual phase does not by itself complete the parent objective.
+M10H is a bounded extension of the accepted reusable spatial foundation. It does not reopen trader mobility, markets, or settlement semantics.
 
-## Published validation snapshot
+## Current repository audit
 
-These are the exact published runtime heads used for the final clean-snapshot acceptance. The DynamicTrading revision is the last runtime/documentation baseline before this progress-only update.
+### DynamicTrading
 
-```text
-PsychopatzCore origin/main  5c5998087b4c7a91d0e57f9667dc911cf1eb061f
-ProjectHoomans origin/main  656dddf42acec857a7a58ad55c4228c36250b051
-DynamicTrading origin/main  67e1a594f8a628f22e2b4694491e2412a9ee21b9
-```
+- local `main` = `origin/main` at `20d59aad7d81116e10fc5a19262e1b1eb3dd186d`;
+- unrelated local `DTHoomans_Conversation.lua` edit remains preserved and unstaged.
 
-All three validation checkouts were clean, detached/published snapshots. No required module existed only in a developer checkout.
+### PsychopatzCore
 
-## Repository safeguards
+- local `main` = `origin/main` at `5c5998087b4c7a91d0e57f9667dc911cf1eb061f`;
+- published `PsychopatzCore.SpatialRelation.Between(...)` already owns world-cardinal relation, distance, SAME_AREA, optional distance bands, and translation-safe labels.
 
-- DynamicTrading uses the existing `main` branch; no branch was created.
-- The unrelated local edit in `Contents/mods/DTHoomans/42.20/media/lua/shared/DTHoomans/DTHoomans_Conversation.lua` remains unstaged and was not included.
-- Project Hoomans semantic-scene, spatial-index, combat-awareness, generated-content, and harness history was preserved; the publication reconciliation did not reset, rebase, discard, or overwrite it.
-- PsychopatzCore and Project Hoomans published `main` are clean at the heads above.
+### Project Hoomans
 
-## Accepted M0–M9 foundation
+- published `origin/main`: `656dddf42acec857a7a58ad55c4228c36250b051`;
+- local `main`: `ac4fa3f8dae5890057190cfa0694690188010f1f`;
+- local `main` is clean and 2 commits ahead with unrelated semantic-scene observatory/acceptance work:
+  - `9231b6a1 feat: add semantic scene observatory`
+  - `ac4fa3f8 feat: complete semantic scene runtime acceptance`
 
-- Trader merchant stock is exact, persistent inventory; UI open/reopen never rerolls it.
-- Settlement visits exchange only a bounded portion of stock instead of replacing inventory.
-- MarketSense remains the intrinsic-value and taxonomy authority.
-- Dynamic Trading owns settlement market pressure, typed data-driven events, merchant stock/budget, quotes, and settlement exchange.
-- Project Hoomans owns NPC/faction/community identity, settlement presence, movement, arrival lifecycle, LOD, failure/retry, and exact-home identity.
-- Market provisioning is lazy and idempotent for existing saves; production settlement arrival forwards one authoritative exchange visit.
-- Market recovery is bounded and authoritative; production event generation is condition-based with hysteresis/cooldown/duration.
-- Resident traders resolve home-market context without fabricating a visit, exchange, or pressure mutation.
-- No per-frame economy loop, all-trader event rewrite, or full item-registry scan per quote/visit was introduced.
+Do not blindly publish those commits merely to integrate M10H.
 
-## Accepted M10 mobility foundation
+## Accepted M0–M10G foundation
 
-- Base-less caravans remain independent, perpetual mobile factions with no hidden base or offscreen leader.
-- Settlement-owned traders remain members of their original Hoomans community/faction and return to the exact originating `community.id`.
-- Generic Hoomans temporary commercial visits and purpose-agnostic excursions own admission-free visitation, abstract travel, encounters, presence/LOD, expiry, failure/retry, save/reload continuation, and public status.
-- Dynamic Trading contributes only bounded economic opportunity/policy information; it is not a movement controller.
-- Production caravan and resident-trader lifecycles prove destination scoring, commercial visits, exact stock continuity, one exchange per arrival, anti-ping-pong cooldowns, protected-task/Follow Player constraints, and exact-home return.
-- Public excursion facts remain privacy-aware and read-only for semantic consumers.
+Accepted published behavior includes:
 
-## M10G-A — clean Hoomans publication reconciliation — accepted
+- persistent exact merchant stock;
+- settlement market pressure, recovery, typed events, and partial exchange;
+- two trader lifecycles: resident and base-less caravan;
+- generic non-admission settlement visits;
+- purpose-agnostic Hoomans community excursions;
+- exact-home return;
+- published cross-repo dependency graph;
+- production semantic trader whereabouts;
+- authoritative destination settlement names;
+- world-cardinal spatial language;
+- privacy-aware place/direction/ETA realization.
 
-- Re-audited Project Hoomans local `main`, `origin/main`, worktrees, dirty state, and ahead history.
-- Verified the minimal generic excursion/commercial-mobility/completed-lifecycle dependency graph and reconciled it onto published `origin/main` without blindly publishing unrelated history.
-- Published-head loader/test gates were aligned for the actual published module inventory; the final clean Hoomans snapshot contains all required M10 modules.
+M10G published-head evidence recorded previously:
 
-## M10G-B — PsychopatzCore reusable spatial relation — accepted
+- Project Hoomans full suite: `942/942`;
+- focused Hoomans excursion/mobility/semantic set: `14/14`;
+- DynamicTrading full suite: `41/41`;
+- focused DynamicTrading resident/caravan/market set: `16/16`;
+- Core spatial/composition/core/translation regressions passed;
+- Lua/Kahlua/static/translation/diff checks passed.
 
-Published Core provides `PsychopatzCore.SpatialRelation.Between(fromPoint, toPoint, options)` with:
+Do not redo M0–M10G unless current code proves a regression.
 
-- finite coordinate validation and `dx`, `dy`, `dz`;
-- Euclidean and horizontal distance;
-- canonical bearing and configurable same-area/dead-zone threshold;
-- `SAME_AREA`, `NORTH`, `NORTHEAST`, `EAST`, `SOUTHEAST`, `SOUTH`, `SOUTHWEST`, `WEST`, and `NORTHWEST`;
-- opposite-direction symmetry, bounded optional distance bands, and translation-safe labels.
+## New user-approved extension
 
-The Project Zomboid axis convention was verified against decompiled `zombie.iso.IsoDirections`: north `(0,-1)`, east `(1,0)`, south `(0,1)`, west `(-1,0)`. Core has no trader, community, excursion, or semantic-role knowledge.
+The reusable spatial system must also support **observer-relative tactical clock bearings** for immediate local callouts.
 
-## M10G-C — Hoomans authoritative place projection — accepted
+Examples:
 
-Hoomans derives destination presentation on demand from `destinationCommunityID` through the live community registry and current community/site/home coordinates. It does not persist copied destination names or computed directions. Rename and relocation therefore affect later semantic output automatically; missing names or coordinates omit the affected presentation instead of exposing IDs or fabricating direction.
+> "Zombies, eight o'clock!"
 
-## M10G-D — production semantic whereabouts integration — accepted
+> "Hostiles at three o'clock!"
 
-The real semantic path is:
+This is distinct from world-cardinal direction:
 
 ```text
-natural-language question
-  → parser IR
-  → cognition request/live-fact projection
-  → privacy-aware Hoomans role-whereabouts fact
-  → authoritative place projection + Core spatial relation
-  → normal response catalog/realization
+WORLD_CARDINAL
+    used for stable places/world relations
+    "Riverside is northeast of us."
+
+OBSERVER_HEADING
+    used for immediate egocentric/tactical relations
+    "Zombies, eight o'clock!"
 ```
 
-`COMMUNITY_ROLE_WHEREABOUTS` with `role = trader` is the first generic consumer. The production path recognizes “Where is your trader?”, “Where's the trader?”, and “Do you know where the trader went?”, supports grounded destination/direction/ETA, refreshes after rename/relocation, remains read-only, and omits privileged route data for outsiders. Deferred multiplayer fact completion is typed separately from gossip and remains bounded.
+Clock bearing is relative to the observer's **current facing**, not north.
 
-## M10G-E — published-head acceptance — accepted
+## Critical invariants
 
-Final clean published-head gates passed:
+- 12 o'clock = directly ahead.
+- 3 o'clock = right.
+- 6 o'clock = behind.
+- 9 o'clock = left.
+- Twelve equal 30-degree sectors.
+- Clock direction requires a trustworthy observer heading.
+- No heading → no fabricated clock result.
+- Clock bearing is ephemeral; do not persist `8 o'clock` as durable threat knowledge.
+- Current observer facing and current target position determine the live callout.
+- Core does not detect zombies or choose targets.
+- Hoomans perception/combat owns target detection, salience, grouping, freshness, and combat eligibility.
+- Semantic realization decides whether to use tactical clock wording or coarse civilian wording.
+- Abstract/offscreen actors normally do not use clock language without authoritative heading state.
 
-- Project Hoomans full suite: `942/942`.
-- Project Hoomans focused excursion, commercial mobility, semantic whereabouts, persistence, bridge, and loader gates: `14/14`.
-- DynamicTrading full suite: `41/41`.
-- DynamicTrading resident/caravan/market/settlement focused set: `16/16`.
-- PsychopatzCore spatial/composition/core/translation regressions: all passed.
-- PsychopatzCore translation JSON parse and EN/TL key parity: `8` files, `371` keys.
-- Lua parsing: Hoomans `4644` files, DynamicTrading `104` files, Core `457` files.
-- Production Kahlua/static verification: Hoomans `35` changed production Lua files and Core spatial module; no errors.
-- Translation coverage/model/window/custom-manifest tests: all passed.
-- `git diff --check`: clean for all three published snapshots.
+## Existing Hoomans orientation seam
 
-## Ownership and performance invariants
+Hoomans already reads the live materialized body's forward vector through:
 
-- PsychopatzCore owns generic point-to-point spatial mechanics and canonical spatial tokens only.
-- Project Hoomans owns community/place identity, canonical names and coordinates, movement, excursions, privacy-aware whereabouts, and semantic reference-place resolution.
-- Dynamic Trading owns stock, markets, economic exchange, and commercial policy/scoring; it is never movement authority.
-- Semantic/knowledge systems own intent, disclosure, and wording; they never mutate travel.
-- Destination names and directions are derived on demand, not duplicated into excursion persistence.
-- Long-distance travel remains abstract; nearby NPC behavior remains materialized/live.
-- No per-frame global destination solver, all-settlement scan per NPC, full registry scan per route decision, physical full-map pathfinding, unbounded route history, or duplicate public-status persistence was introduced.
+```lua
+zombie:getForwardDirection()
+```
 
-## Remaining user-owned acceptance
+Existing pathing/facing code also has bounded last-facing state.
 
-Native Project Zomboid single-player/multiplayer runtime acceptance is the only remaining gate. No developer-side M0–M10G requirement remains open.
+M10H should extract/reuse one authoritative Hoomans-facing adapter rather than copy this logic into every callout consumer.
+
+## Current phase
+
+**M10H — Observer-Relative Tactical Bearings**
+
+## Next Chunk — M10H-A: Core heading-relative clock relation
+
+Start in PsychopatzCore.
+
+### Required work
+
+1. Read PsychopatzCore root `AGENTS.md`.
+2. Recheck Core local/remote status and worktrees.
+3. Extend the existing published `PsychopatzCore.SpatialRelation` rather than creating a second spatial module.
+4. Add a public generic observer-heading relation API, conceptually:
+   ```lua
+   SpatialRelation.RelativeToHeading(
+       observerPoint,
+       targetPoint,
+       headingVector,
+       options
+   )
+   ```
+5. Normalize valid non-zero heading vectors.
+6. Compute a clockwise relative angle from observer forward to target.
+7. Emit:
+   - `clockHour`;
+   - `clockToken = CLOCK_01 ... CLOCK_12`;
+   - coarse `relativeSector8`;
+   - distance/same-area data.
+8. Preserve the already-verified Project Zomboid world coordinate convention.
+9. Add translation/presentation-safe clock tokens/labels.
+10. Add fail-first tests for:
+    - 12/3/6/9 principal axes;
+    - representative intermediate hours including 8;
+    - all twelve sectors/boundaries;
+    - arbitrary/scaled heading vectors;
+    - observer rotation;
+    - invalid/zero heading;
+    - same-area suppression;
+    - coarse-sector agreement.
+11. Run Core spatial/composition/translation regressions and static checks.
+12. Publish Core before downstream Hoomans depends on the new API.
+
+### M10H-A gate
+
+Published Core provides one dependency-safe O(1) spatial service supporting both world-cardinal and observer-heading relations, with complete deterministic clock geometry tests.
+
+After M10H-A, continue automatically to M10H-B. Do not stop for another `/goal`.
+
+## Remaining mandatory M10H work
+
+### M10H-B — Hoomans live heading authority
+
+- read/reuse actual materialized body `getForwardDirection()`;
+- centralize one Hoomans-facing resolver/adapter;
+- only use cached facing when Hoomans considers it trustworthy/current;
+- no reliable heading → omit clock relation;
+- abstract/offscreen actors do not fabricate heading;
+- preserve unrelated local semantic-scene commits/work.
+
+### M10H-C — tactical target spatial projection
+
+For an already-selected perceived target:
+
+```text
+observer position
++ authoritative observer heading
++ current target position
+→ Core observer-relative relation
+```
+
+Hoomans perception/combat remains authority for:
+
+- perceived zombies/hostiles;
+- target salience;
+- multiple-threat grouping/centroid choice;
+- visibility/freshness;
+- combat/alert eligibility.
+
+Do not add threat scanning to Core.
+
+Do not persist the live clock hour as durable knowledge.
+
+### M10H-D — semantic tactical callouts
+
+Expose reusable facts so production semantic/combat callout realization can support:
+
+> "Zombies, eight o'clock!"
+
+> "Hostiles at three o'clock!"
+
+Clock wording is not universal.
+
+Tactical/guard/military/raider/urgent coordinated contexts may prefer clock-face speech.
+
+Other speakers may consume the same fact as:
+
+> "Zombies behind us, left side!"
+
+The style system decides wording. Core provides no zombie/hostile/personality sentence.
+
+Callout generation is read-only and must not retarget, move, or change combat authority.
+
+### M10H-E — published-head acceptance
+
+From clean published repository heads:
+
+- Core clock-bearing tests pass;
+- Hoomans heading adapter tests pass;
+- Hoomans threat spatial projection tests pass;
+- production semantic/combat callout tests pass;
+- existing M10G trader-place cardinal tests remain green;
+- DynamicTrading full/focused market/mobility tests remain green;
+- Lua/Kahlua/static/translation/diff checks pass.
+
+Record exact published SHAs.
+
+## Ownership
+
+### PsychopatzCore
+
+Owns:
+
+- point/vector validation;
+- world-cardinal relation;
+- heading-relative angle;
+- clock sectors/tokens;
+- coarse egocentric sectors;
+- generic labels/translation keys.
+
+Does not own threat detection, NPC state, combat, or wording.
+
+### Project Hoomans
+
+Owns:
+
+- live NPC facing;
+- perceived threat selection/freshness;
+- target position;
+- tactical spatial fact projection;
+- semantic/combat context.
+
+### Semantic realization
+
+Owns:
+
+- whether clock style is appropriate;
+- "zombie" vs "hostile" vocabulary;
+- urgency/personality/faction phrasing;
+- clock vs coarse-relative wording.
+
+## Stop conditions
+
+Do not return to native-only handoff until M10H-A through M10H-E pass from published heads.
+
+Stop early only for a genuine Git/publication conflict, missing required engine-facing orientation API with no safe fallback, authorization boundary, or an unspecified product decision that prevents safe implementation.
+
+Native SP/MP becomes the sole remaining user-owned gate again **only after M10H is accepted**.

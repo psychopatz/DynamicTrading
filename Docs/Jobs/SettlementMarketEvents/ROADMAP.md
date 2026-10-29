@@ -524,7 +524,135 @@ At minimum:
 
 The published repository graph reproduces the accepted developer behavior. Only then may native SP/MP be the sole remaining user-owned acceptance gate.
 
-Only after M9E and M10A–M10G are accepted may native SP/MP be the sole remaining user-owned acceptance gate.
+M10G is accepted and remains the published foundation.
+
+### M10H — Observer-Relative Tactical Bearings
+
+M10H extends the accepted Core spatial relation service with a second explicit reference frame for immediate local/tactical speech.
+
+Read the observer-relative sections of `SPATIAL_LANGUAGE.md` before implementation.
+
+#### M10H-A — Core heading-relative clock relation
+
+Extend `PsychopatzCore.SpatialRelation` with a generic public observer-heading relation API.
+
+Required behavior:
+
+- caller supplies observer point, target point, and a world-space forward/heading vector;
+- normalize valid non-zero heading vectors;
+- compute target angle relative to forward;
+- 12 o'clock = forward;
+- 3 o'clock = right;
+- 6 o'clock = behind;
+- 9 o'clock = left;
+- expose all 12 deterministic 30-degree clock sectors;
+- expose canonical tokens `CLOCK_01` … `CLOCK_12`;
+- expose a coarse egocentric sector such as `AHEAD`, `FRONT_RIGHT`, `RIGHT`, `REAR_RIGHT`, `BEHIND`, `REAR_LEFT`, `LEFT`, `FRONT_LEFT`;
+- preserve distance/same-area information;
+- zero/invalid heading fails safely;
+- same-area targets do not emit misleading tactical bearings;
+- no Hoomans/zombie/combat dependency in Core.
+
+Add translation/presentation-safe clock labels without scattering hard-coded strings through consumers.
+
+#### Gate
+
+Core tests prove all principal clock axes, representative intermediate hours including `CLOCK_08`, deterministic boundaries, arbitrary/scaled heading vectors, observer rotation, invalid heading safety, same-area behavior, and O(1) operation.
+
+#### M10H-B — Hoomans authoritative live heading adapter
+
+Expose/reuse one Hoomans-owned way to obtain a trustworthy live actor forward vector.
+
+Requirements:
+
+- prefer the materialized body's engine `getForwardDirection()`;
+- reuse existing Hoomans pathing/facing state only when considered current/trustworthy;
+- do not duplicate facing extraction in individual semantic/combat callout modules;
+- no trustworthy heading means no clock bearing;
+- abstract/offscreen actors normally omit clock bearing unless an explicit authoritative heading exists.
+
+#### Gate
+
+Hoomans tests prove live forward-vector extraction, invalid/missing fallback behavior, and that no fabricated clock hour is produced for an actor without reliable orientation.
+
+#### M10H-C — Tactical threat spatial projection
+
+Add/reuse a generic Hoomans tactical spatial projection for an already-selected perceived target.
+
+Hoomans perception/combat remains responsible for:
+
+- which zombie/hostile/object is perceived;
+- salience/target selection;
+- grouping/centroid policy for multiple threats;
+- freshness of perception;
+- combat/alert eligibility.
+
+The spatial projection consumes only:
+
+```text
+observer position
+observer heading
+selected target position
+```
+
+and produces canonical clock/coarse-relative spatial facts through Core.
+
+Clock bearing is ephemeral: derive it from current observer/target state at callout time. Do not persist `8 o'clock` as durable knowledge when observer/target motion can invalidate it.
+
+#### Gate
+
+A live observer seeing a target at the appropriate geometry receives `CLOCK_08`/rear-left facts; rotating the observer or moving the target updates the result without rewriting persisted knowledge.
+
+#### M10H-D — Semantic tactical-callout realization
+
+Wire the relative facts into the existing semantic/conversation/combat-callout surface as reusable presentation data.
+
+The system must support grounded realization equivalent to:
+
+> "Zombies, eight o'clock!"
+
+or:
+
+> "Hostiles at three o'clock!"
+
+without hard-coding one universal sentence.
+
+Clock-face speech is a style choice, not universal NPC speech. Tactical/military/guard/raider or urgent coordinated contexts may prefer clock wording; other speakers may use coarse observer-relative wording such as:
+
+> "Zombies behind us, left side!"
+
+Do not make Core responsible for combat vocabulary, personality, traits, or sentence selection.
+
+#### Gate
+
+Production semantic/callout tests prove a current perceived zombie/hostile can be described with the correct clock hour for an eligible tactical speaker, while a non-tactical style can consume the same fact using coarse relative wording. The query/callout remains read-only with respect to movement/combat target state.
+
+#### M10H-E — Published-head acceptance
+
+Publish Core before downstream Hoomans depends on the new API.
+
+Then validate clean published snapshots of required repos:
+
+- Core clock-bearing tests;
+- Hoomans heading/tactical spatial tests;
+- semantic/combat callout tests;
+- existing M10G trader whereabouts/cardinal tests remain green;
+- DynamicTrading market/mobility regressions remain green;
+- Lua/Kahlua/static/translation/diff checks pass.
+
+#### Gate
+
+Published heads reproduce both spatial reference frames:
+
+```text
+WORLD_CARDINAL
+    → settlement/place direction
+
+OBSERVER_HEADING
+    → tactical clock/coarse-relative direction
+```
+
+Only after M10H is accepted may native SP/MP again be the sole remaining user-owned acceptance gate.
 
 ## Optional later extensions — not part of completion
 

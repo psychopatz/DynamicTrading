@@ -380,20 +380,287 @@ If ETA is known, the context may support:
 
 The exact sentence is not an acceptance requirement. Grounded fact availability and correct privacy are.
 
+## Observer-relative clock bearings
+
+World-cardinal direction and clock direction are different reference frames and must remain explicit.
+
+### World-relative
+
+Used for stable place/world statements:
+
+```text
+NORTH
+NORTHEAST
+EAST
+...
+```
+
+Example:
+
+> "Riverside Collective is northeast of us."
+
+### Observer-relative
+
+Used for immediate local/tactical statements relative to an observer's facing:
+
+```text
+12 o'clock = directly ahead
+3 o'clock  = right
+6 o'clock  = behind
+9 o'clock  = left
+```
+
+Example:
+
+> "Zombies, eight o'clock!"
+
+Do not convert world cardinal bearing directly into a clock hour without an observer heading.
+
+## Core clock-bearing API
+
+Extend the generic Core spatial service with a dependency-safe observer-relative helper.
+
+Conceptually:
+
+```lua
+PsychopatzCore.SpatialRelation.RelativeToHeading(
+    fromPoint,
+    toPoint,
+    heading,
+    options
+)
+```
+
+or an equivalent public API that reuses `Between(...)`.
+
+Input heading is a normalized or normalizable world-space vector:
+
+```lua
+heading = { x = ..., y = ... }
+```
+
+Output should remain canonical data:
+
+```lua
+{
+    relativeAngleDegrees = ...,
+
+    clockHour = 8,
+    clockToken = "CLOCK_08",
+
+    relativeSector8 = "REAR_LEFT",
+
+    distance = ...,
+    sameArea = false,
+}
+```
+
+Core must not fetch an NPC body or know what a zombie/hostile is. The caller supplies origin, target, and heading.
+
+## Clock convention
+
+Freeze this convention in tests:
+
+```text
+              12
+
+        11          1
+     10                2
+
+  9                      3
+
+      8                4
+         7          5
+
+               6
+```
+
+Semantics:
+
+- `12` = forward;
+- `3` = right;
+- `6` = behind;
+- `9` = left;
+- hours increase clockwise from the observer's forward vector.
+
+Use twelve equal 30-degree sectors, centered on each clock hour.
+
+Boundary behavior must be deterministic and tested.
+
+## Coarse observer-relative sectors
+
+The same calculation should expose a reusable coarse token so non-tactical speakers do not need clock-face language:
+
+```text
+AHEAD
+FRONT_RIGHT
+RIGHT
+REAR_RIGHT
+BEHIND
+REAR_LEFT
+LEFT
+FRONT_LEFT
+```
+
+This allows the same spatial truth to realize as either:
+
+> "Zombies, eight o'clock!"
+
+or:
+
+> "Zombies behind us, to the left!"
+
+without changing perception/math.
+
+## Heading authority
+
+PsychopatzCore accepts a heading vector but does not decide where it comes from.
+
+Project Hoomans owns live NPC orientation.
+
+For materialized Hoomans, prefer the actual engine forward vector exposed by the live body (`getForwardDirection()`) or a single Hoomans-owned reusable facing resolver that wraps it.
+
+A cached facing direction may be used only when Hoomans considers it sufficiently authoritative/current.
+
+If no trustworthy observer heading exists:
+
+- do not fabricate a clock hour;
+- omit clock-relative data;
+- fall back to world-cardinal facts when appropriate.
+
+For abstract/offscreen NPCs, clock language is normally unavailable unless an authoritative heading is explicitly part of that simulation state.
+
+## Ephemeral clock truth
+
+Do **not** persist a clock hour as durable target knowledge.
+
+Persist/retain the authoritative target identity/position/fact.
+
+Derive clock bearing at detection/utterance time from:
+
+```text
+current observer position
++ current observer heading
++ current target position
+```
+
+because:
+
+- the observer may turn;
+- the target may move;
+- an old "8 o'clock" fact becomes false quickly.
+
+A historical perception event may record a snapshot bearing for diagnostics, but live semantic realization must not treat that snapshot as a current tactical direction.
+
+## Threat / perception consumer boundary
+
+Core does not scan zombies, choose enemies, group threats, or select a callout target.
+
+Project Hoomans perception/combat/awareness owns:
+
+- which zombies/hostiles are currently perceived;
+- target salience;
+- whether several threats should be represented by one salient target or a cluster/centroid;
+- whether the observation is current enough to speak;
+- whether the caller is in a combat/alert context.
+
+The spatial service only converts the chosen observer/target geometry into reusable relation data.
+
+## Tactical semantic realization
+
+Clock-face language should be a **presentation style**, not universal NPC speech.
+
+The semantic layer may prefer tactical-clock wording when context/speaker style supports it, for example:
+
+- guards;
+- military-trained/archetyped NPCs;
+- raiders/enforcers;
+- urgent coordinated combat callouts;
+- future tactical traits or faction speech policy.
+
+Other NPCs can use coarse observer-relative or cardinal wording.
+
+Example canonical fact:
+
+```text
+threatType = zombie
+relativeSector8 = REAR_LEFT
+clockHour = 8
+distanceBand = NEAR
+```
+
+Possible realization:
+
+> "Zombies, eight o'clock!"
+
+Alternative:
+
+> "Zombies behind us, left side!"
+
+The Core module provides no combat sentence.
+
+## Clock localization
+
+Expose canonical tokens such as:
+
+```text
+CLOCK_01
+CLOCK_02
+...
+CLOCK_12
+```
+
+Presentation/translation may realize these as:
+
+```text
+1 o'clock
+2 o'clock
+...
+12 o'clock
+```
+
+or language-specific equivalents.
+
+Do not scatter hard-coded English clock strings across Hoomans combat/semantic modules.
+
+## Clock-bearing acceptance
+
+Core tests must prove at minimum:
+
+- forward target → `CLOCK_12`;
+- right target → `CLOCK_03`;
+- behind target → `CLOCK_06`;
+- left target → `CLOCK_09`;
+- representative intermediate hours including `CLOCK_08`;
+- deterministic 30-degree boundaries;
+- heading vectors need not be cardinal;
+- scaling a heading vector does not change the result;
+- zero/invalid heading fails safely;
+- same-area target does not emit a misleading tactical bearing;
+- rotating the observer while target stays fixed changes the clock hour correctly.
+
+Hoomans integration tests should prove:
+
+- live body forward direction is the observer heading source;
+- no trustworthy heading means no fabricated clock data;
+- current threat position is used;
+- semantic query/callout remains read-only with respect to target/movement state.
+
 ## Reuse targets
 
-The Core spatial service must remain generic enough for later consumers such as:
+The Core spatial service must remain generic enough for consumers such as:
 
 - "The raiders were west of town."
 - "There's another settlement southeast of us."
 - "The horde is approaching from the southwest."
 - "Your base is east of here."
+- "Zombies, eight o'clock!"
+- "Hostiles at three o'clock!"
 - radio/world-knowledge reports;
 - quest/objective hints;
+- combat/perception callouts;
 - debug tooling;
 - map annotations.
-
-Do not add those consumers during M10G unless a tiny fixture is required to prove genericity.
 
 ## Performance
 

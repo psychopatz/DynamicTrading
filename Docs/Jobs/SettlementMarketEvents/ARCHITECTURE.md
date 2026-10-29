@@ -790,7 +790,36 @@ Parent completion requires the actual semantic/NLU/fact-provider/realization pip
 
 Movement/excursion services expose facts only. They do not author one fixed trader sentence.
 
-### 18.7 Publication invariant
+### 18.7 Observer-relative tactical bearings
+
+Core spatial relations support two explicit reference frames:
+
+```text
+WORLD
+    → cardinal / intercardinal direction
+
+OBSERVER_HEADING
+    → clock bearing + coarse egocentric sector
+```
+
+Clock bearing is relative to a supplied forward vector:
+
+- 12 = ahead;
+- 3 = right;
+- 6 = behind;
+- 9 = left.
+
+Project Hoomans owns the authoritative live observer heading. Core owns only the vector math/tokens.
+
+Clock bearings are ephemeral presentation facts. Do not persist "8 o'clock" as durable knowledge when the observer or target may move. Recompute from current observer position/facing and current target position at the time of an immediate callout.
+
+When no trustworthy facing exists, omit clock bearing rather than inventing it. World-cardinal direction may still be used where meaningful.
+
+Threat selection/grouping remains Hoomans perception/combat authority. Core never scans or chooses zombies/hostiles.
+
+Semantic realization may select tactical clock language for appropriate speakers/contexts while other speakers use coarse relative phrases such as "behind us, left side."
+
+### 18.8 Publication invariant
 
 A local combined checkout is insufficient if pushed DynamicTrading depends on unpushed Hoomans/Core code.
 

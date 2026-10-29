@@ -280,4 +280,73 @@ PsychopatzCore has generic world/actor/location infrastructure and isolated dire
 
 M10G therefore adds a reusable Core spatial relation/language foundation per `SPATIAL_LANGUAGE.md`, then makes Hoomans the first consumer.
 
-The parent goal remains developer-active for **M10G Publication + Semantic Spatial Integration Closure**.
+The parent goal remained developer-active for **M10G Publication + Semantic Spatial Integration Closure** at that audit point.
+
+## Post-M10G tactical spatial extension audit
+
+Current accepted/published foundation:
+
+- PsychopatzCore now provides `PsychopatzCore.SpatialRelation.Between(...)`;
+- the PZ axis convention is frozen in Core: +X east, +Y south;
+- Core already provides world-cardinal direction, distance, SAME_AREA, optional distance bands, and translation-safe labels;
+- Project Hoomans production semantics already consumes world-cardinal place facts for trader whereabouts;
+- Hoomans live bodies expose actual forward orientation through `getForwardDirection()`, and existing pathing/facing code already reads this vector with bounded last-facing fallback.
+
+The user-approved new capability is observer-relative tactical direction suitable for immediate callouts such as:
+
+> "Zombies, eight o'clock!"
+
+or:
+
+> "Hostiles at three o'clock!"
+
+This is a **second reference frame**, not a replacement for world-cardinal direction.
+
+### Why this belongs in Core
+
+The math is generic:
+
+```text
+observer position
++ target position
++ observer forward vector
+→ relative angle
+→ clock hour / coarse egocentric sector
+```
+
+Core must remain unaware of zombies, hostiles, NPC traits, dialogue, or combat.
+
+### Why live facing belongs to Hoomans
+
+Clock position is meaningful only relative to an observer heading.
+
+Hoomans already owns materialized NPC bodies and their engine forward vector. It should expose/reuse one authoritative facing adapter rather than duplicate `getForwardDirection()` extraction in each semantic/combat consumer.
+
+### Clock bearings are ephemeral
+
+Do not store `8 o'clock` as durable knowledge.
+
+The observer can turn and the target can move. Persist/retain target identity/location/fact as appropriate, then recompute the clock relation at callout time from current geometry.
+
+For abstract/offscreen actors with no trustworthy heading, omit clock bearing rather than invent it.
+
+### Threat selection remains outside Core
+
+Hoomans perception/combat/awareness continues to decide:
+
+- which zombie/hostile is perceived;
+- current visibility/freshness;
+- salient target or cluster;
+- combat/alert context.
+
+Core only converts chosen geometry into reusable spatial tokens.
+
+### Semantic style remains downstream
+
+Clock language should be available to tactical/military/guard/raider or urgent coordinated speech, while ordinary NPCs may prefer coarse egocentric wording such as:
+
+> "Zombies behind us, left side!"
+
+The same canonical relation supports both.
+
+Therefore the parent goal is reopened for bounded **M10H Observer-Relative Tactical Bearings**. M0–M10G remain accepted and must not be reworked without evidence of regression.

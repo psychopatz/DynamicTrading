@@ -476,11 +476,74 @@ After all required publication:
 - no missing-module failure is acceptable;
 - report exact published SHAs.
 
+### M10H observer-relative tactical-bearing acceptance
+
+#### Core clock geometry
+
+Prove:
+
+- forward target → `CLOCK_12`;
+- right target → `CLOCK_03`;
+- behind target → `CLOCK_06`;
+- left target → `CLOCK_09`;
+- representative intermediate hours including `CLOCK_08`;
+- all twelve 30-degree sectors are deterministic;
+- arbitrary non-cardinal heading vectors work;
+- scaled heading vectors produce identical results;
+- rotating observer changes clock hour correctly for a fixed target;
+- zero/invalid heading fails safely;
+- same-area target produces no misleading clock bearing;
+- coarse egocentric sector agrees with the clock result;
+- translation/presentation labels are reusable and not hard-coded in Hoomans consumers.
+
+#### Hoomans heading authority
+
+Prove:
+
+- a materialized NPC's live `getForwardDirection()` is usable through one Hoomans-owned reusable adapter;
+- fallback/cached facing is used only when explicitly considered trustworthy;
+- missing/unreliable facing yields no clock bearing;
+- abstract/offscreen NPCs do not fabricate tactical clock directions;
+- no individual combat/semantic module reimplements facing-vector extraction.
+
+#### Threat projection
+
+Using an already-selected perceived target:
+
+- current observer position/facing + current target position produce the clock relation;
+- a target at the rear-left fixture produces `CLOCK_08`;
+- moving the target changes the callout relation;
+- turning the observer changes the callout relation;
+- the clock value is not persisted as durable threat knowledge;
+- target identity/selection remains Hoomans perception/combat authority.
+
+#### Semantic/callout realization
+
+At minimum prove:
+
+- tactical/guard/military-style context can realize grounded output equivalent to "Zombies, eight o'clock!";
+- hostile-human fixture can realize equivalent "Hostiles at three o'clock!";
+- non-tactical style can consume the same fact as coarse observer-relative language such as "behind us, left side";
+- Core has no zombie/hostile/personality wording;
+- callout generation cannot mutate target selection, movement, or combat state;
+- stale/no-longer-visible target does not receive a falsely current clock callout.
+
+#### Published-head acceptance
+
+From clean published heads:
+
+- Core clock tests pass;
+- Hoomans heading/threat projection tests pass;
+- semantic/combat callout tests pass;
+- existing M10G cardinal trader-whereabouts tests remain green;
+- DynamicTrading market/mobility suites remain green;
+- Lua/Kahlua/static/translation/diff checks remain clean.
+
 ### M10 final gate
 
-M10 is accepted only when M10A–M10G pass: both trader flagship lifecycles work through production entrypoints, generic Hoomans visit/excursion contracts remain independent of DT, reusable Core spatial relation is verified, the production semantic pipeline can answer grounded trader whereabouts with settlement name/direction under correct privacy, all previous market/event regressions remain green, and the published repository graph reproduces the accepted implementation.
+M10 is accepted only when M10A–M10H pass: both trader flagship lifecycles work through production entrypoints, generic Hoomans visit/excursion contracts remain independent of DT, reusable Core world-cardinal and observer-relative clock spatial relations are verified, the production semantic pipeline can answer grounded trader whereabouts and tactical threat callouts under correct privacy/context, all previous market/event regressions remain green, and the published repository graph reproduces the accepted implementation.
 
-Only after M9E + M10A–M10G may native SP/MP be the sole remaining user-owned gate.
+Only after M9E + M10A–M10H may native SP/MP be the sole remaining user-owned gate.
 
 ## Native acceptance
 
@@ -498,6 +561,9 @@ When normal Project Zomboid SP/MP is authorized/available:
 - faction/community membership remains correct for both trader types;
 - local semantic status truthfully reflects home/preparing/away/returning phases;
 - an informed local can answer trader whereabouts with the actual destination settlement name and correct relative direction when those facts are known;
-- outsider/privacy cases do not leak destination name, direction, or ETA.
+- outsider/privacy cases do not leak destination name, direction, or ETA;
+- a live tactical NPC with a current perceived threat can produce the correct observer-relative clock callout;
+- turning the observer or moving the threat updates the clock direction;
+- missing facing data suppresses clock phrasing rather than fabricating it.
 
 If native testing is user-owned, Luna must finish every developer-side gate first and leave only the explicit native evidence pending.

@@ -25,7 +25,7 @@ The target system must make:
 - long-distance trader travel stays abstract while nearby/materialized Hoomans behavior remains live;
 - generic excursion/public-status hooks expose authoritative social facts such as "the trader is away on a trading run" without coupling semantics to DT movement internals;
 - a production semantic question such as "Where is your trader?" can resolve the authoritative destination settlement name, relative direction, and ETA when the speaker is allowed to know them;
-- PsychopatzCore provides one reusable coordinate-to-spatial-relation/language foundation rather than trader-specific compass math.
+- PsychopatzCore provides one reusable spatial-relation/language foundation for both world-cardinal place directions and observer-relative clock bearings, rather than trader/combat-specific direction math.
 
 ## Core gameplay principle
 
