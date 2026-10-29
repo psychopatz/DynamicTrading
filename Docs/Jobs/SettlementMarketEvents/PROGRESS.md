@@ -449,11 +449,82 @@ After M9A, continue automatically to M9B recovery runtime, M9C grounded producti
   added. Changed Lua passed `luac -p`, PZ Verify Kahlua error scanning, and
   `git diff --check`.
 
-## Current next chunk — M9C Grounded production event producer
+## M9C — accepted grounded production event producer
 
-Add one bounded, hysteresis/cooldown-gated producer that reads underlying
-persisted market pressure and registers the generic proof event through normal
-production runtime. Continue automatically to M9D after its focused gate.
+M9C adds one bounded production producer at the authoritative settlement-visit
+runtime seam:
+
+- `DTCommon.MarketEventProducer` reads only persisted settlement `Food`
+  pressure, never event-modified effective pressure;
+- shortage and agricultural-surplus entry/clear thresholds use hysteresis;
+- one stable producer event identity per settlement preserves duration and
+  cooldown state through the existing event envelope without a second state
+  store;
+- the producer uses the existing data-only definitions and generic
+  `DTCommon.MarketEvents.Register` API; the registry has no named-event branch;
+- production evaluation is bounded to a completed visit, never a per-frame,
+  all-market, all-trader, or item-registry loop;
+- event start changes quote/availability and presentation context only; it
+  does not rewrite exact merchant inventory.
+
+### M9C evidence
+
+- `python3 tests/run_tests.py`: `PASS 37/37`, including the focused
+  `dt_m9c_event_producer_runtime_smoke` and the M9D flagship smoke.
+- The M9C smoke drives `TraderService.MarkSettlementVisit`, mutates raw market
+  pressure through the normal market mutation API, verifies a shortage event,
+  quote/availability and shared presentation reaction, exact stock stability,
+  sustained-condition idempotence, clear behavior, and persisted cooldown
+  re-entry. The test body never calls `MarketEvents.Register`.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- Changed production Lua passed `luac -p` and PZ Verify Kahlua error scans;
+  the test-only `package.preload` findings are harness loader mechanics. Lua
+  diff checks passed.
+
+## M9D — accepted no-fixture gameplay lifecycle
+
+The flagship `dt_m9d_no_fixture_lifecycle_smoke` begins with an active Hoomans
+community/faction and bound mobile trader but no DT market or event. It drives
+the real `PNC.MobileSettlementVisitService.OnSettlementArrival` entrypoint and
+proves:
+
+- automatic canonical `community.id` market provisioning and farm profile
+  resolution;
+- one bounded exchange with persistent unrelated stock and replay-safe visit
+  identity;
+- later Hoomans arrival driving lazy pressure recovery toward the profile
+  baseline;
+- natural event expiry, a later raw-pressure shortage, immediate quote and
+  presentation reaction, and no event-start inventory mutation;
+- WorldKnowledge publication and physical Radio presentation of the same
+  bounded event summary;
+- fresh DT persistence readers preserving market profile, event timing/type,
+  and exact stock state.
+
+The flagship body does not call `SettlementMarket.GetOrCreate`,
+`SettlementExchange.Execute`, `SettlementMarket.Recover`,
+`MarketEvents.Register`, `DTHoomans.Settlement.StartTraderTravel`, or the
+private DT arrival handler.
+
+### M9D evidence
+
+- `python3 tests/run_tests.py`: `PASS 37/37`.
+- M9D starts with zero target market/event records and uses only the real
+  Hoomans public arrival lifecycle for provisioning, exchange, recovery, event
+  production, expiry, and replay idempotence.
+- The DT/Hoomans bridge remains `83 checks, 0 failures`.
+- Project Hoomans affected regressions passed: mobile settlement admission,
+  abstract-world phase 2, and composition bootstrap (`1/1` each). Its existing
+  unrelated semantic-combat worktree changes were preserved.
+- Production DT Lua passed `luac -p`, PZ Verify Kahlua error scans, and
+  `git diff --check`; no new per-frame/all-trader/all-item loop was added.
+
+## M9 developer gate status
+
+M9A, M9B, M9C, and M9D developer-side implementation and deterministic
+acceptance gates are complete. Native Project Zomboid SP/MP driving remains the
+sole user-owned acceptance step, as authorized by the runbook.
 
 ## Known constraints
 

@@ -836,6 +836,15 @@ function Service.MarkSettlementVisit(traderID, options)
     end
     Storage.Touch()
     Storage.Transmit()
+    local producer = DTCommon and DTCommon.MarketEventProducer
+    if producer and type(producer.Evaluate) == "function"
+        and (options and (options.settlementID or options.communityID))
+    then
+        -- Event production is downstream of the completed visit. A producer
+        -- failure must not roll back a valid stock/market transaction.
+        pcall(producer.Evaluate,
+            options.settlementID or options.communityID, options)
+    end
     return {
         traderID = traderID,
         actorID = policy.actorID,
