@@ -358,6 +358,15 @@ global
 
 Events must not loop over all traders and rewrite stock when created.
 
+The current registry persists events in a separate bounded event envelope. A
+server registration/removal advances the store revision; quote resolution
+derives an additional deterministic context revision from the current scope,
+active event IDs, and time window. This means an event can invalidate a quote
+when it starts or expires without a per-frame loop or a write to every trader.
+Matching global, region, faction, and settlement records aggregate generic
+category modifiers into a bounded effective context. No event type or event ID
+is special-cased by the market or quote code.
+
 Event start:
 
 ```text

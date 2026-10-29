@@ -85,6 +85,8 @@ local function copyEventModifiers(value)
                     marketTag = marketTag,
                     supplyDelta = clamp(source.supplyDelta, -1, 1, 0),
                     demandDelta = clamp(source.demandDelta, -1, 1, 0),
+                    availabilityMultiplier = clamp(
+                        source.availabilityMultiplier, 0, 4, 1),
                     priceMultiplier = clamp(source.priceMultiplier, 0,
                         Pricing.MAX_EVENT_PRICE_MULTIPLIER, 1),
                     eventID = text(source.eventID or source.id, 192),
@@ -121,6 +123,8 @@ local function resolveEventContext(settlementID, record, options)
     return {
         revision = math.max(0, integer(result.revision, 0)),
         modifiers = copyEventModifiers(result.modifiers),
+        activeEventIDs = result.activeEventIDs,
+        activeEventCount = math.max(0, integer(result.activeEventCount, 0)),
         unavailable = result.unavailable == true,
         reason = result.reason,
     }
@@ -151,8 +155,10 @@ local function neutralItemContext(fullType, context, reason)
         effectiveDemand = nil,
         marketPressure = 0,
         marketModifier = 0,
+        availabilityMultiplier = 1,
         eventPriceMultiplier = 1,
         eventCount = 0,
+        activeEventCount = context and context.activeEventCount or 0,
         reason = reason or "market_context_unavailable",
     }
 end
@@ -201,15 +207,19 @@ function Pricing.BuildContext(record, player, options)
     else
         context.marketReason = "settlement_unresolved"
     end
-    if settlementID then
-        eventContext = resolveEventContext(settlementID, record, options)
-        if eventContext then
-            context.eventRevision = eventContext.revision
-            context.eventModifiers = eventContext.modifiers
-            context.eventReason = eventContext.reason
-            context.eventsUnavailable = eventContext.unavailable == true
-        end
+    eventContext = resolveEventContext(settlementID, record, options)
+    if eventContext then
+        context.eventRevision = eventContext.revision
+        context.eventModifiers = eventContext.modifiers
+        context.activeEventIDs = eventContext.activeEventIDs or {}
+        context.activeEventCount = eventContext.activeEventCount or 0
+        context.eventReason = eventContext.reason
+        context.eventsUnavailable = eventContext.unavailable == true
     end
+    -- These are server-only references used by IsCurrent; they never cross
+    -- the snapshot or quote wire projection.
+    context.eventRecord = record
+    context.eventOptions = options
     context.quoteContextRevision = Pricing.ContextRevision(context)
     return context
 end
@@ -235,12 +245,13 @@ function Pricing.IsCurrent(context)
         end
     end
     local events = eventAPI()
-    if context.settlementID and context.eventRevision ~= nil
+    if context.eventRevision ~= nil
         and events and type(events.GetRevision) == "function"
     then
         local ok
         local revision
-        ok, revision = pcall(events.GetRevision, context.settlementID)
+        ok, revision = pcall(events.GetRevision, context.settlementID,
+            context.eventRecord, context.eventOptions)
         if not ok or integer(revision, -1)
             ~= integer(context.eventRevision, -2)
         then
@@ -260,6 +271,7 @@ function Pricing.GetItemContext(fullType, context)
     local supply
     local demand
     local eventPriceMultiplier = 1
+    local availabilityMultiplier = 1
     local eventCount = 0
     local pressure
     local marketModifier
@@ -284,11 +296,10 @@ function Pricing.GetItemContext(fullType, context)
         return neutralItemContext(key, context, "market_category_unavailable")
     end
     base = context.categories and context.categories[category] or nil
-    if type(base) ~= "table" then
-        return neutralItemContext(key, context, "market_category_untracked")
-    end
-    baseSupply = clamp(base.supply, 0, 1, 0.5)
-    baseDemand = clamp(base.demand, 0, 1, 0.5)
+    baseSupply = type(base) == "table"
+        and clamp(base.supply, 0, 1, 0.5) or 0.5
+    baseDemand = type(base) == "table"
+        and clamp(base.demand, 0, 1, 0.5) or 0.5
     supply = baseSupply
     demand = baseDemand
     modifiers = context.eventModifiers or {}
@@ -301,6 +312,9 @@ function Pricing.GetItemContext(fullType, context)
                 0, 1, supply)
             demand = clamp(demand + clamp(modifier.demandDelta, -1, 1, 0),
                 0, 1, demand)
+            availabilityMultiplier = clamp(availabilityMultiplier
+                * clamp(modifier.availabilityMultiplier, 0, 4, 1),
+                0, 4, 1)
             eventPriceMultiplier = clamp(eventPriceMultiplier
                 * clamp(modifier.priceMultiplier, 0,
                     Pricing.MAX_EVENT_PRICE_MULTIPLIER, 1),
@@ -317,17 +331,21 @@ function Pricing.GetItemContext(fullType, context)
         marketRevision = context.marketRevision,
         eventRevision = context.eventRevision,
         category = category,
-        marketApplied = context.marketAvailable == true,
+        marketApplied = context.marketAvailable == true
+            and type(base) == "table",
         marketSupply = baseSupply,
         marketDemand = baseDemand,
         effectiveSupply = supply,
         effectiveDemand = demand,
         marketPressure = pressure,
         marketModifier = marketModifier,
+        availabilityMultiplier = availabilityMultiplier,
         eventPriceMultiplier = eventPriceMultiplier,
         eventCount = eventCount,
-        reason = context.marketAvailable == true and nil
-            or (context.marketReason or "market_context_unavailable"),
+        activeEventCount = context.activeEventCount or 0,
+        reason = type(base) == "table" and context.marketAvailable == true
+            and nil or (context.marketReason
+                or "market_category_untracked"),
     }
 end
 

@@ -6,7 +6,9 @@ DTCommon.Storage = Storage
 local Inventory = require "PsychopatzCore/Inventory/PsychopatzInventory"
 local fallbackData
 local fallbackMarketData
+local fallbackEventData
 local marketDataReference
+local eventDataReference
 
 local function marketSchema()
     return DTCommon.MarketSchema
@@ -116,6 +118,67 @@ function Storage.SaveMarketData()
     return true
 end
 
+local function normalizeEventData(data)
+    local schema = marketSchema()
+    local normalized
+    local reason
+    if data == eventDataReference then return data end
+    if not schema or type(schema.NormalizeEventStore) ~= "function" then
+        return nil, "event_schema_unavailable"
+    end
+    normalized, reason = schema.NormalizeEventStore(data)
+    if not normalized then return nil, reason end
+    for key, _ in pairs(data) do
+        if key ~= "schemaVersion" and key ~= "revision"
+            and key ~= "events"
+        then
+            data[key] = nil
+        end
+    end
+    data.schemaVersion = normalized.schemaVersion
+    data.revision = normalized.revision
+    data.events = normalized.events
+    eventDataReference = data
+    return data
+end
+
+function Storage.GetEventData()
+    local data
+    if ModData and type(ModData.getOrCreate) == "function" then
+        data = ModData.getOrCreate(
+            DTCommon.EVENT_MODDATA_KEY or "DTCommon.MarketEvents")
+    else
+        fallbackEventData = fallbackEventData or {}
+        data = fallbackEventData
+    end
+    return normalizeEventData(data)
+end
+
+function Storage.TouchEvent()
+    local data, reason = Storage.GetEventData()
+    local revision
+    if not data then return nil, reason end
+    revision = math.max(0, math.floor(tonumber(data.revision) or 0))
+    data.revision = math.min(2147483647, revision + 1)
+    return data.revision
+end
+
+function Storage.TransmitEvent()
+    if not authority() then return false end
+    if ModData and type(ModData.transmit) == "function" then
+        ModData.transmit(
+            DTCommon.EVENT_MODDATA_KEY or "DTCommon.MarketEvents")
+    end
+    return true
+end
+
+function Storage.SaveEventData()
+    local revision, reason = Storage.TouchEvent()
+    if not revision then return false, reason end
+    Storage.TransmitEvent()
+    return true
+end
+
 -- Trader stock is persisted through PsychopatzCore's compact virtual-inventory
 -- envelope. ModData contains dense numeric item records instead of repeated
 -- full type strings, definitions, or live Java-backed inventory objects.
@@ -146,9 +209,11 @@ end
 function Storage.Initialize()
     local data = Storage.GetData()
     Storage.GetMarketData()
+    Storage.GetEventData()
     if authority() then
         Storage.Transmit()
         Storage.TransmitMarket()
+        Storage.TransmitEvent()
     end
     return data
 end

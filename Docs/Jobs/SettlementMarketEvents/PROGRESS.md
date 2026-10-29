@@ -2,7 +2,7 @@
 
 ## Parent status
 
-**IN PROGRESS — M3 accepted; M4 is next.**
+**IN PROGRESS — M4 accepted; M5 is next.**
 
 The complete M0–M8 roadmap remains the parent completion boundary. Finishing
 one chunk or phase does not complete the parent objective.
@@ -150,7 +150,7 @@ M1B added data-driven profile baselines and the bounded market mutation path:
 
 ## Current phase
 
-**M3 — Market-aware pricing**
+**M4 — Generic market events**
 
 ## M2A — accepted bounded settlement exchange
 
@@ -236,20 +236,46 @@ MarketSense boundary:
   changed production and test Lua files.
 - `git diff --check` passed.
 
-## Next Chunk — M4
+## M4 — accepted generic market event registry
 
-Implement the generic typed event registry and effective-context resolver:
+M4 adds the generic event persistence and effective-context resolver:
 
-1. Persist versioned events with global, region, faction, and settlement
-   scopes and bounded start/end expiry.
-2. Resolve active generic category modifiers into the M3 pricing context with
-   revision invalidation and no event-specific quote branches.
-3. Prove event price/availability response without event-start stock mutation.
+- `DTCommon.Storage` persists a separate versioned `DTCommon.MarketEvents`
+  envelope, leaving trader stock and settlement market envelopes independent;
+- `DTCommon.MarketEvents` supports server-authoritative register, replace,
+  list, remove, diagnostics, and deterministic active-context resolution for
+  global, region, faction, and settlement scopes;
+- start/end windows are deterministic and end-exclusive; matching category
+  modifiers aggregate into bounded supply, demand, availability, and price
+  factors without event-specific branches;
+- event store writes and active-set/time-window changes produce context
+  revisions consumed by the M3 quote invalidation seam;
+- event registration/removal only changes event state: it does not loop over
+  traders, rewrite stock, or create magical inventory.
 
-## Remaining gap after M3
+## M4 evidence
 
-Generic scoped event persistence/activation, market-aware availability,
-grounded presentation, and the later roadmap phases remain incomplete.
+- `python3 tests/run_tests.py`: `PASS 30/30`.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- PZ Verify Kahlua checks reported zero errors across the 22-file DTCommon
+  shared production tree; `luac -p` and `git diff --check` passed.
+
+## Next Chunk — M5
+
+Add proof fixtures through the generic event pipeline:
+
+1. Add data definitions for a settlement-scoped food shortage and an
+   agricultural surplus using the same typed modifier schema.
+2. Make active availability factors affect bounded candidate availability and
+   make both opposite events react immediately in commercial quotes.
+3. Verify event start/expiry changes prices and availability while exact
+   persistent trader stock remains unchanged until settlement logistics.
+
+## Remaining gap after M4
+
+Proof event fixtures, market-aware availability, grounded presentation, and
+the later roadmap phases remain incomplete.
 
 ## Known constraints
 

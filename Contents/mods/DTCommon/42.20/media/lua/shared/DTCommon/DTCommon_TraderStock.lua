@@ -209,8 +209,10 @@ function Stock.Quote(fullType, operation, inventoryItem, pricingContext)
     price.marketApplied = itemContext.marketApplied == true
     price.marketRevision = itemContext.marketRevision
     price.eventRevision = itemContext.eventRevision
+    price.availabilityMultiplier = itemContext.availabilityMultiplier or 1
     price.eventPriceMultiplier = eventPriceMultiplier
     price.eventCount = itemContext.eventCount or 0
+    price.activeEventCount = itemContext.activeEventCount or 0
     price.settlementID = itemContext.settlementID
     price.explanation = {
         fullType = price.fullType,
@@ -231,8 +233,10 @@ function Stock.Quote(fullType, operation, inventoryItem, pricingContext)
         marketPressure = itemContext.marketPressure or 0,
         marketModifier = marketModifier,
         marketFactor = 1 + marketModifier,
+        availabilityMultiplier = itemContext.availabilityMultiplier or 1,
         eventPriceMultiplier = eventPriceMultiplier,
         eventCount = itemContext.eventCount or 0,
+        activeEventCount = itemContext.activeEventCount or 0,
         priceBeforeRounding = priceBeforeRounding,
         unitPrice = price.unitPrice,
         reason = itemContext.reason,
