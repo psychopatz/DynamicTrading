@@ -335,6 +335,11 @@ Therefore:
 
 > **Prices respond to information; inventory responds to logistics.**
 
+The proof event definitions use the same generic `marketTag` modifier shape as
+all other event producers. Their availability multiplier is surfaced in the
+server quote explanation and bounds category candidate exposure during a
+settlement exchange; it does not remove or reroll existing exact trader stock.
+
 ## 11. Events
 
 Events contribute modifiers through a resolver.

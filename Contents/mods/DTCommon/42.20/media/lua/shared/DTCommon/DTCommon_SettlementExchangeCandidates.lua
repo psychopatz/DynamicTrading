@@ -10,6 +10,7 @@ local Inventory = require "PsychopatzCore/Inventory/PsychopatzInventory"
 local C = require "PsychopatzCore/Inventory/PsychopatzInventoryConstants"
 local Stock = DTCommon.TraderStock
 local Catalog = DTCommon.MarketCatalog
+local Pricing = DTCommon.MarketPricing
 
 local function integer(value, fallback)
     value = tonumber(value)
@@ -72,6 +73,21 @@ local function addOperation(plan, operation)
             + operation.unitPrice * operation.quantity
     end
     return true
+end
+
+local function availableCandidateLimit(candidates, context)
+    local multiplier = 1
+    local itemContext
+    local limit
+    if #candidates < 1 then return 0 end
+    if Pricing and type(Pricing.GetItemContext) == "function" then
+        itemContext = Pricing.GetItemContext(candidates[1], context)
+        multiplier = tonumber(itemContext and itemContext.availabilityMultiplier)
+            or 1
+    end
+    if multiplier <= 0 then return 0 end
+    limit = math.floor(#candidates * math.min(4, multiplier) + 0.5)
+    return math.max(1, math.min(#candidates, limit))
 end
 
 function Candidates.PlanDisposals(plan, store, context)
@@ -147,7 +163,9 @@ function Candidates.PlanAcquisitions(plan, context)
                 limit = 8,
                 availableOnly = true,
             })
-            for candidateIndex = 1, #(candidates or {}) do
+            local candidateLimit = availableCandidateLimit(
+                candidates or {}, context)
+            for candidateIndex = 1, candidateLimit do
                 if remaining <= 0
                     or plan.operationCount >= plan.maxOperations
                 then break end
@@ -165,6 +183,10 @@ function Candidates.PlanAcquisitions(plan, context)
                             fullType = fullType,
                             quantity = quantity,
                             unitPrice = unitPrice,
+                            availabilityMultiplier = Pricing
+                                and type(Pricing.GetItemContext) == "function"
+                                and (Pricing.GetItemContext(fullType, context)
+                                    or {}).availabilityMultiplier or 1,
                         })
                     then
                         selected[fullType] = true

@@ -2,7 +2,7 @@
 
 ## Parent status
 
-**IN PROGRESS — M4 accepted; M5 is next.**
+**IN PROGRESS — M5 accepted; M6 is next.**
 
 The complete M0–M8 roadmap remains the parent completion boundary. Finishing
 one chunk or phase does not complete the parent objective.
@@ -150,7 +150,7 @@ M1B added data-driven profile baselines and the bounded market mutation path:
 
 ## Current phase
 
-**M4 — Generic market events**
+**M5 — Proof events**
 
 ## M2A — accepted bounded settlement exchange
 
@@ -261,21 +261,45 @@ M4 adds the generic event persistence and effective-context resolver:
 - PZ Verify Kahlua checks reported zero errors across the 22-file DTCommon
   shared production tree; `luac -p` and `git diff --check` passed.
 
-## Next Chunk — M5
+## M5 — accepted generic proof events
 
-Add proof fixtures through the generic event pipeline:
+M5 adds data-only food shortage and agricultural surplus definitions through
+the M4 registry and connects generic availability to bounded exchange
+candidate exposure:
 
-1. Add data definitions for a settlement-scoped food shortage and an
-   agricultural surplus using the same typed modifier schema.
-2. Make active availability factors affect bounded candidate availability and
-   make both opposite events react immediately in commercial quotes.
-3. Verify event start/expiry changes prices and availability while exact
-   persistent trader stock remains unchanged until settlement logistics.
+- the shortage and surplus definitions use only typed category modifiers for
+  supply, demand, availability, and price; no event-specific pricing branch
+  was added;
+- identical MarketSense intrinsic food items receive opposite immediate
+  commercial quote responses and retain the same intrinsic value;
+- exchange candidate selection honors each active category availability factor
+  deterministically within its existing operation/unit budget;
+- event expiry restores the neutral quote and candidate availability context;
+- event registration and planning leave persistent trader state untouched.
 
-## Remaining gap after M4
+## M5 evidence
 
-Proof event fixtures, market-aware availability, grounded presentation, and
-the later roadmap phases remain incomplete.
+- `python3 tests/run_tests.py`: `PASS 31/31`.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- PZ Verify Kahlua checks reported zero errors across the 23-file DTCommon
+  shared production tree; `luac -p` and `git diff --check` passed.
+
+## Next Chunk — M6
+
+Complete the deterministic two-settlement logistics propagation scenario:
+
+1. Combine persistent exact trader stock, farm surplus and military shortage
+   markets with a validated arrival/exchange/travel sequence.
+2. Verify acquisition at the surplus settlement, persistence across reload,
+   travel, and partial disposal at the shortage settlement.
+3. Prove both market revisions and stock versions move only on completed
+   logistics, with duplicate arrival IDs unable to double-apply exchange.
+
+## Remaining gap after M5
+
+The flagship logistics evidence, grounded presentation, and the later roadmap
+phases remain incomplete.
 
 ## Known constraints
 

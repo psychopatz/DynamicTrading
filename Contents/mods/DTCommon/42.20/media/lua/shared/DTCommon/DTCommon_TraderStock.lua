@@ -427,6 +427,7 @@ function Stock.SnapshotItems(record, existingStore, pricingContext)
                     quantity = math.max(1, math.floor(tonumber(itemRecord[2]) or 1)),
                     unitPrice = buyQuote.unitPrice,
                     sellPrice = sellQuote.unitPrice,
+                    availabilityMultiplier = buyQuote.availabilityMultiplier,
                     buyExplanation = buyQuote.explanation,
                     sellExplanation = sellQuote.explanation,
                 }
@@ -477,6 +478,7 @@ function Stock.SnapshotSellRows(physical, pricingContext)
                         itemIDQuantities = {},
                         quantity = 0,
                         unitPrice = quote.unitPrice,
+                        availabilityMultiplier = quote.availabilityMultiplier,
                         explanation = quote.explanation,
                     }
                     byKey[key] = row
