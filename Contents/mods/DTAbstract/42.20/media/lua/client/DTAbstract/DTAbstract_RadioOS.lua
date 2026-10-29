@@ -38,6 +38,19 @@ local function findTrader(traderID)
     return found
 end
 
+local function marketEvents(record)
+    local presentation = DTCommon and DTCommon.MarketEventPresentation
+    local policy = record and record.ca or nil
+    local summary
+    local ok
+    if not presentation or type(presentation.Summary) ~= "function" then
+        return {}
+    end
+    ok, summary = pcall(presentation.Summary,
+        policy and policy.lastSettlementID or nil, record, {})
+    return ok and summary and summary.events or {}
+end
+
 local function list(_, page)
     local rows = {}
     page = type(page) == "table" and page or {}
@@ -53,6 +66,7 @@ local function list(_, page)
                     id = tostring(traderID),
                     title = tostring(record.n or traderID),
                     status = tostring(record.s or "READY"),
+                    marketEvents = marketEvents(record),
                     actions = {
                         {
                             id = ACTION_ID,

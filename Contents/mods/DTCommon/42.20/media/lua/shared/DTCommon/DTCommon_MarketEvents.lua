@@ -314,6 +314,20 @@ function Registry.ResolveContext(settlementID, record, options)
     return activeContext(settlementID, record, options)
 end
 
+-- Read-only projection for presentation consumers. The event registry remains
+-- the only persisted event store; callers receive normalized event copies and
+-- the same bounded active-context revision used by pricing.
+function Registry.ListActive(settlementID, record, options)
+    local context, reason = activeContext(settlementID, record, options)
+    local output = {}
+    if not context then return output, reason end
+    for index = 1, math.min(#context.activeEventIDs, MAX_EVENTS) do
+        local event = Registry.Get(context.activeEventIDs[index])
+        if event then output[#output + 1] = event end
+    end
+    return output, context
+end
+
 function Registry.GetRevision(settlementID, record, options)
     local context, reason = activeContext(settlementID, record, options)
     if not context then return nil, reason end

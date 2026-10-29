@@ -10,6 +10,11 @@ Definitions.VERSION = 1
 Definitions.FOOD_SHORTAGE = {
     schemaVersion = 1,
     type = "food_shortage",
+    presentation = {
+        headlineKey = "DTCommon_MarketEvent_FoodShortage_Headline",
+        descriptionKey = "DTCommon_MarketEvent_FoodShortage_Description",
+        importance = 2,
+    },
     modifiers = {
         {
             marketTag = "Food",
@@ -24,6 +29,11 @@ Definitions.FOOD_SHORTAGE = {
 Definitions.AGRICULTURAL_SURPLUS = {
     schemaVersion = 1,
     type = "agricultural_surplus",
+    presentation = {
+        headlineKey = "DTCommon_MarketEvent_AgriculturalSurplus_Headline",
+        descriptionKey = "DTCommon_MarketEvent_AgriculturalSurplus_Description",
+        importance = 1,
+    },
     modifiers = {
         {
             marketTag = "Food",

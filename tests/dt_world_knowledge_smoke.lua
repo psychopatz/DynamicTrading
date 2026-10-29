@@ -12,35 +12,82 @@ local WorldKnowledge = require
     "PsychopatzCore/WorldKnowledge/PsychopatzWorldKnowledge"
 
 local data = { t = {} }
+local eventData = { events = {}, revision = 0 }
 local records = {}
 DTCommon = {
     Storage = {
         IsAuthority = function() return true end,
         GetData = function() return data end,
+        GetEventData = function() return eventData end,
         Touch = function() data.touched = (data.touched or 0) + 1 end,
         Transmit = function() data.transmitted = (data.transmitted or 0) + 1 end,
+        SaveEventData = function()
+            eventData.revision = eventData.revision + 1
+            return true
+        end,
     },
     TraderService = {
         GetRecord = function(id) return records[id] end,
     },
+    T = function(key, fallback)
+        if key == "DTCommon_MarketEvent_FoodShortage_Headline" then
+            return "FOOD SHORTAGE"
+        end
+        return fallback
+    end,
 }
 
 local Policy = T.load(
     "DTCommon", "shared", "DTCommon/DTCommon_CoreActorPolicy.lua")
+DTCommon.MarketSchema = T.load(
+    "DTCommon", "shared", "DTCommon/DTCommon_MarketSchema.lua")
+DTCommon.MarketEvents = T.load(
+    "DTCommon", "shared", "DTCommon/DTCommon_MarketEvents.lua")
+DTCommon.MarketEventPresentation = T.load(
+    "DTCommon", "shared",
+    "DTCommon/DTCommon_MarketEventPresentation.lua")
 local Adapter = T.load(
     "DTCommon", "shared", "DTCommon/DTCommon_WorldKnowledge.lua")
 
 local actorA = "npc:dt:caravan-a"
 local actorB = "npc:dt:caravan-b"
 local actorC = "npc:dt:caravan-c"
+local actorD = "npc:dt:market-event"
+PNC = {
+    Communities = {
+        Get = function(id)
+            if id == "settlement:food" then
+                return { id = id, status = "active" }
+            end
+            return nil
+        end,
+    },
+}
 records["trader:caravan-a"] = {
-    ca = Policy.New({ actorID = actorA, providerRevision = 1 }),
+    b = 17,
+    v = 4,
+    i = { rows = { { [1] = 7, [2] = 2 } } },
+    ca = Policy.New({
+        actorID = actorA,
+        providerRevision = 1,
+        lastSettlementID = "settlement:food",
+    }),
 }
 records["trader:caravan-b"] = {
     ca = Policy.New({ actorID = actorB, providerRevision = 1 }),
 }
 records["trader:caravan-c"] = {
     ca = Policy.New({ actorID = actorC, providerRevision = 1 }),
+}
+records["trader:market-event"] = {
+    b = 29,
+    v = 8,
+    i = { rows = { { [1] = 9, [2] = 1 } } },
+    ca = Policy.New({
+        actorID = actorD,
+        providerRevision = 1,
+        lastSettlementID = "settlement:food",
+    }),
 }
 
 Adapter.Reset({ maxFacts = 32, maxActors = 8, maxRefs = 8 })
@@ -152,6 +199,78 @@ local restored = Adapter.BuildConversationContext("trader:caravan-b", { now = 21
 T.equal(restored.npcGossip.factRefs[1], fact.factID,
     "reload preserves intended historical trader knowledge")
 
+local Definitions = T.load(
+    "DTCommon", "shared", "DTCommon/DTCommon_MarketEventDefinitions.lua")
+local eventDefinition = Definitions.Instantiate(
+    Definitions.FOOD_SHORTAGE,
+    "event:food-shortage:settlement-food",
+    { kind = "settlement", id = "settlement:food" },
+    0,
+    30)
+local registeredEvent, registeredReason = DTCommon.MarketEvents.Register(
+    eventDefinition.eventID, eventDefinition)
+T.truthy(registeredEvent, registeredReason)
+local eventSummary, eventSummaryReason =
+    DTCommon.MarketEventPresentation.Summary(
+        "settlement:food", records["trader:caravan-a"], { now = 15 })
+T.truthy(eventSummary, eventSummaryReason)
+T.equal(#eventSummary.events, 1,
+    "one active settlement event is presented")
+T.equal(eventSummary.events[1].scope.id, "settlement:food",
+    "event presentation keeps its settlement scope")
+T.equal(eventSummary.events[1].startsAt, 0,
+    "event presentation keeps its start time")
+T.equal(eventSummary.events[1].endsAt, 30,
+    "event presentation keeps its expiry time")
+local eventRecord = records["trader:market-event"]
+local eventBudget = eventRecord.b
+local eventVersion = eventRecord.v
+local eventInventory = eventRecord.i
+local eventSync, eventSyncReason = Adapter.SyncMarketEvents(
+    "trader:market-event", { now = 15 })
+T.truthy(eventSync, eventSyncReason)
+T.equal(eventSync.activeEventCount, 1,
+    "active event is acquired on demand for one presented trader")
+T.equal(eventRecord.b, eventBudget,
+    "event presentation does not mutate trader budget")
+T.equal(eventRecord.v, eventVersion,
+    "event presentation does not mutate stock version")
+T.equal(eventRecord.i, eventInventory,
+    "event presentation does not replace exact stock")
+local eventFactID = eventSync.facts[1].factID
+T.equal(eventSummary.events[1].factID, eventFactID,
+    "Radio and WorldKnowledge projections share one fact identity")
+local eventFact = WorldKnowledge.Ledger.Get(
+    WorldKnowledge.LedgerState, eventFactID)
+T.equal(eventFact.kind, "market.event",
+    "published fact is typed as a market event")
+T.equal(eventFact.producer, "dynamictrading:market-events",
+    "published fact keeps the authoritative producer")
+T.equal(eventFact.payload.eventID, eventDefinition.eventID,
+    "published fact keeps the event identity")
+T.equal(eventFact.payload.scopeID, "settlement:food",
+    "published fact keeps the event scope")
+T.equal(eventFact.expiresAt, 30,
+    "published fact expires with the authoritative event")
+local eventExplanation, eventExplanationReason = Adapter.Explain(
+    "trader:market-event", eventFactID, 15)
+T.truthy(eventExplanation, eventExplanationReason)
+T.equal(eventExplanation.payload.scopeID, "settlement:food",
+    "event explanation exposes its scope")
+T.equal(eventExplanation.expiresAt, 30,
+    "event explanation exposes its expiry")
+local eventContext = Adapter.BuildConversationContext(
+    "trader:market-event", { now = 15 })
+T.contains(eventContext.npcGossip.statements[1], "FOOD SHORTAGE",
+    "WorldKnowledge renders the localized event headline")
+local expiredContext = Adapter.BuildConversationContext(
+    "trader:market-event", { now = 31 })
+local expiredEventSeen = false
+for _, factID in ipairs(expiredContext.npcGossip.factRefs) do
+    if factID == eventFactID then expiredEventSeen = true end
+end
+T.falsy(expiredEventSeen, "expired market fact is not presented")
+
 -- Exercise the existing Core actor conversation service through DTCommon Talk:
 -- the adapter supplies context, while the shared semantic router still owns
 -- parsing and response selection.
@@ -179,13 +298,25 @@ local actorObjects = {
         social = { personality = {}, relationships = {} },
         knowledge = Knowledge.NewState(),
     },
+    [actorD] = {
+        actorId = actorD,
+        identity = { displayName = "Market Event Trader" },
+        persona = { selectionSetVersion = 1 },
+        social = { personality = {}, relationships = {} },
+        knowledge = Knowledge.NewState(),
+    },
 }
 Policy.ResolveActor = function(record)
     local id = record and record.ca and record.ca.actorID
     return actorObjects[id], actorObjects[id] and nil or "actor_not_found"
 end
 DTCommon.STATUS_READY = "READY"
-DTCommon.T = function(_, fallback) return fallback end
+DTCommon.T = function(key, fallback)
+    local values = {
+        DTCommon_MarketEvent_FoodShortage_Headline = "FOOD SHORTAGE",
+    }
+    return values[key] or fallback
+end
 DTCommon.TraderService.ValidateTalkAccess = function(_, id, mode)
     if not records[id] then return false, "trader_not_found" end
     if mode ~= "radio" then return false, "wrong_mode" end
@@ -212,6 +343,23 @@ local talkTurn, talkTurnReason = Talk.Submit(
 T.truthy(talkTurn, talkTurnReason)
 T.contains(talkTurn.result.responses[1].text, "route:ridge",
     "Talk response is grounded in the DT fact")
+
+local eventTalkOpen, eventTalkOpenReason = Talk.Open(
+    player, "trader:market-event", "radio")
+T.truthy(eventTalkOpen, eventTalkOpenReason)
+local eventTalkFactSeen = false
+for _, factID in ipairs(eventTalkOpen.worldKnowledge.npcGossip.factRefs) do
+    if factID == eventFactID then eventTalkFactSeen = true end
+end
+T.truthy(eventTalkFactSeen,
+    "Talk consumes the same published market-event fact")
+local eventTalkTurn, eventTalkTurnReason = Talk.Submit(
+    player, "trader:market-event", eventTalkOpen.sessionID, "news", {
+        mode = "radio", language = "EN", requestID = "dt-wkg-market-event",
+    })
+T.truthy(eventTalkTurn, eventTalkTurnReason)
+T.contains(eventTalkTurn.result.responses[1].text, "FOOD SHORTAGE",
+    "Talk response is grounded in the active market event")
 
 local unknownOpen, unknownOpenReason = Talk.Open(
     player, "trader:caravan-c", "radio")

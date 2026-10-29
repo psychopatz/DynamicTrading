@@ -104,13 +104,33 @@ local function formatDenied(reason)
     return ok and value or template
 end
 
+local function marketStatus(row)
+    local events = row and row.marketEvents
+    local event = type(events) == "table" and events[1] or nil
+    local headline
+    local template
+    local ok
+    local value
+    if not event then
+        return T("DTCommon_Radio_NoMarketNews", "NO MARKET NEWS")
+    end
+    headline = event.headlineKey
+        and T(event.headlineKey, event.eventType or "MARKET EVENT")
+        or event.eventType or "MARKET EVENT"
+    template = T("DTCommon_Radio_MarketEvent", "MARKET NEWS: %s")
+    ok, value = pcall(string.format, template, tostring(headline))
+    return ok and value or template
+end
+
 local function render(context, window, screen)
     local state = window.customState
     local rows = ensureRows(context, window)
     local color = window:screenColors()
+    local selected = rows[state.traderIndex or 1]
     local header = window:drawScreenHeader(
         T("DTCommon_Radio_TraderScanner", "TRADERS"),
-        state.statusText or T("DTCommon_Radio_Ready", "TRADER SCANNER"))
+        state.statusText or (selected and marketStatus(selected)
+            or T("DTCommon_Radio_Ready", "TRADER SCANNER")))
     if #rows == 0 then
         window:drawTextClipped(T("DTCommon_Radio_NoTraders", "NO TRADERS"),
             header.metrics.x, header.contentY, header.metrics.width, color)

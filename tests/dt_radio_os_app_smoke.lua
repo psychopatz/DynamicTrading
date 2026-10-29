@@ -34,6 +34,7 @@ local OS = {
             return true, { contacts = {
                 { id = "remote:one", title = "Trader One",
                     providerID = providerID,
+                    marketEvents = {},
                     actions = { { id = "dynamictrading:trade",
                         label = "Trade" } } },
             }, nextOffset = 1 }
@@ -41,6 +42,14 @@ local OS = {
         return true, { contacts = {
             { id = providerID .. ":one", title = "Trader One",
                 providerID = providerID,
+                marketEvents = providerID
+                    == "dynamictrading:physical_traders" and {
+                        {
+                            eventType = "food_shortage",
+                            headlineKey =
+                                "DTCommon_MarketEvent_FoodShortage_Headline",
+                        },
+                    } or {},
                 actions = { { id = "dynamictrading:trade", label = "Trade" } } },
         } }
     end,
@@ -57,7 +66,12 @@ package.preload["PsychopatzCore/UI/Radio/OS/PsychopatzRadioOS"] =
     function() return OS end
 
 DTCommon = {
-    T = function(_, fallback) return fallback end,
+    T = function(key, fallback)
+        if key == "DTCommon_MarketEvent_FoodShortage_Headline" then
+            return "FOOD SHORTAGE"
+        end
+        return fallback
+    end,
 }
 
 T.load("DTCommon", "client", "DTCommon/DTCommon_RadioOS.lua")
@@ -67,11 +81,13 @@ T.truthy(app.isAvailable({ active = true }),
 T.falsy(app.isAvailable({ active = false }),
     "scanner is unavailable without an active radio")
 
+local windowHeader
 local window = {
     customState = {},
     scale = 1,
     screenColors = function() return { r = 1, g = 1, b = 1, a = 1 } end,
-    drawScreenHeader = function()
+    drawScreenHeader = function(_, title, status)
+        windowHeader = { title = title, status = status }
         return { metrics = { x = 0, width = 240, lineHeight = 12 },
             contentY = 20 }
     end,
@@ -102,6 +118,13 @@ T.equal(#window.customState.traderRows, 3,
     "scanner combines only namespaced trader providers")
 T.equal(remoteCalls, 2, "scanner follows bounded provider pagination")
 app.render(context, window, { x = 0, y = 0, w = 256, h = 160 })
+T.contains(windowHeader.status, "MARKET NEWS: FOOD SHORTAGE",
+    "Radio OS exposes grounded active market news")
+window.customState.traderIndex = 3
+app.render(context, window, { x = 0, y = 0, w = 256, h = 160 })
+T.equal(windowHeader.status, "NO MARKET NEWS",
+    "Radio OS reports truthful no-news for an unaffected trader")
+window.customState.traderIndex = 1
 local hit = app.hitTest(context, window, 12, 21)
 T.truthy(hit and hit.index, "scanner row is directly clickable")
 T.truthy(app.onScreenClick(context, window, hit),

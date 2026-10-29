@@ -82,6 +82,19 @@ local function affiliation(npcID)
     return ok and type(value) == "table" and value or nil
 end
 
+local function marketEvents(record)
+    local presentation = DTCommon and DTCommon.MarketEventPresentation
+    local policy = record and record.ca or nil
+    local summary
+    local ok
+    if not presentation or type(presentation.Summary) ~= "function" then
+        return {}
+    end
+    ok, summary = pcall(presentation.Summary,
+        policy and policy.lastSettlementID or nil, record, {})
+    return ok and summary and summary.events or {}
+end
+
 local function merchant(record, current)
     local npcID = record and (record.p or record.l) or nil
     local body
@@ -164,6 +177,7 @@ local function list(_, page)
                 id = tostring(traderID),
                 title = displayName(record, npcID),
                 status = tostring(record.s or DTCommon.STATUS_READY),
+                marketEvents = marketEvents(record),
                 portraitDescriptor = portraitDescriptor(npcID),
                 actions = {
                     {

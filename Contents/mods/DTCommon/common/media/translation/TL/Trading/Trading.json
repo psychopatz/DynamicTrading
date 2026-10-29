@@ -18,5 +18,11 @@
     "DTCommon_Radio_Ready": "SCANNER NG TRADER",
     "DTCommon_Radio_RequestSent": "NAIPADALA ANG REQUEST SA TRADER",
     "DTCommon_Radio_TradeDenied": "TINANGGIHAN ANG TRADE: %s",
-    "DTCommon_Radio_Unavailable": "HINDI MAGAMIT ANG TRADING"
+    "DTCommon_Radio_Unavailable": "HINDI MAGAMIT ANG TRADING",
+    "DTCommon_Radio_NoMarketNews": "WALANG BALITA SA PAMILIHAN",
+    "DTCommon_Radio_MarketEvent": "BALITA SA PAMILIHAN: %s",
+    "DTCommon_MarketEvent_FoodShortage_Headline": "KAPOS SA PAGKAIN",
+    "DTCommon_MarketEvent_FoodShortage_Description": "Kapos ang suplay ng pagkain sa pamayanang ito.",
+    "DTCommon_MarketEvent_AgriculturalSurplus_Headline": "SOBRANG ANI",
+    "DTCommon_MarketEvent_AgriculturalSurplus_Description": "Sagana ang suplay ng pagkain sa pamayanang ito."
 }

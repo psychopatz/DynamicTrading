@@ -2,7 +2,7 @@
 
 ## Parent status
 
-**IN PROGRESS — M6 accepted; M7 is next.**
+**IN PROGRESS — M7 accepted; M8 is next.**
 
 The complete M0–M8 roadmap remains the parent completion boundary. Finishing
 one chunk or phase does not complete the parent objective.
@@ -150,7 +150,7 @@ M1B added data-driven profile baselines and the bounded market mutation path:
 
 ## Current phase
 
-**M6 — Two-settlement logistics accepted**
+**M7 — Grounded event presentation accepted**
 
 ## M2A — accepted bounded settlement exchange
 
@@ -311,17 +311,42 @@ Hoomans arrival adapter and DTCommon visit/exchange seam:
   production tree and the new logistics harness; `luac -p` and
   `git diff --check` passed.
 
-## Next Chunk — M7
+## M7 — accepted grounded event presentation
 
-Build grounded market/event presentation over authoritative state: publish
-event facts through the existing world-knowledge/radio seams, expose bounded
-market and event explanations to supported presentation consumers, and keep
-presentation read-only with no stock mutation.
+M7 connects authoritative active market events to the existing presentation
+seams without creating a second event store or mutating economic state:
 
-## Remaining gap after M6
+- `MarketEventPresentation` exposes bounded active summaries and stable fact
+  identities directly from `DTCommon.MarketEvents`, including scope and time;
+- on-demand WorldKnowledge synchronization publishes one typed `market.event`
+  fact and acquires it only for the trader whose Talk context is being built;
+- Talk renders the same fact and returns truthful no-news after expiry or when
+  no event matches the trader's settlement context;
+- physical and abstract Radio OS contact rows expose the same bounded event
+  summaries, while the scanner renders localized event news or explicit no-news;
+- event presentation remains read-only with respect to trader stock, budget,
+  stock versions, quotes, and settlement market pressure.
 
-Grounded presentation, later roadmap phases, and native Project Zomboid
-acceptance remain incomplete.
+## M7 evidence
+
+- `python3 tests/run_tests.py`: `PASS 32/32`.
+- Focused M7 event/presentation run: `PASS 4/4` for event registry, proof
+  events, WorldKnowledge/Talk, and Radio OS harnesses.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- PZ Verify Kahlua reported zero errors across the 24-file DTCommon shared
+  production tree and changed presentation files; Lua parse, translation JSON
+  parity, and `git diff --check` passed.
+
+## Next Chunk — M8
+
+Complete performance, migration, expiry/recovery edge-case, bounded-cache,
+profiling, and integration-boundary hardening, then document native SP/MP
+acceptance as the remaining user-owned gate where it cannot be executed here.
+
+## Remaining gap after M7
+
+M8 hardening and native Project Zomboid acceptance remain incomplete.
 
 ## Known constraints
 

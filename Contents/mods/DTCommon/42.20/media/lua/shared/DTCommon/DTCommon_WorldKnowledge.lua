@@ -15,6 +15,7 @@ if not loaded or type(Core) ~= "table" then Core = nil end
 local TraderService = DTCommon.TraderService
 local Policy = DTCommon.CoreActorPolicy
 local Storage = DTCommon.Storage
+local EventPresentation = DTCommon.MarketEventPresentation
 local MAX_CONTEXT = 4
 local MAX_TRACE = 64
 local MAX_TEXT = 240
@@ -96,12 +97,22 @@ local function defaultRender(fact, reference)
     local subject = type(fact) == "table" and fact.subject or nil
     local subjectID = type(subject) == "table" and text(subject.id, nil, 96)
         or text(subject, nil, 96)
+    local eventType = type(payload) == "table"
+        and text(payload.eventType, nil, 96) or nil
+    local headlineKey = type(payload) == "table"
+        and text(payload.headlineKey, nil, 192) or nil
+    local headline = headlineKey and DTCommon.T
+        and DTCommon.T(headlineKey, headlineKey) or nil
     local label = route or market or subjectID or "the trade route"
     if type(fact) ~= "table" then return nil end
     if fact.kind ~= "market.route" and fact.kind ~= "market.availability"
-        and fact.kind ~= "trader.route"
+        and fact.kind ~= "trader.route" and fact.kind ~= "market.event"
     then
         return nil
+    end
+    if fact.kind == "market.event" then
+        return "I heard about " .. tostring(headline or eventType
+            or "a market event") .. " at " .. tostring(label) .. "."
     end
     if provenance == "told" or provenance == "radio" then
         return "I heard that " .. label .. " is active."
@@ -123,6 +134,85 @@ function Adapter.Publish(specification, options)
     specification = copy(type(specification) == "table" and specification or {})
     specification.producer = specification.producer or "dynamictrading"
     return world.Publish(specification, options)
+end
+
+-- Publish active authoritative market events into the existing Core ledger
+-- and acquire them for one trader on demand. This deliberately avoids an
+-- event-start loop over every trader; Talk requests hydrate only the actor
+-- that is actually being presented. Stock, budget, and quote state are not
+-- touched by this projection.
+function Adapter.SyncMarketEvents(trader, options)
+    local world = core()
+    local record
+    local reason
+    local actor
+    local policy
+    local settlementID
+    local summary
+    local synced = {}
+    local failures = {}
+    options = copy(type(options) == "table" and options or {})
+    if not world then return nil, "core_world_knowledge_unavailable" end
+    if not EventPresentation
+        or type(EventPresentation.Summary) ~= "function"
+        or type(EventPresentation.FactSpecification) ~= "function"
+    then return nil, "market_event_presentation_unavailable" end
+    if Storage and type(Storage.IsAuthority) == "function"
+        and Storage.IsAuthority() ~= true
+    then return nil, "server_authority_required" end
+    record, reason = recordFor(trader)
+    if not record then return nil, reason end
+    actor, reason = actorID(record)
+    if not actor then return nil, reason end
+    policy = Policy and type(Policy.Get) == "function"
+        and Policy.Get(record) or {}
+    settlementID = options.settlementID or policy.lastSettlementID
+    summary, reason = EventPresentation.Summary(
+        settlementID, record, options)
+    if not summary then return nil, reason end
+    for index = 1, #(summary.events or {}) do
+        local event = summary.events[index]
+        local specification
+        local fact
+        local reference
+        local factReason
+        specification, factReason = EventPresentation.FactSpecification(event)
+        if specification then
+            fact, factReason = world.Publish(specification, {
+                now = summary.now,
+            })
+        end
+        if fact then
+            reference, factReason = world.Acquire(actor, fact.factID, {
+                authorized = true,
+                provenance = "public",
+                source = "dynamictrading:market-events",
+                acquisitionPath = "market-events",
+                confidence = 1,
+                learnedAt = summary.now,
+            })
+        end
+        if reference then
+            synced[#synced + 1] = {
+                factID = fact.factID,
+                eventID = event.eventID,
+            }
+        else
+            failures[#failures + 1] = {
+                eventID = event.eventID,
+                reason = factReason or "market_event_fact_failed",
+            }
+        end
+    end
+    return {
+        settlementID = summary.settlementID,
+        revision = summary.revision,
+        now = summary.now,
+        activeEventCount = summary.activeEventCount,
+        noNews = summary.activeEventCount == 0,
+        facts = synced,
+        failures = failures,
+    }
 end
 
 function Adapter.Acquire(trader, factID, specification)
@@ -150,6 +240,7 @@ function Adapter.BuildConversationContext(trader, options)
     id, reason = actorID(record)
     if not id then return nil, reason end
     options = copy(type(options) == "table" and options or {})
+    Adapter.SyncMarketEvents(trader, options)
     options.max = math.max(1, math.min(MAX_CONTEXT,
         math.floor(tonumber(options.max) or MAX_CONTEXT)))
     if type(options.renderFact) ~= "function" then
@@ -165,11 +256,24 @@ function Adapter.Explain(trader, factID, now)
     local world = core()
     local record, reason = recordFor(trader)
     local id
+    local explanation
+    local fact
     if not world then return nil, "core_world_knowledge_unavailable" end
     if not record then return nil, reason end
     id, reason = actorID(record)
     if not id then return nil, reason end
-    return world.Explain(id, factID, now)
+    explanation, reason = world.Explain(id, factID, now)
+    if not explanation then return nil, reason end
+    if world.Ledger and type(world.Ledger.Get) == "function" then
+        fact = world.Ledger.Get(world.LedgerState, factID)
+    end
+    if fact then
+        explanation.subject = copy(fact.subject)
+        explanation.location = copy(fact.location)
+        explanation.expiresAt = fact.expiresAt
+        explanation.payload = copy(fact.payload)
+    end
+    return explanation
 end
 
 function Adapter.Propagate(fromTrader, toTrader, options)

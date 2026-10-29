@@ -416,6 +416,15 @@ Dialogue must not invent market events.
 
 Presentation is downstream of simulation truth.
 
+The M7 presentation adapter reads active events from the registry and projects
+them into Core WorldKnowledge as bounded `market.event` facts. The fact keeps
+the event producer, settlement scope, start/expiry window, localization keys,
+and stable identity inspectable. WorldKnowledge acquisition happens on demand
+for the trader being presented, so event activation never rewrites every
+trader. Talk consumes the fact for grounded gossip/no-news behavior; Radio OS
+contact projections consume the same event summary for localized news/no-news
+status. Neither path writes trader stock, budget, quotes, or market pressure.
+
 ## 14. Physical settlement resources — future-compatible seam
 
 Initial implementation uses abstract market pressure.

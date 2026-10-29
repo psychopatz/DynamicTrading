@@ -18,5 +18,11 @@
     "DTCommon_Radio_Ready": "TRADER SCANNER",
     "DTCommon_Radio_RequestSent": "TRADE REQUEST SENT",
     "DTCommon_Radio_TradeDenied": "TRADE DENIED: %s",
-    "DTCommon_Radio_Unavailable": "TRADING UNAVAILABLE"
+    "DTCommon_Radio_Unavailable": "TRADING UNAVAILABLE",
+    "DTCommon_Radio_NoMarketNews": "NO MARKET NEWS",
+    "DTCommon_Radio_MarketEvent": "MARKET NEWS: %s",
+    "DTCommon_MarketEvent_FoodShortage_Headline": "FOOD SHORTAGE",
+    "DTCommon_MarketEvent_FoodShortage_Description": "Food supplies are tight at this settlement.",
+    "DTCommon_MarketEvent_AgriculturalSurplus_Headline": "AGRICULTURAL SURPLUS",
+    "DTCommon_MarketEvent_AgriculturalSurplus_Description": "Food supplies are plentiful at this settlement."
 }
