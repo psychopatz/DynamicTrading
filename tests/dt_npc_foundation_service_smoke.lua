@@ -91,6 +91,59 @@ T.equal(record.v, 2, "restock advances stock version")
 T.equal(visit.visitCount, 1, "service records one settlement visit")
 T.truthy(touched > 0, "service persists policy visit")
 
+local exchangeCalls = 0
+DTCommon.SettlementExchange = {
+    Execute = function(traderID, settlementID, options)
+        exchangeCalls = exchangeCalls + 1
+        T.equal(traderID, "trader:p7", "service forwards exchange trader")
+        T.equal(settlementID, "community_p7",
+            "service forwards exchange settlement")
+        T.equal(options.exchange, true, "service forwards exchange intent")
+        return { changed = true, stockVersion = record.v, marketRevision = 1 }
+    end,
+}
+local exchangeVisit, exchangeVisitReason = Service.MarkSettlementVisit(
+    "trader:p7", {
+        authority = "server",
+        atSettlement = true,
+        settlementID = "community_p7",
+        exchange = true,
+        visitID = "journey:p7:exchange",
+        now = 48,
+    })
+T.truthy(exchangeVisit, exchangeVisitReason)
+T.truthy(exchangeVisit.exchange, "service returns the exchange result")
+T.equal(exchangeCalls, 1, "service executes one settlement exchange")
+local duplicateExchange, duplicateExchangeReason =
+    Service.MarkSettlementVisit("trader:p7", {
+        authority = "server",
+        atSettlement = true,
+        settlementID = "community_p7",
+        exchange = true,
+        visitID = "journey:p7:exchange",
+        now = 48,
+    })
+T.equal(duplicateExchange, nil, "duplicate exchange visit is rejected")
+T.equal(duplicateExchangeReason, "duplicate_visit",
+    "duplicate exchange visit has a stable reason")
+DTCommon.SettlementExchange.Execute = function()
+    return nil, "exchange_failed"
+end
+record.s = "AWAY"
+local failedExchange, failedExchangeReason = Service.MarkSettlementVisit(
+    "trader:p7", {
+        authority = "server",
+        atSettlement = true,
+        settlementID = "community_p7",
+        exchange = true,
+        visitID = "journey:p7:failed-exchange",
+        now = 72,
+    })
+T.equal(failedExchange, nil, "failed exchange is rejected")
+T.equal(failedExchangeReason, "exchange_failed",
+    "exchange failure reason is preserved")
+T.equal(record.s, "AWAY", "failed exchange restores trader status")
+
 local mapRegistry = {
     ProjectActor = function(self, actor, spec)
         return { actorID = actor.actorId, provider = spec.provider,

@@ -2,7 +2,7 @@
 
 ## Parent status
 
-**IN PROGRESS — M1 accepted; M2 is next.**
+**IN PROGRESS — M2A accepted; M2B is next.**
 
 The complete M0–M8 roadmap remains the parent completion boundary. Finishing
 one chunk or phase does not complete the parent objective.
@@ -152,28 +152,52 @@ M1B added data-driven profile baselines and the bounded market mutation path:
 
 **M2 — Settlement Exchange**
 
-## Next Chunk — M2A
+## M2A — accepted bounded settlement exchange
 
-Implement a bounded settlement-exchange planner over the existing persistent
-trader stock and the M1 market/catalog foundations.
+M2A adds a narrow exchange facade, planner, and MarketSense-backed candidate
+adapter over the existing persistent virtual inventory:
 
-Required work:
+- disposals inspect only exact trader stock and acquisitions use bounded
+  `MarketCatalog` category candidates; unrelated records are preserved;
+- plans cap operations and units, carry stock/market revisions and budget,
+  and apply pressure deltas only for completed disposal/acquisition units;
+- execution preflights stock and market revisions, saves the exact inventory
+  once, applies one expected-revision market mutation, and restores stock,
+  budget, and version on save or market failure;
+- `MarkSettlementVisit` can invoke the exchange after the authoritative
+  settlement seam, while the Hoomans arrival adapter forwards the explicit
+  exchange intent and the policy keeps a bounded recent visit-ID ledger;
+- no UI snapshot calls `TraderStock.New`, no event-start stock mutation, and
+  no per-quote item-universe scan were introduced.
 
-1. Plan disposal/acquisition only for bounded MarketSense-backed category
-   candidates; keep unrelated exact stock untouched.
-2. Integrate the plan with the authoritative settlement visit seam, with one
-   duplicate-safe operation and one coherent persistence/rollback boundary.
-3. Apply market deltas only for goods actually exchanged; do not reroll or
-   replace trader stock on UI open or event start.
-4. Add persistent-stock, stock-version, budget, market-revision, and duplicate
-   visit acceptance tests before accepting M2A.
+## M2A evidence
 
-## Remaining gap after M1B
+- `python3 tests/run_tests.py`: `PASS 27/27`.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- PZ Verify Kahlua checks reported zero errors across 20 DTCommon shared files,
+  6 DTHoomans server files, and the exchange smoke test; exchange modules also
+  passed the token-bloat threshold check.
+- `luac -p` and `git diff --check` passed.
 
-Bounded partial settlement exchange, market-aware availability and quotes,
-generic scoped event resolution, and logistics propagation between settlements
-remain incomplete. M1 now provides only compact market pressure and catalog
-foundations; it does not change commercial quotes.
+## Next Chunk — M2B
+
+Wire the default settlement-arrival exchange action and complete the bounded
+two-settlement propagation scenario over save/reload:
+
+1. Emit/consume an explicit exchange-enabled arrival action through the real
+   Hoomans travel seam without adding a second NPC lifecycle.
+2. Verify a surplus settlement acquisition followed by travel and a shortage
+   settlement disposal; preserve exact stock and unrelated goods.
+3. Add integration coverage for market-pressure direction, quote inputs,
+   duplicate arrival recovery, and persisted state across both settlements.
+
+## Remaining gap after M2A
+
+Default arrival wiring and the two-settlement propagation acceptance remain
+for M2B. Market-aware availability and quotes, generic scoped event
+resolution, grounded presentation, and the later roadmap phases remain
+incomplete; M2A does not change commercial quote calculation.
 
 ## Known constraints
 

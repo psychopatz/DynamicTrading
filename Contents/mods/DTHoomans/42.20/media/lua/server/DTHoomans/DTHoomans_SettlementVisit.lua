@@ -183,6 +183,7 @@ local function arrivalHandler(record, journey, action)
             available = action and action.available,
             earned = action and action.earned,
             restock = action and action.restock,
+            exchange = action and action.exchange == true,
         }
     )
     if not result and reason == "duplicate_visit" then

@@ -718,14 +718,39 @@ end
 function Service.MarkSettlementVisit(traderID, options)
     if not authority() then return nil, "server_authority_required" end
     local record = Service.GetRecord(traderID)
+    local previousPolicy
+    local previousStatus
+    local exchangeResult
+    local restockResult
+    local exchange
     if not record then return nil, "trader_not_found" end
+    previousPolicy = Policy.Get(record)
+    previousStatus = record.s
     local policy, reason = Policy.MarkVisit(record, options)
     if not policy then return nil, reason end
     record.s = DTCommon.STATUS_READY
-    local restockResult
-    if options and options.restock == true then
+    if options and options.exchange == true then
+        exchange = DTCommon.SettlementExchange
+        if not exchange or type(exchange.Execute) ~= "function" then
+            record.ca = previousPolicy
+            record.s = previousStatus
+            return nil, "settlement_exchange_unavailable"
+        end
+        exchangeResult, reason = exchange.Execute(
+            traderID,
+            options.settlementID or options.communityID,
+            options
+        )
+        if not exchangeResult then
+            record.ca = previousPolicy
+            record.s = previousStatus
+            return nil, reason
+        end
+    elseif options and options.restock == true then
         restockResult, reason = Service.Restock(traderID, options)
         if not restockResult then return nil, reason end
+        exchangeResult = nil
+        record.ca = Policy.Get(record)
     end
     Storage.Touch()
     Storage.Transmit()
@@ -734,6 +759,7 @@ function Service.MarkSettlementVisit(traderID, options)
         actorID = policy.actorID,
         visitCount = policy.visitCount,
         restock = restockResult,
+        exchange = exchangeResult,
     }
 end
 

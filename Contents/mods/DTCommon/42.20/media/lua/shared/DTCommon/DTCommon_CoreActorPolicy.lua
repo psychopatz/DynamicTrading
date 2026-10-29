@@ -8,6 +8,7 @@ DTCommon.CoreActorPolicy = Policy
 
 Policy.SCHEMA_VERSION = 1
 Policy.MAX_PRICE_MODIFIER = 0.25
+Policy.MAX_RECENT_VISIT_IDS = 32
 Policy.PROVIDERS = {
     PsychopatzCore = true,
     DTAbstract = true,
@@ -54,8 +55,11 @@ end
 function Policy.New(spec)
     spec = type(spec) == "table" and spec or {}
     local restockItems = {}
+    local recentVisitIDs = {}
     local configuredItems = spec.restockItems
         or (spec.restock and spec.restock.items) or {}
+    local configuredVisitIDs = type(spec.recentVisitIDs) == "table"
+        and spec.recentVisitIDs or {}
     for index = 1, math.min(32, #configuredItems) do
         local item = configuredItems[index]
         if type(item) == "table" and text(item.fullType, nil) then
@@ -64,6 +68,15 @@ function Policy.New(spec)
                 quantity = math.max(1, math.floor(number(item.quantity, 1))),
             }
         end
+    end
+    for index = 1, math.min(Policy.MAX_RECENT_VISIT_IDS,
+        #configuredVisitIDs) do
+        local visitID = text(configuredVisitIDs[index], nil)
+        if visitID then recentVisitIDs[#recentVisitIDs + 1] = visitID end
+    end
+    local legacyVisitID = text(spec.lastVisitID, nil)
+    if legacyVisitID and #recentVisitIDs == 0 then
+        recentVisitIDs[1] = legacyVisitID
     end
     local providerLease = type(spec.providerLease) == "table"
         and spec.providerLease or {}
@@ -97,7 +110,8 @@ function Policy.New(spec)
         },
         visitCount = math.max(0, math.floor(number(spec.visitCount, 0))),
         lastVisitAt = number(spec.lastVisitAt, 0),
-        lastVisitID = text(spec.lastVisitID, nil),
+        lastVisitID = legacyVisitID,
+        recentVisitIDs = recentVisitIDs,
         lastSettlementID = text(spec.lastSettlementID
             or spec.settlementID or spec.communityID, nil),
     }
@@ -214,14 +228,24 @@ function Policy.MarkVisit(record, options)
     end
     local policy = Policy.Get(record)
     local visitID = text(options.visitID, nil)
-    if visitID and policy.lastVisitID == visitID then
-        return nil, "duplicate_visit"
+    if visitID then
+        for index = 1, #policy.recentVisitIDs do
+            if policy.recentVisitIDs[index] == visitID then
+                return nil, "duplicate_visit"
+            end
+        end
     end
     policy.available = options.available ~= false
     policy.availabilityReason = nil
     policy.visitCount = policy.visitCount + 1
     policy.lastVisitAt = number(options.now, policy.lastVisitAt)
     policy.lastVisitID = visitID
+    if visitID then
+        policy.recentVisitIDs[#policy.recentVisitIDs + 1] = visitID
+        while #policy.recentVisitIDs > Policy.MAX_RECENT_VISIT_IDS do
+            table.remove(policy.recentVisitIDs, 1)
+        end
+    end
     policy.lastSettlementID = settlementID
     record.ca = policy
     return policy

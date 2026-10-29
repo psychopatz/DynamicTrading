@@ -75,6 +75,7 @@ local handled, handledReason = handler(
     {
         type = Settlement.ARRIVAL_ACTION,
         settlementID = "community_target",
+        exchange = true,
     },
     "route_complete"
 )
@@ -86,6 +87,8 @@ T.equal(calls[1].options.authority, "server", "arrival is server-authoritative")
 T.equal(calls[1].options.atSettlement, true, "arrival carries settlement context")
 T.equal(calls[1].options.settlementID, "community_target",
     "arrival uses canonical community identity")
+T.equal(calls[1].options.exchange, true,
+    "arrival forwards bounded exchange intent")
 T.contains(calls[1].options.visitID, "journey:one",
     "arrival visit ID is derived from the journey")
 
