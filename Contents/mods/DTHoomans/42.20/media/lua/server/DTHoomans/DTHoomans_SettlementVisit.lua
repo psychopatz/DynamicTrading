@@ -164,6 +164,44 @@ function Settlement.MarkTraderVisit(traderID, settlementID, options)
     return Service.MarkSettlementVisit(traderID, request)
 end
 
+function Settlement.StartTraderTravel(traderID, settlementID, request)
+    local api = PNC and PNC.API and PNC.API.Travel or nil
+    local record
+    local npcID
+    local resolved
+    local reason
+    local action = {}
+    local source
+    if not api or type(api.Start) ~= "function" then
+        return nil, "travel_api_unavailable"
+    end
+    if DTCommon.Storage and type(DTCommon.Storage.IsAuthority) == "function"
+        and DTCommon.Storage.IsAuthority() ~= true
+    then
+        return nil, "server_authority_required"
+    end
+    record = Service and type(Service.GetRecord) == "function"
+        and Service.GetRecord(traderID) or nil
+    if not record then return nil, "trader_not_found" end
+    npcID = text(record.p or record.l)
+    if not npcID then return nil, "trader_npc_missing" end
+    resolved, reason = activeCommunity(settlementID)
+    if not resolved then return nil, reason end
+    request = type(request) == "table" and request or {}
+    source = type(request.arrivalAction) == "table"
+        and request.arrivalAction or {}
+    for key, value in pairs(source) do action[key] = value end
+    action.type = ARRIVAL_ACTION
+    action.traderID = bounded(traderID)
+    action.settlementID = bounded(resolved.id)
+    action.factionID = action.factionID or record.g
+    if action.exchange == nil then action.exchange = request.exchange ~= false end
+    request.ownerMod = request.ownerMod or "DynamicTrading"
+    request.ownerRef = request.ownerRef or bounded(traderID)
+    request.arrivalAction = action
+    return api.Start(npcID, request)
+end
+
 local function arrivalHandler(record, journey, action)
     local npcID = record and record.id or nil
     local traderID

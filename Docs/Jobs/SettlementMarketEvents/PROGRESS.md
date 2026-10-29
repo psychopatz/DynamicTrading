@@ -2,7 +2,7 @@
 
 ## Parent status
 
-**IN PROGRESS — M2A accepted; M2B is next.**
+**IN PROGRESS — M2B accepted; M3 is next.**
 
 The complete M0–M8 roadmap remains the parent completion boundary. Finishing
 one chunk or phase does not complete the parent objective.
@@ -180,24 +180,47 @@ adapter over the existing persistent virtual inventory:
   passed the token-bloat threshold check.
 - `luac -p` and `git diff --check` passed.
 
-## Next Chunk — M2B
+## M2B — accepted travel wiring and two-settlement propagation
 
-Wire the default settlement-arrival exchange action and complete the bounded
-two-settlement propagation scenario over save/reload:
+M2B wires the exchange through the real Hoomans travel ownership boundary:
 
-1. Emit/consume an explicit exchange-enabled arrival action through the real
-   Hoomans travel seam without adding a second NPC lifecycle.
-2. Verify a surplus settlement acquisition followed by travel and a shortage
-   settlement disposal; preserve exact stock and unrelated goods.
-3. Add integration coverage for market-pressure direction, quote inputs,
-   duplicate arrival recovery, and persisted state across both settlements.
+- `DTHoomans.Settlement.StartTraderTravel` validates the active canonical
+  community, resolves the physical trader NPC, and delegates movement to
+  `PNC.API.Travel.Start`;
+- the serialized arrival action is strict, carries the canonical settlement
+  and DT trader identity, and defaults to `exchange=true` while allowing an
+  explicit opt-out;
+- the two-settlement integration moves food through a surplus farm visit and
+  a shortage military visit, changes each local market in the expected
+  direction, preserves unrelated exact stock, and reloads both markets and
+  trader stock from persistence.
 
-## Remaining gap after M2A
+## M2B evidence
 
-Default arrival wiring and the two-settlement propagation acceptance remain
-for M2B. Market-aware availability and quotes, generic scoped event
-resolution, grounded presentation, and the later roadmap phases remain
-incomplete; M2A does not change commercial quote calculation.
+- `python3 tests/run_tests.py`: `PASS 28/28`.
+- `env DT_MODS_ROOT=.../Contents/mods lua tests/dt_hoomans_bridge_harness.lua`:
+  `83 checks, 0 failures`.
+- PZ Verify Kahlua checks reported zero errors across the DTCommon and
+  DTHoomans production trees and the M2B contract/integration tests.
+- `luac -p` and `git diff --check` passed.
+
+## Next Chunk — M3
+
+Add market-aware commercial pricing over the existing MarketSense quote
+boundary:
+
+1. Resolve effective settlement pressure and active event modifiers without
+   replacing MarketSense intrinsic valuation.
+2. Apply bounded local scarcity/abundance and trader relationship modifiers
+   while preserving existing BUY/SELL commercial margins.
+3. Return structured server-owned quote explanations and cover opposite
+   surplus/shortage cases, immediate quote reaction, and reload behavior.
+
+## Remaining gap after M2B
+
+Market-aware availability and quotes, generic scoped event resolution,
+grounded presentation, and the later roadmap phases remain incomplete; M2B
+does not change commercial quote calculation.
 
 ## Known constraints
 

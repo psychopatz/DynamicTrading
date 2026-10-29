@@ -1,12 +1,20 @@
 local T = require "tests/support/test"
+local loadSource = T.load
 
 local registered = {}
 local calls = {}
 local seen = {}
+local travelStarts = {}
 
 DTCommon = {
     Storage = { IsAuthority = function() return true end },
     TraderService = {
+        GetRecord = function(traderID)
+            if traderID == "dt_caravan_1" then
+                return { p = "npc_trader_1", g = "faction_caravan_1" }
+            end
+            return nil
+        end,
         ForEach = function(callback)
             callback("dt_caravan_1", {
                 p = "npc_trader_1",
@@ -49,13 +57,20 @@ PNC = {
                 registered[id] = handler
                 return true
             end,
+            Start = function(npcID, request)
+                travelStarts[#travelStarts + 1] = {
+                    npcID = npcID,
+                    request = request,
+                }
+                return { journeyId = "journey:started" }, "started"
+            end,
         },
     },
     Travel = { Arrivals = { StrictActionTypes = {} } },
 }
 DTHoomans = {}
 
-local Settlement = T.load(
+local Settlement = loadSource(
     "DTHoomans", "server", "DTHoomans/DTHoomans_SettlementVisit.lua")
 T.truthy(registered[Settlement.ARRIVAL_ACTION],
     "Hoomans arrival handler is registered")
@@ -63,6 +78,34 @@ T.truthy(PNC.Travel.Arrivals.StrictActionTypes[Settlement.ARRIVAL_ACTION],
     "settlement arrival action is strict")
 T.equal(Settlement.SettlementIDForFaction("faction_target"),
     "community_target", "active Hoomans community is canonical settlement ID")
+
+local started, startedReason = Settlement.StartTraderTravel(
+    "dt_caravan_1", "community_target", {
+        destination = { x = 100, y = 200, z = 0 },
+        metadata = { route = "test" },
+    })
+T.truthy(started, startedReason)
+T.equal(#travelStarts, 1, "settlement travel delegates to Hoomans once")
+T.equal(travelStarts[1].npcID, "npc_trader_1",
+    "settlement travel uses the physical Hoomans NPC identity")
+T.equal(travelStarts[1].request.ownerMod, "DynamicTrading",
+    "travel action identifies DynamicTrading as the owner")
+T.equal(travelStarts[1].request.ownerRef, "dt_caravan_1",
+    "travel action keeps the DT trader reference")
+T.equal(travelStarts[1].request.arrivalAction.type,
+    Settlement.ARRIVAL_ACTION, "travel action uses the strict DT type")
+T.equal(travelStarts[1].request.arrivalAction.settlementID,
+    "community_target", "travel action uses canonical settlement identity")
+T.equal(travelStarts[1].request.arrivalAction.exchange, true,
+    "travel action defaults to partial exchange")
+local noExchange = Settlement.StartTraderTravel(
+    "dt_caravan_1", "community_target", {
+        destination = { x = 300, y = 400, z = 0 },
+        exchange = false,
+    })
+T.truthy(noExchange, "travel action can explicitly disable exchange")
+T.equal(travelStarts[2].request.arrivalAction.exchange, false,
+    "travel action preserves explicit exchange opt-out")
 
 local handler = registered[Settlement.ARRIVAL_ACTION]
 local handled, handledReason = handler(
