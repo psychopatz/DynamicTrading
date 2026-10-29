@@ -692,7 +692,120 @@ Commercial mobility must preserve existing Hoomans protections:
 
 Excursion or travel failure must never reroll merchant stock.
 
-## 18. Non-goals
+## 18. Spatial relation, place presentation, and semantic whereabouts
+
+Detailed contract: `SPATIAL_LANGUAGE.md`.
+
+### 18.1 Core spatial authority
+
+PsychopatzCore owns reusable point-to-point spatial relation mechanics.
+
+It should expose canonical data such as:
+
+```text
+dx / dy
+distance
+angle/bearing
+SAME_AREA
+NORTH / NORTHEAST / EAST / SOUTHEAST
+SOUTH / SOUTHWEST / WEST / NORTHWEST
+optional coarse distance band
+```
+
+Core must not know traders, excursions, communities, or semantic roles.
+
+Project Zomboid world-axis orientation must be verified once and frozen in Core tests. No adopter may reimplement compass sign logic.
+
+### 18.2 Hoomans place authority
+
+Hoomans resolves stable IDs to current presentation truth:
+
+- `community.id` → current `community.name`;
+- community/site/home coordinates;
+- player base/colony display name through its existing authority when available.
+
+Excursion persistence keeps stable destination identity only.
+
+Do not persist copied destination names, direction labels, or derived spatial prose inside the excursion record.
+
+### 18.3 Semantic reference point
+
+For a local answering about its settlement's absent trader, the preferred relation is:
+
+```text
+speaker/home community
+→ destination settlement
+```
+
+This is more stable than using the player's exact current tile.
+
+If no trustworthy origin exists, direction is omitted rather than fabricated.
+
+### 18.4 Privacy before realization
+
+Authoritative location truth does not imply public knowledge.
+
+Hoomans/semantic knowledge policy determines whether a speaker may disclose:
+
+- destination name;
+- direction;
+- distance band;
+- ETA.
+
+Core geometry never decides privacy.
+
+### 18.5 Generic role-whereabouts fact
+
+The semantic primitive should be reusable beyond traders.
+
+Conceptually:
+
+```text
+COMMUNITY_ROLE_WHEREABOUTS
+role = trader
+```
+
+The provider may expose:
+
+```text
+locationState
+activity / public reason
+phase
+destinationCommunityID
+destinationName
+direction
+distanceBand
+expectedReturnAt
+```
+
+subject to privacy.
+
+The first production consumer is "Where is your trader?", but later medics, scouts, envoys, couriers, and similar roles should be able to reuse the same fact model.
+
+### 18.6 Production semantic path
+
+Directly calling `CommunityExcursionService.GetSemanticContext` proves only an API.
+
+Parent completion requires the actual semantic/NLU/fact-provider/realization pipeline to consume excursion facts and produce grounded response content.
+
+Movement/excursion services expose facts only. They do not author one fixed trader sentence.
+
+### 18.7 Publication invariant
+
+A local combined checkout is insufficient if pushed DynamicTrading depends on unpushed Hoomans/Core code.
+
+Before developer-complete handoff:
+
+```text
+published PsychopatzCore origin/main
++ published ProjectHoomans origin/main
++ published DynamicTrading origin/main
+→ accepted cross-repo tests pass
+```
+
+No local-only required module may remain.
+
+## 19. Non-goals
 
 This job does not require:
 

@@ -231,3 +231,53 @@ The foundational Hoomans excursion model should be purpose-agnostic so future me
 At audit time Project Hoomans commit `2200b866` (`feat: expose mobile settlement arrival observers`) existed locally but was not contained by any remote branch, while the local Hoomans `main` also contained unrelated newer semantic-combat commits. The required observer contract must be reconciled/published safely; do not blindly publish unrelated local work merely to satisfy Dynamic Trading.
 
 The parent goal therefore remains developer-active for **M9E Resident/Publication Closure** and **M10 Community Excursions & Commercial Trader Mobility**.
+
+## Post-M10F publication + semantic-spatial audit
+
+Audit baseline:
+
+- DynamicTrading local/main = origin/main at `447cc27a65c9c7aca413eff77b5fc8e57d2fded5`;
+- ProjectHoomans local `main` = `7df32a633db81f4d74940790f2ae6eb65c42974c`, clean but 9 commits ahead of `origin/main` `fb5c75664cae94889798de8e51fe5e8ad2abfa33`;
+- PsychopatzCore local/main = origin/main at `ea5a1c7c8ec8c97efe87a2a233cbc61419a7a862`.
+
+M10D–M10F implementation itself is credible: the clean committed Hoomans snapshot at `16d1635e` paired with pushed DynamicTrading `447cc27a` reproduced the reported full Hoomans suite (`936/936`), and DynamicTrading's full suite passed `41/41`.
+
+However, developer completion is still blocked by two verified gaps.
+
+### Published dependency graph is incomplete
+
+A clean published-pair audit using DynamicTrading `origin/main` + ProjectHoomans `origin/main` fails the M10 resident/caravan tests because published Hoomans does not yet contain:
+
+- `PNC_CommunityExcursionService.lua`;
+- `PNC_CommercialMobilityService.lua`.
+
+The local Hoomans ahead history interleaves required M10 commits with unrelated semantic-scene commits. Therefore "implemented locally and tested" is not equivalent to "published dependency graph complete".
+
+M10G must reconcile/publish the minimal required Hoomans implementation safely and prove the exact published repository heads together.
+
+### Excursion semantic API is not wired into production dialogue
+
+Hoomans now exposes privacy-aware generic APIs such as:
+
+- `GetSocialStatus`;
+- `GetNPCSocialStatus`;
+- `GetCommunityAbsences`;
+- `GetSemanticContext`.
+
+At the audited baseline, production semantic code does not call `GetSemanticContext`; the relevant callers are the service itself and tests. Therefore "Where is your trader?" is still an API-level proof, not a production semantic/NLU/fact/realization feature.
+
+M10G must wire a generic role-whereabouts fact into the real semantic pipeline.
+
+### Settlement names are already authoritative in Hoomans
+
+Communities already carry a generated/renamable human-facing `community.name` and authoritative home/site coordinates. Destination presentation should resolve those current records on demand from `destinationCommunityID`.
+
+Do not persist copied settlement names into excursion state.
+
+### No reusable Core compass/spatial-language service exists yet
+
+PsychopatzCore has generic world/actor/location infrastructure and isolated direction math in UI/event-marker code, but no reusable shared point-to-point semantic spatial service.
+
+M10G therefore adds a reusable Core spatial relation/language foundation per `SPATIAL_LANGUAGE.md`, then makes Hoomans the first consumer.
+
+The parent goal remains developer-active for **M10G Publication + Semantic Spatial Integration Closure**.

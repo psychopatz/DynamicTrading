@@ -341,6 +341,8 @@ Examples:
 
 The first proof should demonstrate that a local asking/answering "where is the trader?" can consume authoritative excursion status without hard-coded DT movement checks.
 
+For destination-name and relative-direction enrichment, use the reusable contract in `SPATIAL_LANGUAGE.md`: resolve the live Hoomans destination place/name, then use PsychopatzCore spatial relation rather than persisting or recomputing compass text inside the excursion service.
+
 Dialogue wording remains downstream semantic realization; do not hard-code a fixed sentence in the excursion service.
 
 ## Future invitation seam

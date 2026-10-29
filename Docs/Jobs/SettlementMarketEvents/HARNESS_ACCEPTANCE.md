@@ -383,11 +383,104 @@ Explicit failures:
 - duplicate excursion/public-state persistence;
 - DynamicTrading becoming the travel/encounter/LOD authority.
 
+### M10G publication + semantic spatial integration acceptance
+
+#### Published dependency graph
+
+- clean published ProjectHoomans contains the generic excursion/commercial mobility modules required by pushed DynamicTrading;
+- clean published DynamicTrading + Hoomans no longer fail M10D/M10F due to missing modules;
+- any required PsychopatzCore spatial module is also published before downstream repos depend on it;
+- publication excludes unrelated local semantic-scene history unless it is proven required and independently accepted.
+
+#### Core spatial relation
+
+Test all of:
+
+- NORTH;
+- NORTHEAST;
+- EAST;
+- SOUTHEAST;
+- SOUTH;
+- SOUTHWEST;
+- WEST;
+- NORTHWEST;
+- SAME_AREA.
+
+Also prove:
+
+- A→B and B→A return exact opposite directions;
+- numeric distance is correct;
+- same-area threshold is configurable;
+- missing/NaN/infinite coordinates fail safely;
+- coordinate orientation matches the verified Project Zomboid world/map axis convention;
+- English label/presentation uses reusable translation/presentation seams rather than Hoomans/DT hard-coded compass strings.
+
+#### Hoomans place presentation
+
+Fixtures must prove:
+
+- destination name resolves from current authoritative `community.name`;
+- destination direction resolves from live community/site/home coordinates through Core;
+- semantic origin uses the speaker/home community for the resident-trader whereabouts case;
+- rename changes later output without editing excursion persistence;
+- coordinate relocation changes later direction without editing excursion persistence;
+- internal IDs are never substituted as user-facing names;
+- missing authoritative name/location degrades by omission, not fabrication.
+
+#### Production semantic pipeline
+
+Acceptance must enter through the real semantic/NLU/fact-provider/realization flow.
+
+At minimum test:
+
+- "Where is your trader?"
+- "Where's the trader?"
+- "Do you know where the trader went?"
+
+Authorized local while trader is VISITING:
+
+- receives authoritative away/trading-run state;
+- receives destination settlement name when known;
+- receives relative direction when known;
+- receives ETA when known;
+- can realize grounded output equivalent to "Our trader is at Riverside Collective, northeast of here."
+
+AT_HOME:
+
+- receives truthful at-home/available state.
+
+PREPARING:
+
+- receives preparing-for-run state.
+
+RETURNING_HOME:
+
+- receives returning state and appropriate home-relative information.
+
+Outsider/unauthorized viewer:
+
+- receives only privacy-permitted status;
+- does not receive privileged destination name, direction, or ETA.
+
+All semantic queries are read-only with respect to excursion/travel state.
+
+The acceptance must not call `CommunityExcursionService.GetSemanticContext` directly as a substitute for the production semantic pipeline.
+
+#### Published-head acceptance
+
+After all required publication:
+
+- archive/checkout the exact published `origin/main` heads for PsychopatzCore, ProjectHoomans, and DynamicTrading;
+- run the required cross-repo suites using those snapshots;
+- no local-only file may be required for passing M10;
+- no missing-module failure is acceptable;
+- report exact published SHAs.
+
 ### M10 final gate
 
-M10 is accepted only when both flagship lifecycles pass through production entrypoints, generic Hoomans non-admission/excursion contracts pass independently of DT, affected semantic tests consume public facts correctly, all previous market/event regressions remain green, and required cross-repo commits are safely published or a genuine blocker is documented.
+M10 is accepted only when M10A–M10G pass: both trader flagship lifecycles work through production entrypoints, generic Hoomans visit/excursion contracts remain independent of DT, reusable Core spatial relation is verified, the production semantic pipeline can answer grounded trader whereabouts with settlement name/direction under correct privacy, all previous market/event regressions remain green, and the published repository graph reproduces the accepted implementation.
 
-Only after M9E + M10 may native SP/MP be the sole remaining user-owned gate.
+Only after M9E + M10A–M10G may native SP/MP be the sole remaining user-owned gate.
 
 ## Native acceptance
 
@@ -403,6 +496,8 @@ When normal Project Zomboid SP/MP is authorized/available:
 - roaming caravan can naturally complete non-admission commercial settlement hops;
 - resident trader can leave on a rare commercial excursion, be absent at home, and return to the exact home settlement;
 - faction/community membership remains correct for both trader types;
-- local semantic status truthfully reflects home/preparing/away/returning phases.
+- local semantic status truthfully reflects home/preparing/away/returning phases;
+- an informed local can answer trader whereabouts with the actual destination settlement name and correct relative direction when those facts are known;
+- outsider/privacy cases do not leak destination name, direction, or ETA.
 
 If native testing is user-owned, Luna must finish every developer-side gate first and leave only the explicit native evidence pending.

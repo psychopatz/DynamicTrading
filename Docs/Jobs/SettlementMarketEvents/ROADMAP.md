@@ -390,9 +390,141 @@ Run affected Project Hoomans, DynamicTrading, Core, MarketSense, semantic, Lua/K
 
 #### Gate
 
-Both trader types behave according to their distinct lifecycles through production entrypoints. No commercial visit can trigger member admission, no DT-owned movement authority is introduced, long-distance travel remains abstract, and all required cross-repo changes are safely published or precisely blocked.
+Both trader types behave according to their distinct lifecycles through production entrypoints. No commercial visit can trigger member admission, no DT-owned movement authority is introduced, and long-distance travel remains abstract.
 
-Only after M9E and M10 are accepted may native SP/MP be the sole remaining user-owned acceptance gate.
+This gate proves lifecycle implementation, not final publication/semantic integration. M10G remains mandatory.
+
+### M10G — Publication + Semantic Spatial Integration Closure
+
+Read `SPATIAL_LANGUAGE.md` before implementation.
+
+M10G closes two verified post-M10F gaps:
+
+1. the required Hoomans M10 implementation is locally committed but not fully present on published `origin/main`;
+2. generic excursion semantic APIs exist, but the production semantic question/fact/realization pipeline does not yet consume them.
+
+It also introduces one reusable Core spatial-language primitive rather than trader-specific direction math.
+
+#### M10G-A — Clean cross-repo publication
+
+Re-audit DynamicTrading, ProjectHoomans, and PsychopatzCore local/remote state first.
+
+Planning snapshot:
+
+- DynamicTrading local/main = origin/main at `447cc27a`;
+- ProjectHoomans local `main` was clean at `7df32a63` and 9 commits ahead of `origin/main` `fb5c7566`;
+- the ahead Hoomans history interleaves required M10 commits with unrelated semantic-scene commits;
+- PsychopatzCore local/main = origin/main at `ea5a1c7c`.
+
+Do not blindly push Hoomans local `main`.
+
+Safely reconcile/publish the minimal required M10 dependency graph from the current verified source. A detached clean worktree or equivalent repository-safe method is acceptable if it does not create a new branch or disturb the user's local main. Re-run tests against the exact publishable commit graph before pushing.
+
+#### Gate
+
+Fresh published snapshots of the required repositories contain `PNC_CommunityExcursionService`, `PNC_CommercialMobilityService`, resident excursion integration, and their required dependencies. DynamicTrading M10D/M10F tests no longer fail because published Hoomans files are missing.
+
+#### M10G-B — PsychopatzCore reusable spatial relation
+
+Add a portable shared/common Core module per `SPATIAL_LANGUAGE.md`.
+
+Required capabilities:
+
+- validate finite point coordinates;
+- compute dx/dy and Euclidean distance;
+- compute a canonical angle/bearing representation;
+- classify `SAME_AREA` plus all eight cardinal/intercardinal directions;
+- preserve numeric distance;
+- support configurable same-area threshold;
+- optionally classify configurable coarse distance bands;
+- expose canonical tokens independent of English prose;
+- integrate with existing translation/presentation conventions for English labels without duplicating hard-coded strings across consumers.
+
+Verify Project Zomboid's actual world-axis orientation and freeze it in tests. Do not let Hoomans or DynamicTrading guess sign conventions independently.
+
+#### Gate
+
+Core regression proves all eight directions, exact opposites, same-area behavior, invalid-coordinate safety, distance correctness, and the frozen PZ coordinate orientation. The module has no Hoomans/DynamicTrading dependency and performs O(1) work.
+
+#### M10G-C — Hoomans destination/place presentation
+
+Extend Hoomans' generic excursion semantic projection using authoritative place data.
+
+Requirements:
+
+- resolve destination `community.id` to the current `community.name`;
+- resolve destination coordinates from authoritative community/site/home state;
+- resolve the semantic origin primarily from the speaker/home community when answering about its own absent member;
+- use Core spatial relation for direction/distance;
+- for player colony/base targets, resolve the existing canonical user-facing name if trustworthy;
+- omit a name/direction when authoritative data is unavailable rather than leaking an internal ID or fabricating location text;
+- do not persist copied destination names or computed directions in excursion state.
+
+#### Gate
+
+Renaming or relocating a destination changes later semantic presentation automatically without rewriting the excursion record. Hoomans tests prove canonical name + spatial relation from live authoritative state.
+
+#### M10G-D — Production semantic whereabouts provider + realization
+
+Wire the generic excursion/whereabouts facts into the **real production semantic pipeline**, not a direct API-only test.
+
+Use a generic fact/intent such as `COMMUNITY_ROLE_WHEREABOUTS` with `role=trader` as the first consumer.
+
+Support natural input variants including at least:
+
+- "Where is your trader?"
+- "Where's the trader?"
+- "Do you know where the trader went?"
+
+The production flow must resolve:
+
+```text
+semantic/NLU question
+→ generic role-whereabouts fact
+→ Hoomans privacy-aware excursion status
+→ authoritative destination place
+→ Core spatial relation
+→ semantic realization
+```
+
+For an authorized local, context/realization must be able to include:
+
+- actual destination settlement name;
+- relative direction from the meaningful origin;
+- ETA/return time when known.
+
+For an outsider or poorly informed speaker, privacy may omit destination name, direction, and ETA.
+
+Do not hard-code one fixed trader sentence inside movement/excursion services. Reuse the semantic realization/localization system and provide variants where that system expects them.
+
+#### Gate
+
+A production semantic test—not a direct `GetSemanticContext` call—can answer an informed local with grounded content equivalent to:
+
+> "Our trader is at Riverside Collective, northeast of here."
+
+when the authoritative fixtures support that fact.
+
+The same test suite proves home/preparing/away/returning states, outsider privacy, and that semantic queries cannot start/cancel/redirect an excursion.
+
+#### M10G-E — Published-pair acceptance
+
+After publication, validate from clean/fresh snapshots of the published repository heads rather than only the local combined checkout.
+
+At minimum:
+
+- Core spatial tests;
+- Hoomans excursion/commercial mobility/semantic tests;
+- DynamicTrading resident/caravan/market suites;
+- cross-repo bridge tests;
+- Lua/Kahlua/static/translation/diff checks;
+- no missing-module failures from published `origin/main` heads.
+
+#### Gate
+
+The published repository graph reproduces the accepted developer behavior. Only then may native SP/MP be the sole remaining user-owned acceptance gate.
+
+Only after M9E and M10A–M10G are accepted may native SP/MP be the sole remaining user-owned acceptance gate.
 
 ## Optional later extensions — not part of completion
 

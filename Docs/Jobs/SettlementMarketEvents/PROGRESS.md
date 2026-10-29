@@ -2,279 +2,317 @@
 
 ## Parent status
 
-**DEVELOPER-COMPLETE — M0–M10 market, event, excursion, and trader-mobility implementation gates pass. Native SP/MP remains the sole user-owned acceptance gate.**
+**IN PROGRESS — M0–M10F implementation is accepted; M10G Publication + Semantic Spatial Integration Closure is mandatory before native SP/MP handoff.**
 
-The complete M0–M10 roadmap is the parent completion boundary. A chunk or phase completing does not complete the parent objective.
+The complete M0–M10 roadmap, including M10G, remains the parent completion boundary. A chunk or phase completing does not complete the parent objective.
 
-## Planning baseline
+## Current repository audit baseline
 
-DynamicTrading audited `main`:
+### DynamicTrading
 
-`9ee65f0be58bdea00a1f1532173ec9fa8afee021`
+- local `main`: `447cc27a65c9c7aca413eff77b5fc8e57d2fded5`;
+- `origin/main`: same;
+- unrelated pre-existing local edit remains:
+  `Contents/mods/DTHoomans/42.20/media/lua/shared/DTHoomans/DTHoomans_Conversation.lua`.
 
-Legacy behavioral reference:
+Preserve that edit unless its owner explicitly incorporates it.
 
-`ee0a8dc6a6989fbbdbd943ec23aa3f1c54099415`
+### Project Hoomans
 
-Current Project Hoomans re-audit:
+- local `main`: `7df32a633db81f4d74940790f2ae6eb65c42974c`;
+- `origin/main`: `fb5c75664cae94889798de8e51fe5e8ad2abfa33`;
+- local `main` is clean and 9 commits ahead;
+- ahead history interleaves required M10 commits with unrelated semantic-scene commits.
 
-- local `main`: `16d1635e` (`feat: complete community excursion mobility lifecycle`);
-- remote `origin/main`: `fb5c7566` (`feat: add generic settlement visits`);
-- required generic settlement-arrival observer `2200b866` remains contained by `origin/main`;
-- local `main` also contains unrelated semantic-runtime commits and remains ahead of `origin/main`; `16d1635e` is committed locally but is not pushed because publishing that non-fast-forward history would publish unrelated work;
-- unrelated local semantic adapter work remains uncommitted and is preserved unstaged.
+Planning-time ahead sequence:
 
-DynamicTrading remains concurrently changing; recheck both repositories before each publication.
+```text
+7df32a63 feat: add semantic scene opportunity admission
+0507d2c8 feat: add semantic scene audience handoff
+16d1635e feat: complete community excursion mobility lifecycle
+be38dde5 feat: add semantic scene continuation
+ca038eec feat: add generic commercial caravan mobility
+0cc195d3 feat: add global semantic scene runtime
+776c7d07 feat: add generic community excursions
+a16a9f3d feat: adapt managed npcs into semantic scenes
+b6ab4f49 test: freeze semantic scene runtime baseline
+```
 
-DynamicTrading also contains the unrelated pre-existing local edit:
+Re-audit before acting. Do not blindly push local Hoomans `main`.
 
-`Contents/mods/DTHoomans/42.20/media/lua/shared/DTHoomans/DTHoomans_Conversation.lua`
+### PsychopatzCore
 
-Preserve it unless its owner explicitly incorporates it.
+- local `main`: `ea5a1c7c8ec8c97efe87a2a233cbc61419a7a862`;
+- `origin/main`: same;
+- clean at planning audit.
 
-## Accepted M0–M8 engine foundation
+Read its root `AGENTS.md` before M10G-B edits.
+
+## Accepted foundation — M0 through M9
 
 Accepted and regression-protected:
 
-- stable trader registry and persistent exact merchant stock;
+- persistent exact trader stock/budget;
 - MarketSense intrinsic-value/taxonomy authority;
-- compact settlement market registry/profile/pressure/recovery;
+- compact settlement market state/profiles/pressure/recovery;
 - bounded partial settlement exchange;
-- server-authoritative market-aware quote pipeline;
-- generic scoped market-event registry and data-only proof events;
-- two-settlement logistics propagation through persistent trader stock;
-- grounded WorldKnowledge / Talk / Radio market-event presentation;
-- schema migration, bounds, cache/profiler hardening;
-- replay/stale-version/security protections;
-- no per-frame economy, all-trader event rewrite, or per-quote full item scan.
+- market-aware server-authoritative pricing;
+- generic scoped market events and grounded event presentation;
+- real Hoomans settlement-arrival activation;
+- lazy market provisioning/recovery;
+- production market-condition event producer;
+- resident settlement trader market context;
+- no per-frame economy/all-trader/full-item hot loops.
 
-Legacy remains behavioral reference only. Do not restore DTNPC, manual price catalogs, or monolithic legacy dialogue.
+Do not redo these phases without evidence of regression.
 
-## Accepted M9A–M9D runtime activation
+## Accepted trader-mobility foundation — M10A through M10F
 
-M9 closed the earlier "engine exists but gameplay does not drive it" gap.
+Accepted implementation/evidence:
 
-Accepted behavior:
+### M10A
 
-- production Hoomans mobile-settlement arrival can notify DynamicTrading;
-- missing settlement markets are lazily provisioned by canonical Hoomans `community.id`;
-- bounded Hoomans metadata resolves a market profile with safe `default` fallback;
-- settlement visit drives one idempotent DT exchange;
-- elapsed authoritative time drives lazy market recovery;
-- production market-condition producer can register/clear Food Shortage / Agricultural Surplus through the generic event registry;
-- event production uses raw persisted pressure with hysteresis/cooldown;
-- event start affects price/availability/presentation but not exact merchant stock;
-- M9 flagship starts with no target DT market/event and drives the public Hoomans arrival lifecycle rather than direct test-only DT setup calls.
+- generic Hoomans `settlement_visit` distinct from admission;
+- commercial intent reuses relationship/hostility/encounter/pending-arrival/expiry/LOD machinery;
+- commercial visits never invoke admission member-transfer behavior.
 
-Latest accepted evidence:
+Published Hoomans baseline containing M10A:
 
-- full DynamicTrading suite: `929/929`;
-- full Project Hoomans suite: `929/929`;
-- M9E resident market-context acceptance passed;
-- Hoomans arrival-observer diagnostic regression passed;
-- changed production Lua passed `luac -p`, Kahlua verification, and `git diff --check`.
+`fb5c7566`
 
-These are accepted engine/runtime results. Do not redo M0–M9D unless current source proves a regression.
+### M10B
 
-## Post-M9 trader-lifecycle audit
+- purpose-agnostic `CommunityExcursionService`;
+- persisted AT_HOME → PREPARING → OUTBOUND → VISITING → RETURNING_HOME → AT_HOME lifecycle;
+- exact home/faction identity;
+- bounded itinerary/participants;
+- lifecycle notifications, public/social projection, failure/retry;
+- long-distance abstract / local-live boundary preserved.
 
-The claim that native SP/MP was the only remaining step is superseded.
+Implementation commit:
 
-### Two real trader types
+`776c7d07` — local Hoomans history, not yet on published `origin/main`.
 
-**Settlement-owned resident trader**
+### M10C
 
-- ordinary non-mobile Hoomans settlement member with role `trader`;
-- has a real home community;
-- currently remains at home;
-- should leave only rarely for purposeful commercial excursions.
+- generic `CommercialMobilityService`;
+- Hoomans owns candidate discovery, danger/diplomacy, final target, travel and encounters;
+- optional bounded commercial opportunity scoring;
+- base-less caravan can enter real commercial settlement travel;
+- recent-visit anti-ping-pong behavior.
 
-**Base-less roaming trader/caravan**
+Implementation commit:
 
-- independent Hoomans mobile trader faction;
-- has no home community or hidden base;
-- default state is perpetual roaming/travel;
-- should commercially visit settlements without admission/absorption.
+`ca038eec` — local Hoomans history, not yet on published `origin/main`.
 
-### Closed M9E gaps
+### M10D–M10F
 
-- staffed resident binding now resolves the active Hoomans `community.id`;
-- binding idempotently provisions the local market and stores separate home/current context;
-- first snapshot/quote uses the home market without a fake visit, exchange, pressure mutation, or stock/budget change;
-- home identity remains distinct from `lastSettlementID` commercial history;
-- the generic Hoomans arrival observer is published on `main` and reports bounded clean listener failures without interrupting arrival lifecycle;
-- M9E acceptance starts with an active staffed settlement and no pre-created DT market.
+- rare resident-trader commercial excursions;
+- exact-home return;
+- resident faction/community membership preserved;
+- away resident unavailable at home;
+- exact merchant stock carried through visits;
+- base-less caravan A→B→C production mobility;
+- no admission/home/base for perpetual caravan;
+- privacy-aware social/excursion status;
+- bounded future commercial request/evaluator seam;
+- replay/failure/save-load hardening.
 
-## Closed M10 developer gates
+Hoomans implementation commit:
 
-1. **Resident excursion production policy**
-   A bounded Dynamic Trading policy now evaluates budget, carried stock, home availability, cooldown, meaningful Hoomans opportunity, safety, Follow Player, protected work, and exact-home identity before creating a generic Hoomans participant excursion. The resident remains in its original faction/community, keeps exact merchant stock, and is unavailable for home trade while away.
+`16d1635e` — committed locally, not yet on published `origin/main`.
 
-2. **Semantic/public status and request seam**
-   Hoomans exposes privacy-aware generic social facts for home, preparing, away, visiting, returning, and failure states; authorized home-faction viewers may receive bounded destination/ETA while outsiders do not. A bounded commercial request evaluator seam accepts only accept/reject/defer decisions and never commands movement or mutates excursion state.
+DynamicTrading implementation:
 
-3. **Flagship/failure hardening**
-   Production tests cover the base-less A→B→C caravan and Home A→B→Home A resident lifecycles, exact stock continuity, one exchange per arrival, pressure/logistics, anti-ping-pong history, abstract travel revisions, encounter-delayed arrival, hostile/invalid destinations, duplicate arrivals, retry, save/reload, Follow Player, protected work, and semantic status across all major phases.
+`447cc27a` — published on `origin/main`.
+
+Verified developer evidence:
+
+- DynamicTrading full suite: `41/41`;
+- focused resident/caravan cross-repo regressions: `3/3`;
+- clean Hoomans archive at `16d1635e` paired with DynamicTrading `447cc27a`: `936/936`.
+
+These results prove the local committed implementation, not the published dependency graph.
+
+## Post-M10F audit — remaining developer gaps
+
+### 1. Published Hoomans dependency graph is incomplete
+
+A clean published-pair audit using:
+
+```text
+DynamicTrading origin/main = 447cc27a
+ProjectHoomans origin/main = fb5c7566
+```
+
+fails M10 tests because published Hoomans is missing required modules including:
+
+- `PNC_CommunityExcursionService.lua`;
+- `PNC_CommercialMobilityService.lua`.
+
+Therefore the goal is not developer-complete while pushed DynamicTrading requires local-only Hoomans implementation.
+
+### 2. Production semantics does not consume excursion whereabouts
+
+Hoomans exposes:
+
+- `GetSocialStatus`;
+- `GetNPCSocialStatus`;
+- `GetCommunityAbsences`;
+- `GetSemanticContext`.
+
+But production semantic code does not currently call `GetSemanticContext`.
+
+The existing "where is the trader?" evidence is API/test-level, not an actual production semantic/NLU/fact/realization path.
+
+### 3. Destination settlement name is not yet projected into production semantic facts
+
+Hoomans already owns authoritative:
+
+- `community.id`;
+- human-facing `community.name`;
+- `community.home` / site-home coordinates.
+
+M10G must resolve the current name/location on demand from the stable destination ID. Do not persist copied destination names.
+
+### 4. No reusable Core coordinate→direction service exists
+
+PsychopatzCore has no shared semantic spatial-relation module yet.
+
+M10G must add one reusable Core primitive for:
+
+- point validation;
+- dx/dy;
+- distance;
+- angle/bearing;
+- SAME_AREA;
+- 8-way cardinal direction;
+- optional configurable coarse distance band;
+- reusable localized/presentation labels.
+
+See `SPATIAL_LANGUAGE.md`.
 
 ## Current phase
 
-**M10F — Flagship, failure, and hardening gates accepted**
+**M10G — Publication + Semantic Spatial Integration Closure**
 
-## Handoff state
+## Next Chunk — M10G-A: clean Hoomans publication reconciliation
 
-M10D, M10E, and M10F are accepted on the developer side. Native Project Zomboid SP/MP replay remains user-owned acceptance; no further developer roadmap chunk remains.
+Start with publication truth before adding new downstream dependencies.
 
-### Historical M10D acceptance scope
+### Required work
 
-1. Re-audit settlement trader staffing, home identity, facility/work ownership, Follow Player, trader availability, and the generic Hoomans excursion APIs.
-2. Add a bounded production policy that can prepare a resident trader for a worthwhile and safe commercial destination without converting the home faction into a mobile group.
-3. Reuse generic Hoomans excursion phases, abstract travel, encounters, temporary settlement visits, exact-home return, failure/retry, presence/LOD, and persistence.
-4. Keep the original `community.id` and faction membership authoritative throughout; carry the existing merchant stock and make the trader unavailable for home trade while away.
-5. Add focused resident lifecycle coverage for policy gates, destination visit, exact-home return, cooldown, protected work, Follow Player, save/reload, and idempotent arrival/exchange.
-6. Run focused cross-repository regressions, Lua/Kahlua/static/persistence/diff checks, update this ledger, and commit/push coherent in-scope work only when fast-forward-safe.
+1. Read DynamicTrading root `AGENTS.md` and this job package in runbook order.
+2. Recheck DynamicTrading status/HEAD/upstream/worktrees.
+3. Read Project Hoomans root `AGENTS.md`.
+4. Recheck Hoomans local/remote status, ahead history, dirty files, and worktrees.
+5. Determine the **minimal required publishable dependency graph** for M10B–M10F.
+   - Candidate implementation commits include `776c7d07`, `ca038eec`, and `16d1635e`;
+   - do not assume they are independent of intervening commits;
+   - verify dependencies from source/tests.
+6. Build/test an exact publishable Hoomans state without disturbing or rewriting the user's local `main`.
+   - no new branch;
+   - a detached clean worktree or equivalent repository-approved method is acceptable;
+   - no destructive reset/rebase/stash/discard.
+7. Pair that publishable Hoomans snapshot with published DynamicTrading `447cc27a`.
+8. Run the M10 resident/caravan tests and required Hoomans regressions.
+9. Push only a verified fast-forward-safe Hoomans `main` update when the resulting history contains the required M10 implementation without unintentionally publishing unrelated unaccepted work.
+10. Update this ledger with exact published Hoomans SHA/evidence.
 
-### M10D gate
+### M10G-A gate
 
-M10D was accepted when:
+Fresh published Hoomans + DynamicTrading snapshots contain all required M10 modules and pass the relevant M10 tests with no missing-module failures.
 
-- a settlement-owned trader leaves only through a bounded purposeful policy;
-- original faction/community membership and canonical home identity remain unchanged;
-- Hoomans owns the excursion, safety, travel, encounters, exact return, and temporary visit lifecycle;
-- the trader carries the exact existing stock, is unavailable at home while away, and restores home availability on return;
-- cooldown and protected-task/Follow Player gates prevent unsafe or immediate repeat departure;
-- unrelated local work remains preserved.
+After M10G-A, continue automatically to M10G-B. Do not stop for another `/goal`.
 
-Do not create another `/goal` for the accepted developer-side roadmap.
+## Remaining mandatory M10G work
 
-## M10C validation ledger — accepted
+### M10G-B — PsychopatzCore spatial relation
 
-- Hoomans now exposes a generic, scheduled `CommercialMobilityService`; it discovers bounded settlement candidates, applies location danger and existing relationship/hostility eligibility, scores distance, and owns final destination selection and abstract travel.
-- `settlement_visit` with extensible `commercial` intent is reused for arrivals; no admission join chance or membership transfer is invoked, and the existing observer/exchange seam remains authoritative and idempotent.
-- DT caravans persist `mobilityIntent = commercial`, retain `mobilePathMode = random` and `mobileControlMode = strategic`, and lazily repair older DT caravan records without recreating factions, stock, or NPCs.
-- DT registers only one bounded read-only economic scorer over compact settlement market/event state; it does not scan the MarketSense registry, rewrite all traders, mutate pressure, or change stock at event/travel start.
-- Player settlements without a pre-existing base compete under the same Hoomans safety/relationship contract; bounded canonical-community visit history prevents immediate A↔B ping-pong.
-- Stale base/leader comments were corrected; the roaming caravan remains a base-less independent faction with no hidden home or offscreen leader.
-- Focused M10C tests pass in both repositories; full current smoke suites pass DynamicTrading `39/39` and Project Hoomans `934/934`; changed M10C Lua passed Kahlua verification and `git diff --check`.
-- Hoomans M10C commit: `ca038eec` on local `main`, not pushed because local `main` also contains unrelated semantic-runtime commits ahead of `origin/main` (`fb5c7566`). The DynamicTrading conversation edit and Hoomans semantic work remain unstaged.
+Read PsychopatzCore root `AGENTS.md` first.
 
-## M10 — Community Excursions & Commercial Trader Mobility
+Implement the reusable contract in `SPATIAL_LANGUAGE.md`:
 
-Read `COMMUNITY_EXCURSIONS.md` before implementation.
+- shared/common dependency-safe module;
+- finite coordinate validation;
+- dx/dy + Euclidean distance;
+- verified PZ axis convention;
+- canonical angle/bearing;
+- SAME_AREA + all 8 directions;
+- configurable same-area threshold;
+- optional configurable distance bands;
+- translation/presentation-safe English direction labels;
+- no Hoomans/DT dependency.
 
-Mandatory order:
+Tests must freeze all directions, opposites, invalid inputs, distance, dead zone, and PZ orientation.
 
-1. **M10A — generic non-admission settlement visit**
-   - temporary visit distinct from admission;
-   - extensible visit intent, commercial first;
-   - no membership transfer;
-   - reuse Hoomans relationship/encounter/pending-arrival/expiry/LOD behavior.
+Publish Core before downstream code depends on the new module.
 
-2. **M10B — generic Community Excursion foundation**
-   - Hoomans-owned, purpose-agnostic;
-   - AT_HOME → PREPARING → OUTBOUND → VISITING → RETURNING_HOME → AT_HOME;
-   - exact home community;
-   - compact persistence, notifications, public/social projection;
-   - long-distance abstract / local live boundary preserved.
+### M10G-C — Hoomans authoritative place projection
 
-3. **M10C — base-less roaming commercial caravan**
-   - no home/base/return phase;
-   - production AI naturally selects commercial settlements;
-   - Hoomans owns final destination/movement;
-   - DT provides bounded economic opportunity score only;
-   - recent-visit anti-ping-pong memory;
-   - player settlement treated as another safe/opportune market;
-   - commercial visit never admission;
-   - remove stale imaginary-base comments.
+- destination `community.id` → current `community.name`;
+- resolve destination home/site coordinates;
+- prefer speaker/home community as semantic origin for its own absent member;
+- use Core spatial relation;
+- resolve player-base name through existing authority where available;
+- omit unavailable name/direction rather than leaking IDs/fabricating;
+- rename/relocation changes later projection without rewriting excursion persistence.
 
-4. **M10D — rare resident-trader commercial excursions**
-   - home by default;
-   - rare purposeful departure;
-   - remain member of original faction/community;
-   - no whole-faction mobility conversion;
-   - protected Follow/task/home cooldown gates;
-   - exact-home return;
-   - away trader unavailable for physical home trade;
-   - exact merchant stock carried through visits.
+### M10G-D — production semantic whereabouts
 
-5. **M10E — semantic/public excursion facts + future request seam**
-   - generic public status: home/preparing/away/visiting/returning;
-   - public reason can be trading run;
-   - destination/ETA only when known/allowed;
-   - semantic knowledge layer consumes facts, not movement internals;
-   - first proof supports truthful "where is your trader?" context;
-   - future "visit my settlement" is a request/suggestion evaluated by faction/trader AI, never a direct movement command;
-   - full player invitation UI/dialogue is not required.
+Wire the real semantic/NLU/fact-provider/realization pipeline.
 
-6. **M10F — flagship/failure/hardening**
-   - perpetual caravan: A→B→C commercial visits, no admission/home/stock reroll;
-   - resident trader: Home A→B→Home A, exact home and membership preserved;
-   - encounter, invalid destination, duplicate arrival, Follow/protected task, save/reload failsafes;
-   - semantic status through all phases;
-   - no per-frame route solver, full-market scan per NPC, or physical full-map pathfinding.
+Use a generic role-whereabouts fact, with trader as first consumer.
+
+Required user inputs include:
+
+- "Where is your trader?"
+- "Where's the trader?"
+- "Do you know where the trader went?"
+
+For an informed local and authoritative fixture where the trader is at Riverside Collective northeast of home, the real semantic path must have enough grounded data to realize an answer equivalent to:
+
+> "Our trader is at Riverside Collective, northeast of here."
+
+ETA may be included when known.
+
+Privacy must remove destination name/direction/ETA for unauthorized/poorly informed speakers.
+
+The acceptance must not substitute a direct `GetSemanticContext` call for production semantic flow.
+
+### M10G-E — published-head acceptance
+
+After all required publication:
+
+```text
+PsychopatzCore origin/main
++ ProjectHoomans origin/main
++ DynamicTrading origin/main
+```
+
+must reproduce the accepted developer behavior from clean snapshots.
+
+Required:
+
+- Core spatial tests;
+- Hoomans excursion/mobility/semantic tests;
+- DynamicTrading full/focused tests;
+- cross-repo bridges;
+- Lua/Kahlua/static/translation/diff checks;
+- exact published SHAs recorded;
+- no required local-only modules.
 
 ## Ownership invariants
 
-- **Project Hoomans:** NPC/faction/community identity, movement, long-distance abstract travel, local live behavior, encounters, presence/LOD, generic temporary visits, generic excursions, exact-home resolution, public excursion social truth.
-- **Dynamic Trading:** merchant stock/budget, settlement market, exchange, market events, commercial scoring/policy, economic consequences.
-- **MarketSense:** intrinsic value and taxonomy.
-- **Semantic/knowledge systems:** consume authoritative public facts and knowledge visibility; never mutate movement directly.
+- **PsychopatzCore:** reusable geometry/spatial tokens/presentation primitives only.
+- **Project Hoomans:** community/place identity, movement/excursions, privacy-aware whereabouts facts, semantic place/reference resolution.
+- **Dynamic Trading:** merchant stock, market/economics, commercial policy/scoring.
+- **Semantic/knowledge:** intent/fact selection, disclosure, natural-language realization; never movement authority.
 
-## Known constraints / stop conditions
+## Stop conditions
 
-- Preserve the unrelated local `DTHoomans_Conversation.lua` edit.
-- Preserve unrelated Project Hoomans semantic-combat work.
-- Never route a commercial trader through admission member-transfer semantics.
-- Never invent a base/home for the perpetual caravan.
-- Never make DynamicTrading the movement/encounter/LOD authority.
-- Native SP/MP remains user-owned **only after M9E and M10 developer gates pass**.
-- Continue automatically through M9E and M10A–M10F.
-- Stop early only for a genuine repository conflict/publication blocker, missing required dependency with no safe fallback, authorization boundary, or unspecified product decision that prevents safe implementation.
+Do not hand back as developer-complete until M10G-A through M10G-E pass.
 
-## M9E validation ledger — accepted
+Stop early only for a genuine Git/publication conflict, missing required dependency with no safe fallback, authorization boundary, or unspecified product decision that prevents safe implementation.
 
-- Hoomans re-audit: local/remote `main` is `f0eb0384`; `2200b866` is published in `origin/main`.
-- Resident acceptance: `tests/dt_m9e_resident_market_context_smoke.lua` starts with an active staffed settlement and no DT market, then provisions one canonical `community.id` market through `EnsureTraderForFaction`.
-- Resident binding writes separate home/current context; snapshot and quote use the local farm profile while `lastSettlementID`, visit count, stock, budget, and pressure remain unchanged.
-- Hoomans observer diagnostics record clean listener `false, reason` results and continue the authoritative arrival lifecycle.
-- Full verification: DynamicTrading `929/929`; Project Hoomans `929/929`; focused M9A/M9D/M9E and Hoomans admission regressions pass; applicable Kahlua and diff checks pass.
-- Unrelated DynamicTrading conversation work and unrelated Hoomans semantic-document work were not staged, committed, or pushed.
-
-## M10A validation ledger — accepted
-
-- Hoomans published generic `settlement_visit` purpose and bounded extensible `intent` field; `commercial` is data preserved by the generic service, not a Dynamic Trading branch.
-- Non-admission visits reuse Hoomans relationship/hostility checks, encounter deferral, pending arrival, expiry, public visit projection, and abstract arrival lifecycle.
-- Commercial-style arrival never invokes the configured AI admission join chance, transfers no member, and rejects admission actions.
-- Duplicate arrival revisions are idempotent; the focused Hoomans regression and full `929/929` suite pass.
-- Published Hoomans commit: `fb5c7566`.
-
-## M10B validation ledger — accepted
-
-- Hoomans now owns a purpose-agnostic `CommunityExcursionService` persisted on the authoritative faction record.
-- The service enforces `AT_HOME → PREPARING → OUTBOUND → VISITING → RETURNING_HOME → AT_HOME`, with explicit `FAILED` and bounded retry transitions.
-- Canonical home faction/community identity, bounded participants/itinerary, purpose, timestamps, revisions, exact-home resolution, public status, and lifecycle notifications are persisted and normalized across reload.
-- Hoomans WorldDirector runs bounded reconciliation on an hourly scheduler job; no per-frame movement or economy loop was added.
-- Focused lifecycle, composition, MP loader, and settlement-arrival regressions pass; full Project Hoomans suite passes `932/932`.
-- Hoomans M10B commit: `776c7d07` (local `main` only; not published because unrelated local semantic-runtime commits are ahead of `origin/main`).
-- Hoomans changed Lua passed Kahlua checks; the pre-existing MP inventory test's `io.popen` warning remains outside this chunk.
-- Unrelated Hoomans semantic adapter work and the unrelated DynamicTrading conversation edit remain preserved and unstaged.
-
-## M10D validation ledger — accepted
-
-- Dynamic Trading now registers a bounded resident policy with Hoomans `CommunityExcursionService`; policy selection uses the existing trader budget/stock and home availability, cooldown, Hoomans opportunity/safety, Follow Player, and protected-work gates.
-- Hoomans keeps the resident faction non-mobile and preserves the original faction/community membership. The participant travel request carries `commercial` intent, while the Dynamic Trading listener only changes trader availability, current/home context, and the authoritative bounded settlement exchange.
-- Visiting performs one idempotent exchange with the exact merchant stock; outbound/visiting/returning states make the trader unavailable to home trade; `AT_HOME` restores exact home context and availability.
-- Focused resident coverage passes for no-precreated home market, policy-driven departure, duplicate arrival, exact-home return, cooldown, Follow Player, protected work, and save/reload in outbound/visiting/returning phases.
-
-## M10E validation ledger — accepted
-
-- Hoomans exposes generic privacy-aware `GetSocialStatus`, `GetNPCSocialStatus`, `GetCommunityAbsences`, and `GetSemanticContext` projections with authoritative phase/state, public reason, bounded purpose/intent, and destination/ETA disclosure only for an authorized home-faction viewer.
-- The Hoomans request seam accepts bounded commercial destination suggestions and returns evaluator decisions (`accepted`, `rejected`, or `deferred`) without directly starting or mutating travel. Excursion wording remains semantic-layer responsibility.
-- Listener failures from both thrown callbacks and clean `false, reason` returns remain diagnostic and cannot interrupt the Hoomans-owned arrival lifecycle.
-- Focused Hoomans participant/social/request coverage passes, including truthful local route context and outsider route/ETA privacy.
-
-## M10F validation ledger — accepted
-
-- Base-less DT caravan production coverage drives Hoomans destination selection and abstract travel through settlement A, B, and C while retaining no home/base, avoiding admission, preserving exact stock, and applying at most one exchange per destination.
-- Bounded recent-visit cooldown and monotonic travel revisions prevent A↔B replay/ping-pong; hostile/invalid targets, encounter-delayed arrivals, duplicate arrivals, save/reload, retry, and pressure/logistics consequences are covered.
-- Resident and caravan focused tests pass DynamicTrading `3/3`; the affected Hoomans excursion/mobility regressions pass `3/3`; DynamicTrading's full suite passes `41/41`; and a clean committed Hoomans snapshot at `16d1635e` passes `936/936`. The live Hoomans worktree's full runner is currently blocked only by preserved unrelated semantic/MP edits (three failures in those dirty files), which were neither staged nor changed by this chunk.
-- Hoomans M10D–M10F implementation is committed locally as `16d1635e` but is not pushed because local `main` contains unrelated ahead history. DynamicTrading scoped implementation commit `d9a6a8cd` is pushed to `origin/main`; unrelated local work remains unstaged.
+Native SP/MP becomes the sole remaining user-owned gate **only after M10G passes from published repository heads**.

@@ -2,13 +2,13 @@
 
 ## Mission
 
-Implement the full Settlement Market, Events & Trader Mobility parent objective on the existing DynamicTrading `main`, with the smallest required generic cross-repo Project Hoomans changes on its existing `main`.
+Implement the full Settlement Market, Events & Trader Mobility parent objective on the existing DynamicTrading `main`, with the smallest required generic cross-repo Project Hoomans and PsychopatzCore changes on their existing `main` branches.
 
 The immediate Next Chunk in `PROGRESS.md` is only the starting responsibility.
 
 > A chunk or phase completing is **not** completion of this job.
 
-Continue automatically through all mandatory M0–M10 roadmap work after each accepted chunk unless a genuine blocker or user-only native acceptance gate remains. M0–M9D built and activated the market/event engine; M9E and M10 now close resident-market, publication, generic excursion, and commercial-mobility gaps before native handoff.
+Continue automatically through all mandatory M0–M10 roadmap work after each accepted chunk unless a genuine blocker or user-only native acceptance gate remains. M0–M10F built the market/event and trader-mobility systems; M10G now closes cross-repo publication, reusable spatial-language, and production semantic integration before native handoff.
 
 ## Read order
 
@@ -17,9 +17,10 @@ Continue automatically through all mandatory M0–M10 roadmap work after each ac
 3. `AUDIT.md`;
 4. `ARCHITECTURE.md`;
 5. `COMMUNITY_EXCURSIONS.md`;
-6. `ROADMAP.md`;
-7. `HARNESS_ACCEPTANCE.md`;
-8. `PROGRESS.md` **last**.
+6. `SPATIAL_LANGUAGE.md`;
+7. `ROADMAP.md`;
+8. `HARNESS_ACCEPTANCE.md`;
+9. `PROGRESS.md` **last**.
 
 Inspect current production source and dependency code as needed.
 
@@ -42,7 +43,8 @@ If docs disagree with current code, correct the docs.
 
 - MarketSense owns intrinsic value and taxonomy.
 - DTCommon owns market pressure, events, merchant stock, quotes and commercial authority.
-- Project Hoomans owns physical NPC identity, movement, settlement presence, faction/community membership, home resolution, generic excursion state, and lifecycle.
+- Project Hoomans owns physical NPC identity, movement, settlement presence, faction/community membership, home resolution, generic excursion state, place/community identity, privacy-aware whereabouts projection, and lifecycle.
+- PsychopatzCore owns reusable coordinate/spatial-relation mechanics and canonical direction/distance tokens; it must not know traders, communities, or excursions.
 - PsychopatzCore owns reusable actors/inventory/currency/radio/world-knowledge infrastructure.
 - DTAbstract/DTHoomans are adapters/fronts, not separate market engines.
 
@@ -65,6 +67,9 @@ Do not add a second NPC lifecycle or second intrinsic pricing system.
 13. Resident traders stay members of their original community/faction during excursions and return to that exact home.
 14. Long-distance trader travel remains abstract; live behavior remains local.
 15. Semantic systems read generic Hoomans public excursion facts and never command movement directly.
+16. Destination settlement names come from the current authoritative Hoomans community/base record, not copied excursion text.
+17. Direction math is centralized in PsychopatzCore; Hoomans/DT must not reimplement coordinate-sign or compass logic.
+18. Semantic privacy applies before destination name/direction/ETA realization.
 
 ## Git/concurrency
 
@@ -80,7 +85,7 @@ At start:
 
 The planning baseline had an unrelated modification to `DTHoomans_Conversation.lua`. Recheck; do not overwrite or absorb it.
 
-M9/M10 also require Project Hoomans work. Before editing that repository, read its root `AGENTS.md`, inspect local/remote divergence/worktrees, and preserve unrelated semantic-combat work. At planning time required observer commit `2200b866` was local-only among other ahead commits; never blindly push unrelated history merely to publish one dependency.
+M9/M10 also require Project Hoomans work. Before editing that repository, read its root `AGENTS.md`, inspect local/remote divergence/worktrees, and preserve unrelated semantic work. M10G also requires PsychopatzCore; read its root `AGENTS.md` and inspect local/remote/worktree state before edits. Never blindly push unrelated ahead history merely to publish one dependency.
 
 ## Unattended loop
 
@@ -148,7 +153,7 @@ Do not solve missing arrival wiring by moving travel authority into DynamicTradi
 
 ## Community excursion and commercial-mobility discipline
 
-Read `COMMUNITY_EXCURSIONS.md` before M10.
+Read `COMMUNITY_EXCURSIONS.md` before mobility work and `SPATIAL_LANGUAGE.md` before M10G spatial/semantic work.
 
 Mandatory rules:
 
@@ -161,6 +166,8 @@ Mandatory rules:
 - do not turn a settlement faction into a mobile group merely because its trader leaves;
 - exact home return means the originating `community.id`, not "some settlement";
 - public semantic excursion state is a projection/query, not a duplicate persistence store;
+- destination names/directions are resolved on demand from authoritative place IDs and coordinates, not persisted as stale excursion copies;
+- Core spatial math emits canonical data/tokens; semantic realization owns natural-language phrasing/localization;
 - future "visit my settlement" requests are requests/suggestions evaluated by faction/trader AI, never direct semantic movement commands.
 
 ## Scope discipline
@@ -191,7 +198,7 @@ Stop early only for:
 - missing required dependency/API with no safe fallback;
 - a real product decision not specified by these docs;
 - authorization restriction;
-- completed developer-side M0–M10, including M9E cross-repo publication and both M10 flagship trader lifecycles, with only explicit user-owned native acceptance remaining.
+- completed developer-side M0–M10G, including clean cross-repo publication, reusable Core spatial relation/language, production semantic whereabouts integration, and both trader flagship lifecycles, with only explicit user-owned native acceptance remaining.
 
 A passing phase is not a stop condition.
 
