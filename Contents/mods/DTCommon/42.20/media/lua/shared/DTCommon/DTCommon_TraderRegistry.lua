@@ -48,6 +48,8 @@ function Service.Get(traderID)
         coreProviderState = record.ca and record.ca.providerState or nil,
         coreProviderLeaseID = record.ca and record.ca.providerLeaseID or nil,
         coreProviderBodyID = record.ca and record.ca.providerBodyID or nil,
+        homeSettlementID = record.ca and record.ca.homeSettlementID or nil,
+        currentSettlementID = record.ca and record.ca.currentSettlementID or nil,
         lastSettlementID = record.ca and record.ca.lastSettlementID or nil,
     }
 end
@@ -140,6 +142,45 @@ function Service.BindFaction(traderID, factionID, traderNPCID, memberNPCIDs)
     record.m = members
     Stock.SaveAndTransmit()
     return true
+end
+
+-- Bind a resident trader to the canonical Hoomans community identity without
+-- pretending that the trader commercially visited it. The service owns the
+-- persisted merchant context, but does not provision or mutate a market here.
+function Service.SetHomeSettlement(traderID, settlementID)
+    if not DTCommon.Storage.IsAuthority() then
+        return false, "server_authority_required"
+    end
+    local record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    local previous = Policy.Get(record)
+    local policy, reason = Policy.SetHomeSettlement(record, settlementID)
+    if not policy then return false, reason end
+    if previous.homeSettlementID ~= policy.homeSettlementID
+        or previous.currentSettlementID ~= policy.currentSettlementID
+    then
+        Storage.Touch()
+        Storage.Transmit()
+    end
+    return true, "home_context_bound", record
+end
+
+-- Shared by later Hoomans excursions: update pricing/location context without
+-- changing commercial-visit history or stock.
+function Service.SetCurrentSettlement(traderID, settlementID)
+    if not DTCommon.Storage.IsAuthority() then
+        return false, "server_authority_required"
+    end
+    local record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    local previous = Policy.Get(record)
+    local policy, reason = Policy.SetCurrentSettlement(record, settlementID)
+    if not policy then return false, reason end
+    if previous.currentSettlementID ~= policy.currentSettlementID then
+        Storage.Touch()
+        Storage.Transmit()
+    end
+    return true, "current_context_updated", record
 end
 
 -- Compatibility alias: the caravan path binds a faction too.

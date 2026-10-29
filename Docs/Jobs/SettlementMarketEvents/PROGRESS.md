@@ -16,13 +16,14 @@ Legacy behavioral reference:
 
 `ee0a8dc6a6989fbbdbd943ec23aa3f1c54099415`
 
-Contemporaneous Project Hoomans audit:
+Current Project Hoomans re-audit:
 
-- local `main`: `6768843e`;
-- `origin/main`: `8632bc30`;
-- required generic settlement-arrival observer commit `2200b866` existed locally but was not contained by any remote branch.
+- local and remote `main`: `f0eb0384` (`feat: diagnose settlement arrival observers`);
+- required generic settlement-arrival observer `2200b866` is contained by `origin/main`;
+- the diagnostic commit was published as a single fast-forward in-scope change;
+- unrelated local semantic-document edits remain uncommitted and were not staged or pushed.
 
-Recheck both repositories before acting because Project Hoomans is concurrently changing.
+DynamicTrading remains concurrently changing; recheck both repositories before each publication.
 
 DynamicTrading also contains the unrelated pre-existing local edit:
 
@@ -64,11 +65,12 @@ Accepted behavior:
 - event start affects price/availability/presentation but not exact merchant stock;
 - M9 flagship starts with no target DT market/event and drives the public Hoomans arrival lifecycle rather than direct test-only DT setup calls.
 
-Latest accepted DynamicTrading evidence at the M9 audit:
+Latest accepted evidence:
 
-- full DT suite: `37/37`;
-- DTHoomans bridge: `83 checks, 0 failures`;
-- affected Hoomans mobile-settlement / abstract-world / composition regressions passed;
+- full DynamicTrading suite: `929/929`;
+- full Project Hoomans suite: `929/929`;
+- M9E resident market-context acceptance passed;
+- Hoomans arrival-observer diagnostic regression passed;
 - changed production Lua passed `luac -p`, Kahlua verification, and `git diff --check`.
 
 These are accepted engine/runtime results. Do not redo M0–M9D unless current source proves a regression.
@@ -93,34 +95,37 @@ The claim that native SP/MP was the only remaining step is superseded.
 - default state is perpetual roaming/travel;
 - should commercially visit settlements without admission/absorption.
 
-### Verified developer gaps
+### Closed M9E gaps
 
-1. **Resident market context**
-   `DTHoomans_SettlementTrader.EnsureTraderForFaction` binds the staffed trader but does not yet guarantee canonical home market provisioning/current pricing context before any mobile visitor arrives.
+- staffed resident binding now resolves the active Hoomans `community.id`;
+- binding idempotently provisions the local market and stores separate home/current context;
+- first snapshot/quote uses the home market without a fake visit, exchange, pressure mutation, or stock/budget change;
+- home identity remains distinct from `lastSettlementID` commercial history;
+- the generic Hoomans arrival observer is published on `main` and reports bounded clean listener failures without interrupting arrival lifecycle;
+- M9E acceptance starts with an active staffed settlement and no pre-created DT market.
 
-2. **Cross-repo publication**
-   The generic Hoomans arrival observer used by M9 was local-only at audit time.
+## Remaining developer gaps
 
-3. **Roaming caravan destination lifecycle**
+1. **Roaming caravan destination lifecycle**
    DT generates caravans with `mobileControlMode = strategic` and `mobilePathMode = random`. Hoomans' ordinary settlement-departure scheduler requires ambient street-roaming groups, so production DT caravans do not naturally use that settlement-to-settlement selector.
 
-4. **Unsafe admission semantics**
+2. **Unsafe admission semantics**
    Hoomans currently distinguishes `settlement_admission` and `hostile_contact`, not a generic temporary non-admission settlement visit. AI admission has a configured 35% default member join chance. Commercial visitors must never use that path.
 
-5. **Resident excursion lifecycle**
+3. **Resident excursion lifecycle**
    Resident traders have no generic PREPARING → OUTBOUND → VISITING → RETURNING_HOME lifecycle and no exact-home commercial return behavior.
 
-6. **Semantic/public absence facts**
+4. **Semantic/public absence facts**
    No generic Hoomans public excursion projection yet exposes authoritative "trader is away / trading run / rough destination / ETA" state for semantic consumers.
 
-7. **Stale caravan-base comments**
+5. **Stale caravan-base comments**
    Some DT caravan comments still claim a leader "stays at the base" or imply an idle-at-base variant. The approved roaming trader is base-less; do not implement a fake base to match stale comments.
 
 ## Current phase
 
-**M9E — Resident Market Context + Cross-Repo Publication Closure**
+**M10A — Generic Non-Admission Settlement Visit**
 
-## Next Chunk — M9E
+## Next Chunk — M10A
 
 Start by closing the small existing-runtime gaps before building the broader excursion system.
 
@@ -234,3 +239,14 @@ Mandatory order:
 - Native SP/MP remains user-owned **only after M9E and M10 developer gates pass**.
 - Continue automatically through M9E and M10A–M10F.
 - Stop early only for a genuine repository conflict/publication blocker, missing required dependency with no safe fallback, authorization boundary, or unspecified product decision that prevents safe implementation.
+
+## M9E validation ledger — accepted
+
+- Hoomans re-audit: local/remote `main` is `f0eb0384`; `2200b866` is published in `origin/main`.
+- Resident acceptance: `tests/dt_m9e_resident_market_context_smoke.lua` starts with an active staffed settlement and no DT market, then provisions one canonical `community.id` market through `EnsureTraderForFaction`.
+- Resident binding writes separate home/current context; snapshot and quote use the local farm profile while `lastSettlementID`, visit count, stock, budget, and pressure remain unchanged.
+- Hoomans observer diagnostics record clean listener `false, reason` results and continue the authoritative arrival lifecycle.
+- Full verification: DynamicTrading `929/929`; Project Hoomans `929/929`; focused M9A/M9D/M9E and Hoomans admission regressions pass; applicable Kahlua and diff checks pass.
+- Unrelated DynamicTrading conversation work and unrelated Hoomans semantic-document work were not staged, committed, or pushed.
+
+Immediate next chunk: M10A generic non-admission settlement visit. Continue automatically through M10F.

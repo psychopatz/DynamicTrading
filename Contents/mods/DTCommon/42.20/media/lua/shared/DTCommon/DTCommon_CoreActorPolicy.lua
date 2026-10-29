@@ -112,6 +112,13 @@ function Policy.New(spec)
         lastVisitAt = number(spec.lastVisitAt, 0),
         lastVisitID = legacyVisitID,
         recentVisitIDs = recentVisitIDs,
+        -- Hoomans community identity for a resident trader. This is distinct
+        -- from lastSettlementID, which records the last actual commercial
+        -- visit and must not be fabricated during resident binding.
+        homeSettlementID = text(spec.homeSettlementID
+            or spec.homeCommunityID, nil),
+        currentSettlementID = text(spec.currentSettlementID
+            or spec.currentCommunityID, nil),
         lastSettlementID = text(spec.lastSettlementID
             or spec.settlementID or spec.communityID, nil),
     }
@@ -150,6 +157,42 @@ function Policy.SetAvailable(record, available, reason)
     local policy = Policy.Get(record)
     policy.available = available == true
     policy.availabilityReason = text(reason, nil)
+    record.ca = policy
+    return policy
+end
+
+-- Set the canonical home/current settlement context for a resident trader.
+-- This is identity and pricing state only: it deliberately does not create a
+-- visit, increment visitCount, alter lastVisitAt/lastVisitID, or exchange
+-- stock. If a trader is already away, preserve its current destination while
+-- still repairing/recording the exact home identity.
+function Policy.SetHomeSettlement(record, settlementID)
+    if type(record) ~= "table" then return nil, "trader_required" end
+    settlementID = text(settlementID, nil)
+    if not settlementID then return nil, "settlement_required" end
+    local policy = Policy.Get(record)
+    local previousHome = policy.homeSettlementID
+    policy.homeSettlementID = settlementID
+    if not policy.currentSettlementID
+        or policy.currentSettlementID == previousHome
+    then
+        policy.currentSettlementID = settlementID
+    end
+    record.ca = policy
+    return policy
+end
+
+-- Update only the current pricing/location context. Passing nil clears the
+-- current location for an offscreen excursion; actual visit history remains
+-- in lastSettlementID and recentVisitIDs.
+function Policy.SetCurrentSettlement(record, settlementID)
+    if type(record) ~= "table" then return nil, "trader_required" end
+    if settlementID ~= nil then
+        settlementID = text(settlementID, nil)
+        if not settlementID then return nil, "settlement_required" end
+    end
+    local policy = Policy.Get(record)
+    policy.currentSettlementID = settlementID
     record.ca = policy
     return policy
 end
@@ -247,6 +290,7 @@ function Policy.MarkVisit(record, options)
         end
     end
     policy.lastSettlementID = settlementID
+    policy.currentSettlementID = settlementID
     record.ca = policy
     return policy
 end

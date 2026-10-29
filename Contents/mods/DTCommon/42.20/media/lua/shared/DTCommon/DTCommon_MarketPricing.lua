@@ -133,7 +133,13 @@ end
 local function policySettlementID(record)
     if not Policy or type(Policy.Get) ~= "function" then return nil end
     local policy = Policy.Get(record)
-    return policy and text(policy.lastSettlementID, 192) or nil
+    if not policy then return nil end
+    -- Prefer the trader's actual current/home context. The last commercial
+    -- visit remains a separate historical field and is only a compatibility
+    -- fallback for older records that predate resident context.
+    return text(policy.currentSettlementID, 192)
+        or text(policy.lastSettlementID, 192)
+        or text(policy.homeSettlementID, 192)
 end
 
 local function settlementIDFor(record, options)

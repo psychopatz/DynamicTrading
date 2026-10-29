@@ -105,6 +105,66 @@ local function isMobileGroup(faction)
         and faction.tags.mobileGroup == true
 end
 
+-- Project Hoomans owns the settlement identity. Resolve the active community
+-- through its public faction index rather than inventing a DT settlement key
+-- from the faction id. The query is already bounded and sorted by Hoomans.
+local function activeCommunityForFaction(factionID)
+    local communities = PNC and PNC.Communities or nil
+    local values
+    if not communities or type(communities.GetForFaction) ~= "function" then
+        return nil, "settlement_identity_unavailable"
+    end
+    values = communities.GetForFaction(factionID)
+    for index = 1, #(type(values) == "table" and values or {}) do
+        local community = values[index]
+        if type(community) == "table"
+            and community.status == "active"
+            and tostring(community.factionID or "") == tostring(factionID)
+            and tostring(community.id or "") ~= ""
+        then
+            return community
+        end
+    end
+    return nil, "settlement_not_found"
+end
+
+-- Provisioning is deliberately separate from a commercial visit. This path
+-- runs when Hoomans has staffed a resident trader, so a first quote has a
+-- local market context even if no mobile trader has ever arrived.
+local function ensureResidentMarket(factionID)
+    local communities = PNC and PNC.Communities or nil
+    local provision = Settlement.ProvisionMarket
+    local community
+    local reason
+    local market
+    -- Older bridge-only harnesses may load this binding module without the
+    -- Hoomans community service or the settlement market adapter. Production
+    -- Hoomans loads both; retain the binding-only compatibility surface when
+    -- those optional services are absent.
+    if not communities or type(communities.GetForFaction) ~= "function"
+        or type(Service.SetHomeSettlement) ~= "function"
+        or type(provision) ~= "function"
+    then
+        return true, "context_service_unavailable", nil
+    end
+    community, reason = activeCommunityForFaction(factionID)
+    if not community then return false, reason, nil end
+    market, reason = provision(community)
+    if not market then
+        return false, reason or "market_provision_failed", nil
+    end
+    return true, "market_provisioned", community
+end
+
+local function bindResidentContext(traderID, community)
+    if not community or type(Service.SetHomeSettlement) ~= "function" then
+        return true, "context_service_unavailable"
+    end
+    local bound, reason = Service.SetHomeSettlement(traderID, community.id)
+    if not bound then return false, reason or "home_context_failed" end
+    return true, "home_context_bound"
+end
+
 Settlement.TRADER_ROLE = TRADER_ROLE
 Settlement.SWEEP_INTERVAL_HOURS = SWEEP_INTERVAL_HOURS
 Settlement.MAX_BINDINGS_PER_PASS = MAX_BINDINGS_PER_PASS
@@ -113,6 +173,8 @@ function Settlement.TraderIDFor(factionID)
     if factionID == nil or tostring(factionID) == "" then return nil end
     return TRADER_ID_PREFIX .. tostring(factionID)
 end
+
+Settlement.ActiveCommunityForFaction = activeCommunityForFaction
 
 -- Bind a trader record to an existing settlement faction. Returns
 -- ok, reason where reason is one of:
@@ -150,7 +212,13 @@ function Settlement.EnsureTraderForFaction(factionID)
     if not npcID then return false, "settlement_has_no_trader" end
     traderID = Settlement.TraderIDFor(factionID)
     existing = Service.GetRecord and Service.GetRecord(traderID) or nil
+    local contextOK, contextReason, residentCommunity =
+        ensureResidentMarket(factionID)
+    if not contextOK then return false, contextReason end
     if existing and tostring(existing.p or existing.l or "") == npcID then
+        local boundContext, boundReason = bindResidentContext(
+            traderID, residentCommunity)
+        if not boundContext then return false, boundReason end
         return true, "already_bound", existing
     end
     record, reason = Service.Create({
@@ -165,6 +233,9 @@ function Settlement.EnsureTraderForFaction(factionID)
     members = boundMemberIDs(factionID)
     bound, reason = Service.BindFaction(traderID, factionID, npcID, members)
     if not bound then return false, reason or "binding_failed" end
+    local boundContext, boundReason = bindResidentContext(
+        traderID, residentCommunity)
+    if not boundContext then return false, boundReason end
     return true, existing and "rebound" or "bound", record
 end
 

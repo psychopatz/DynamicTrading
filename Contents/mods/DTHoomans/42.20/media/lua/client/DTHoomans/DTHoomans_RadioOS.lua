@@ -91,7 +91,8 @@ local function marketEvents(record)
         return {}
     end
     ok, summary = pcall(presentation.Summary,
-        policy and policy.lastSettlementID or nil, record, {})
+        policy and (policy.currentSettlementID or policy.lastSettlementID
+            or policy.homeSettlementID) or nil, record, {})
     return ok and summary and summary.events or {}
 end
 

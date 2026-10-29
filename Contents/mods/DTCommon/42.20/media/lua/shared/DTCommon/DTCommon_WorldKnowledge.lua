@@ -166,7 +166,8 @@ function Adapter.SyncMarketEvents(trader, options)
     if not actor then return nil, reason end
     policy = Policy and type(Policy.Get) == "function"
         and Policy.Get(record) or {}
-    settlementID = options.settlementID or policy.lastSettlementID
+    settlementID = options.settlementID or policy.currentSettlementID
+        or policy.lastSettlementID or policy.homeSettlementID
     summary, reason = EventPresentation.Summary(
         settlementID, record, options)
     if not summary then return nil, reason end
