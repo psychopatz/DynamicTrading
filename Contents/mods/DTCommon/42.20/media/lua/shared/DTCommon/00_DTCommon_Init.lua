@@ -1,6 +1,10 @@
 DTCommon = DTCommon or {}
 
-require "PsychopatzCore/Inventory/PsychopatzInventory"
+if PsychopatzCore and PsychopatzCore.RequirePack then
+    PsychopatzCore.RequirePack("pack.trading_common", "DTCommon")
+else
+    require "PsychopatzCore/Inventory/PsychopatzInventory"
+end
 require "DTCommon/DTCommon_Translation"
 require "DTCommon/DTCommon_Constants"
 require "DTCommon/DTCommon_MarketSchema"

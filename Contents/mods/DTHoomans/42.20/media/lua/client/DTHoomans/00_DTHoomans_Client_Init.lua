@@ -6,7 +6,11 @@ require "DTHoomans/DTHoomans_RadioOS"
 
 -- Register the trader manager in the shared PsychopatzCore Debug Hub. The
 -- context menu remains only a shortcut to that hub.
-require "PsychopatzCore/UI/PsychopatzDebugHubWindow"
+if PsychopatzCore and PsychopatzCore.Require then
+    PsychopatzCore.Require("core.debug_hub", "DTHoomans")
+else
+    require "PsychopatzCore/UI/PsychopatzDebugHubWindow"
+end
 
 local DebugHub = PsychopatzCore and PsychopatzCore.DebugHub
 local function canUseTraderDebug()
