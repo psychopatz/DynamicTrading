@@ -1100,4 +1100,78 @@ function Service.ExecuteTradeBasket(player, request)
     return result
 end
 
+function Service.SetHomeSettlement(traderID, settlementID)
+    local Registry = DTCommon and DTCommon.TraderRegistry
+    if Registry and type(Registry.SetHomeSettlement) == "function" then
+        return Registry.SetHomeSettlement(traderID, settlementID)
+    end
+    if not authority() then return false, "server_authority_required" end
+    local record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    local previous = Policy.Get(record)
+    local policy, reason = Policy.SetHomeSettlement(record, settlementID)
+    if not policy then return false, reason end
+    if previous.homeSettlementID ~= policy.homeSettlementID
+        or previous.currentSettlementID ~= policy.currentSettlementID
+    then
+        Storage.Touch()
+        Storage.Transmit()
+    end
+    return true, "home_context_bound", record
+end
+
+function Service.SetCurrentSettlement(traderID, settlementID)
+    local Registry = DTCommon and DTCommon.TraderRegistry
+    if Registry and type(Registry.SetCurrentSettlement) == "function" then
+        return Registry.SetCurrentSettlement(traderID, settlementID)
+    end
+    if not authority() then return false, "server_authority_required" end
+    local record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    local previous = Policy.Get(record)
+    local policy, reason = Policy.SetCurrentSettlement(record, settlementID)
+    if not policy then return false, reason end
+    if previous.currentSettlementID ~= policy.currentSettlementID then
+        Storage.Touch()
+        Storage.Transmit()
+    end
+    return true, "current_context_updated", record
+end
+
+function Service.SetDestinationSettlement(traderID, settlementID)
+    local Registry = DTCommon and DTCommon.TraderRegistry
+    if Registry and type(Registry.SetDestinationSettlement) == "function" then
+        return Registry.SetDestinationSettlement(traderID, settlementID)
+    end
+    if not authority() then return false, "server_authority_required" end
+    local record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    local previous = Policy.Get(record)
+    local policy, reason = Policy.SetDestinationSettlement(record, settlementID)
+    if not policy then return false, reason end
+    if previous.destinationSettlementID ~= policy.destinationSettlementID then
+        Storage.Touch()
+        Storage.Transmit()
+    end
+    return true, "destination_context_updated", record
+end
+
+function Service.SetOriginSettlement(traderID, settlementID)
+    local Registry = DTCommon and DTCommon.TraderRegistry
+    if Registry and type(Registry.SetOriginSettlement) == "function" then
+        return Registry.SetOriginSettlement(traderID, settlementID)
+    end
+    if not authority() then return false, "server_authority_required" end
+    local record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    local previous = Policy.Get(record)
+    local policy, reason = Policy.SetOriginSettlement(record, settlementID)
+    if not policy then return false, reason end
+    if previous.originSettlementID ~= policy.originSettlementID then
+        Storage.Touch()
+        Storage.Transmit()
+    end
+    return true, "origin_context_updated", record
+end
+
 return Service

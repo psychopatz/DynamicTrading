@@ -93,7 +93,7 @@ T.truthy(strangerRumor, "stranger rumor block selected")
 T.equal(strangerRumor.id, "dt_block_rumors_neutral", "general rumor for stranger")
 
 -- 5. Full conversation turn with DTCommon_TalkService
-T.load("DTCommon", "shared", "DTCommon/DTCommon_CoreActorPolicy.lua")
+local Policy = T.load("DTCommon", "shared", "DTCommon/DTCommon_CoreActorPolicy.lua")
 T.load("DTCommon", "shared", "DTCommon/DTCommon_TraderService.lua")
 T.load("DTCommon", "shared", "DTCommon/DTCommon_WorldKnowledge.lua")
 T.load("DTCommon", "shared", "DTCommon/DTCommon_TalkService.lua")
@@ -268,40 +268,40 @@ T.equal(turnWhereUnk.result.responses[1].text,
     "I cannot confirm where we are heading next; route orders haven't been finalized.",
     "unseeded destination yields bounded uncertainty")
 
--- 4. GROUNDED (KNOWN EVIDENCE) Destination check: seed destination evidence in policy / options
+-- 4. GROUNDED (KNOWN EVIDENCE) Destination check: seed destination via Policy
+Policy.SetDestinationSettlement(traderRecord, "West Point Outpost")
 local turnWhereGrounded, turnWhereGroundedErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "where are you heading", {
     mode = "radio",
     requestID = "turn-where-grounded",
-    destination = "West Point Outpost",
 })
 T.truthy(turnWhereGrounded, turnWhereGroundedErr)
 T.equal(turnWhereGrounded.result.responses[1].text,
     "We are heading toward West Point Outpost.",
-    "grounded destination rendered from seeded evidence")
+    "grounded destination rendered from production Policy state")
 
--- 5. GROUNDED Origin check
+-- 5. GROUNDED Origin check: seed origin via Policy
+Policy.SetOriginSettlement(traderRecord, "March Ridge Depot")
 local turnOrigGrounded, turnOrigGroundedErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "where did you come from", {
     mode = "radio",
     requestID = "turn-orig-grounded",
-    origin = "March Ridge Depot",
 })
 T.truthy(turnOrigGrounded, turnOrigGroundedErr)
 T.equal(turnOrigGrounded.result.responses[1].text,
     "We came from March Ridge Depot.",
-    "grounded origin rendered from seeded evidence")
+    "grounded origin rendered from production Policy state")
 
--- 6. GROUNDED Settlement check
+-- 6. GROUNDED Settlement check: seed settlement via Policy
+Policy.SetCurrentSettlement(traderRecord, "Riverside Safehouse")
 local turnSettGrounded, turnSettGroundedErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "where is the settlement", {
     mode = "radio",
     requestID = "turn-sett-grounded",
-    settlement = "Riverside Safehouse",
 })
 T.truthy(turnSettGrounded, turnSettGroundedErr)
 T.equal(turnSettGrounded.result.responses[1].text,
     "Our primary trading settlement is Riverside Safehouse.",
-    "grounded settlement rendered from seeded evidence")
+    "grounded settlement rendered from production Policy state")
 
--- 7. UNGROUNDED News check: no seeded news -> bounded no-news
+-- 7A. UNGROUNDED News check: no seeded news -> bounded no-news
 local turnNoNews, turnNoNewsErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "road news", {
     mode = "radio",
     requestID = "turn-no-news",
@@ -310,6 +310,35 @@ T.truthy(turnNoNews, turnNoNewsErr)
 T.equal(turnNoNews.result.responses[1].text,
     "I haven't heard any news lately.",
     "unseeded road news yields bounded no-news")
+
+-- 7B. GROUNDED News check: publish and acquire real fact through WorldKnowledge
+local CoreWK = require "PsychopatzCore/WorldKnowledge/PsychopatzWorldKnowledge"
+CoreWK.Reset({ maxFacts = 16, maxActors = 8, maxRefs = 8 })
+local publishedFact, pubErr = DTCommon.WorldKnowledge.Publish({
+    factID = "fact:market:food-shortage:rosewood",
+    kind = "market.event",
+    subject = { id = "rosewood", kind = "settlement" },
+    payload = {
+        eventType = "FOOD SHORTAGE",
+        marketID = "rosewood",
+    },
+})
+T.truthy(publishedFact, pubErr)
+local acquired, acqErr = DTCommon.WorldKnowledge.Acquire("trader:standalone", "fact:market:food-shortage:rosewood", {
+    authorized = true,
+    provenance = "witnessed",
+    confidence = 90,
+})
+T.truthy(acquired, acqErr)
+
+local turnNewsGrounded, turnNewsErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "road news", {
+    mode = "radio",
+    requestID = "turn-news-grounded",
+})
+T.truthy(turnNewsGrounded, turnNewsErr)
+T.truthy(turnNewsGrounded.result.responses[1].evidence, "evidence attached from real fact")
+T.equal(turnNewsGrounded.result.responses[1].evidence, "fact:market:food-shortage:rosewood", "exact fact ID returned as evidence")
+T.contains(turnNewsGrounded.result.responses[1].text, "FOOD SHORTAGE", "response text derived from published market event")
 
 -- 8. Caravan Story check (Authored non-factual flavor)
 local turnStory, turnStoryErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "tell me a caravan story", {

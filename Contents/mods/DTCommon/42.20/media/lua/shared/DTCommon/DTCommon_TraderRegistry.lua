@@ -183,6 +183,38 @@ function Service.SetCurrentSettlement(traderID, settlementID)
     return true, "current_context_updated", record
 end
 
+function Service.SetDestinationSettlement(traderID, settlementID)
+    if not DTCommon.Storage.IsAuthority() then
+        return false, "server_authority_required"
+    end
+    local record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    local previous = Policy.Get(record)
+    local policy, reason = Policy.SetDestinationSettlement(record, settlementID)
+    if not policy then return false, reason end
+    if previous.destinationSettlementID ~= policy.destinationSettlementID then
+        Storage.Touch()
+        Storage.Transmit()
+    end
+    return true, "destination_context_updated", record
+end
+
+function Service.SetOriginSettlement(traderID, settlementID)
+    if not DTCommon.Storage.IsAuthority() then
+        return false, "server_authority_required"
+    end
+    local record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    local previous = Policy.Get(record)
+    local policy, reason = Policy.SetOriginSettlement(record, settlementID)
+    if not policy then return false, reason end
+    if previous.originSettlementID ~= policy.originSettlementID then
+        Storage.Touch()
+        Storage.Transmit()
+    end
+    return true, "origin_context_updated", record
+end
+
 -- Compatibility alias: the caravan path binds a faction too.
 Service.BindCaravan = Service.BindFaction
 

@@ -271,8 +271,9 @@ function Service.Open(player, traderID, mode, options)
                 or string.find(rawText, "settlement are you going", 1, true)
                 or string.find(rawText, "destination", 1, true)
             then
-                local dest = (policy and (policy.destinationSettlementID or policy.nextSettlementID))
-                    or (context and context.destination)
+                local dest = (context and context.destination)
+                    or (policy and (policy.destinationSettlementID or policy.destination or policy.nextSettlementID))
+                    or (traderRecord and (traderRecord.destination or traderRecord.destinationSettlementID))
                 if not dest and gossip and gossip.statements and #gossip.statements > 0 then
                     for i, stmt in ipairs(gossip.statements) do
                         if string.find(string.lower(stmt), "heading", 1, true)
@@ -305,8 +306,9 @@ function Service.Open(player, traderID, mode, options)
                 or string.find(rawText, "where did you come from", 1, true)
                 or string.find(rawText, "where are you from", 1, true)
             then
-                local orig = (policy and (policy.lastSettlementID or policy.originSettlementID or policy.homeSettlementID))
-                    or (context and context.origin)
+                local orig = (context and context.origin)
+                    or (policy and (policy.originSettlementID or policy.lastSettlementID or policy.homeSettlementID or policy.origin))
+                    or (traderRecord and (traderRecord.origin or traderRecord.originSettlementID or traderRecord.lastSettlementID))
                 if orig then
                     return {
                         key = "DTCommon_Talk_Origin_Grounded",
@@ -326,8 +328,9 @@ function Service.Open(player, traderID, mode, options)
                 or string.find(rawText, "where is the settlement", 1, true)
                 or string.find(rawText, "what settlement", 1, true)
             then
-                local sett = (policy and (policy.currentSettlementID or policy.homeSettlementID))
-                    or (context and context.settlement)
+                local sett = (context and context.settlement)
+                    or (policy and (policy.currentSettlementID or policy.homeSettlementID or policy.settlementID))
+                    or (traderRecord and (traderRecord.currentSettlementID or traderRecord.homeSettlementID or traderRecord.settlementID))
                 if sett then
                     return {
                         key = "DTCommon_Talk_Settlement_Grounded",
@@ -464,9 +467,15 @@ function Service.Submit(player, traderID, talkSessionID, text, options)
         playerKey = playerKey(player),
         traderRecord = record,
         policy = policy,
-        destination = options.destination,
-        origin = options.origin,
-        settlement = options.settlement,
+        destination = options.destination
+            or (policy and (policy.destinationSettlementID or policy.destination or policy.nextSettlementID))
+            or (record and (record.destination or record.destinationSettlementID)),
+        origin = options.origin
+            or (policy and (policy.originSettlementID or policy.lastSettlementID or policy.origin))
+            or (record and (record.origin or record.originSettlementID or record.lastSettlementID)),
+        settlement = options.settlement
+            or (policy and (policy.currentSettlementID or policy.homeSettlementID or policy.settlementID))
+            or (record and (record.currentSettlementID or record.homeSettlementID or record.settlementID)),
         traderRole = (record.ca and record.ca.role) or (policy and policy.role) or "trader",
         worldKnowledge = options.worldKnowledge or (knowledge and knowledge.worldKnowledge) or nil,
         npcGossip = options.npcGossip or (knowledge and knowledge.npcGossip) or nil,

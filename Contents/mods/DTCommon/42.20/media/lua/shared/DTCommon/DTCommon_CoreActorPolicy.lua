@@ -144,6 +144,11 @@ function Policy.New(spec)
             or spec.currentCommunityID, nil),
         lastSettlementID = text(spec.lastSettlementID
             or spec.settlementID or spec.communityID, nil),
+        destinationSettlementID = text(spec.destinationSettlementID
+            or spec.destinationCommunityID or spec.destination
+            or spec.nextSettlementID, nil),
+        originSettlementID = text(spec.originSettlementID
+            or spec.originCommunityID or spec.origin, nil),
     }
 end
 
@@ -216,6 +221,30 @@ function Policy.SetCurrentSettlement(record, settlementID)
     end
     local policy = Policy.Get(record)
     policy.currentSettlementID = settlementID
+    record.ca = policy
+    return policy
+end
+
+function Policy.SetDestinationSettlement(record, settlementID)
+    if type(record) ~= "table" then return nil, "trader_required" end
+    if settlementID ~= nil then
+        settlementID = text(settlementID, nil)
+        if not settlementID then return nil, "settlement_required" end
+    end
+    local policy = Policy.Get(record)
+    policy.destinationSettlementID = settlementID
+    record.ca = policy
+    return policy
+end
+
+function Policy.SetOriginSettlement(record, settlementID)
+    if type(record) ~= "table" then return nil, "trader_required" end
+    if settlementID ~= nil then
+        settlementID = text(settlementID, nil)
+        if not settlementID then return nil, "settlement_required" end
+    end
+    local policy = Policy.Get(record)
+    policy.originSettlementID = settlementID
     record.ca = policy
     return policy
 end
