@@ -38,13 +38,13 @@ local function registerPack()
             },
             {
                 id = "concept.trade.whereabouts",
-                aliases = { "where are you heading", "where did you come from", "routes", "settlement", "destination" },
+                aliases = { "where are you heading", "where did you come from", "where is this caravan going", "where are you going", "routes", "settlement", "destination" },
                 kind = "intent",
                 priority = 70,
             },
             {
                 id = "concept.trade.who",
-                aliases = { "who are you", "who is in charge", "who runs this caravan", "leader", "merchant", "guard" },
+                aliases = { "who are you", "who is in charge", "who runs this caravan", "who handles trading", "leader", "merchant", "guard" },
                 kind = "intent",
                 priority = 60,
             },
@@ -77,6 +77,10 @@ local function registerPack()
                 metadata = { priority = 70 },
             },
             {
+                definition = { id = "act.trade.ask_who", intent = "QUESTION" },
+                metadata = { priority = 75 },
+            },
+            {
                 definition = { id = "act.trade.greeting", intent = "GREETING" },
                 metadata = { priority = 50 },
             },
@@ -88,6 +92,30 @@ local function registerPack()
 
         -- 3. Patterns
         patterns = {
+            {
+                id = "pattern.trade.concept_who",
+                priority = 85,
+                match = { { concept = "concept.trade.who" } },
+                emit = { intent = "QUESTION", speechAct = "act.trade.ask_who", topic = "identity" },
+            },
+            {
+                id = "pattern.trade.concept_whereabouts",
+                priority = 80,
+                match = { { concept = "concept.trade.whereabouts" } },
+                emit = { intent = "QUESTION", speechAct = "act.trade.ask_whereabouts", topic = "whereabouts" },
+            },
+            {
+                id = "pattern.trade.concept_rumors",
+                priority = 75,
+                match = { { concept = "concept.trade.rumors" } },
+                emit = { intent = "GOSSIP", speechAct = "act.trade.ask_rumors", topic = "rumors" },
+            },
+            {
+                id = "pattern.trade.concept_open",
+                priority = 95,
+                match = { { concept = "concept.trade.open" } },
+                emit = { intent = "TRADE", speechAct = "act.trade.request", topic = "trade" },
+            },
             {
                 id = "pattern.trade.open",
                 priority = 100,
@@ -337,6 +365,64 @@ local function registerPack()
                     opening = {
                         textKey = "DTCommon_Talk_Farewell_Neutral",
                         fallback = "Watch your back out there.",
+                    },
+                },
+            },
+            ["dt_block_who_trader"] = {
+                category = "identity",
+                priority = 100,
+                weight = 100,
+                gates = {
+                    { field = "traderRole", op = "!=", value = "guard" },
+                },
+                entryNode = "opening",
+                nodes = {
+                    opening = {
+                        textKey = "DTCommon_Talk_Identity_Trader",
+                        fallback = "I'm the caravan trader. If you need supplies, weapons, or provisions, I'm the one to talk to.",
+                    },
+                },
+            },
+            ["dt_block_who_guard"] = {
+                category = "identity",
+                priority = 100,
+                weight = 100,
+                gates = {
+                    { field = "traderRole", op = "==", value = "guard" },
+                },
+                entryNode = "opening",
+                nodes = {
+                    opening = {
+                        textKey = "DTCommon_Talk_Identity_Guard",
+                        fallback = "I'm on security detail. Keep your weapons lowered and speak to the merchant for business.",
+                    },
+                },
+            },
+            ["dt_block_whereabouts_friend"] = {
+                category = "whereabouts",
+                priority = 200,
+                weight = 100,
+                gates = {
+                    { field = "relationship.approval", op = ">=", value = 20 },
+                },
+                entryNode = "opening",
+                nodes = {
+                    opening = {
+                        textKey = "DTCommon_Talk_Whereabouts_Friend",
+                        fallback = "We just came through the southern outpost and we're heading toward the central market next. Safe travels if you're taking the highways.",
+                    },
+                },
+            },
+            ["dt_block_whereabouts_neutral"] = {
+                category = "whereabouts",
+                priority = 100,
+                weight = 100,
+                gates = {},
+                entryNode = "opening",
+                nodes = {
+                    opening = {
+                        textKey = "DTCommon_Talk_Whereabouts_Neutral",
+                        fallback = "We move across Knox County supplying outposts. The roads are getting harder to hold, but we keep our deliveries moving.",
                     },
                 },
             },

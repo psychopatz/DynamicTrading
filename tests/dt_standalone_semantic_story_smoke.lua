@@ -158,4 +158,59 @@ T.equal(turn.result.responses[1].text,
 T.truthy(turn.result.actions, "turn actions present")
 T.equal(turn.result.actions[1].id, "dynamictrading.trade", "trade choice offered")
 
+-- 6. P11 Standalone Identity & Whereabouts verification
+-- Parsing verification
+local parsedWho = Semantics.Parse("who are you", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedWho, "Parses 'who are you'")
+T.equal(parsedWho.intent, "QUESTION", "Intent is QUESTION")
+T.equal(parsedWho.speechAct, "act.trade.ask_who", "Speech act is act.trade.ask_who")
+
+local parsedWhere = Semantics.Parse("where are you heading", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedWhere, "Parses 'where are you heading'")
+T.equal(parsedWhere.intent, "QUESTION", "Intent is QUESTION")
+T.equal(parsedWhere.speechAct, "act.trade.ask_whereabouts", "Speech act is act.trade.ask_whereabouts")
+
+-- Dialogue block selection: trader identity vs guard identity
+local traderIdentityBlock = Semantics.SelectDialogueBlock("identity", {
+    traderRole = "trader",
+    capabilities = { ["dynamictrading.trade"] = true },
+})
+T.truthy(traderIdentityBlock, "trader identity block selected")
+T.equal(traderIdentityBlock.id, "dt_block_who_trader")
+
+local guardIdentityBlock = Semantics.SelectDialogueBlock("identity", {
+    traderRole = "guard",
+    capabilities = { ["dynamictrading.trade"] = true },
+})
+T.truthy(guardIdentityBlock, "guard identity block selected")
+T.equal(guardIdentityBlock.id, "dt_block_who_guard")
+
+-- Whereabouts selection: friend vs stranger
+local friendWhereabouts = Semantics.SelectDialogueBlock("whereabouts", friendContext, "seed_where")
+T.truthy(friendWhereabouts, "friend whereabouts selected")
+T.equal(friendWhereabouts.id, "dt_block_whereabouts_friend")
+
+local strangerWhereabouts = Semantics.SelectDialogueBlock("whereabouts", strangerContext, "seed_where2")
+T.truthy(strangerWhereabouts, "stranger whereabouts selected")
+T.equal(strangerWhereabouts.id, "dt_block_whereabouts_neutral")
+
+-- TalkService turn submission with identity & whereabouts questions
+local turnWho, turnWhoErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "who are you", {
+    mode = "radio",
+    requestID = "turn-who",
+})
+T.truthy(turnWho, turnWhoErr)
+T.equal(turnWho.result.responses[1].text,
+    "I'm the caravan trader. If you need supplies, weapons, or provisions, I'm the one to talk to.",
+    "trader identity delivered via TalkService")
+
+local turnWhere, turnWhereErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "where are you heading", {
+    mode = "radio",
+    requestID = "turn-where",
+})
+T.truthy(turnWhere, turnWhereErr)
+T.equal(turnWhere.result.responses[1].text,
+    "We just came through the southern outpost and we're heading toward the central market next. Safe travels if you're taking the highways.",
+    "friend whereabouts delivered via TalkService")
+
 T.finish("dt_standalone_semantic_story_smoke")

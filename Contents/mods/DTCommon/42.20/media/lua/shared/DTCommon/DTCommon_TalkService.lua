@@ -187,6 +187,7 @@ function Service.Open(player, traderID, mode, options)
             local decision = result and result.decision or {}
             local gossip = context and context.npcGossip or nil
             local intent = result and result.ir and result.ir.intent
+            local topic = result and result.ir and (result.ir.topic or (result.ir.analysis and result.ir.analysis.topic))
             local Semantics = PsychopatzCore and PsychopatzCore.Semantics
 
             if intent == "GREETING" and Semantics and Semantics.SelectDialogueBlock then
@@ -202,6 +203,30 @@ function Service.Open(player, traderID, mode, options)
 
             if intent == "FAREWELL" and Semantics and Semantics.SelectDialogueBlock then
                 local block = Semantics.SelectDialogueBlock("farewell", context, session.id)
+                if block and block.nodes and block.nodes[block.entryNode] then
+                    local node = block.nodes[block.entryNode]
+                    return {
+                        key = node.textKey,
+                        fallback = node.fallback or node.text,
+                    }
+                end
+            end
+
+            local act = result and result.ir and result.ir.speechAct
+
+            if (act == "act.trade.ask_whereabouts" or topic == "whereabouts" or intent == "WHEREABOUTS") and Semantics and Semantics.SelectDialogueBlock then
+                local block = Semantics.SelectDialogueBlock("whereabouts", context, session.id)
+                if block and block.nodes and block.nodes[block.entryNode] then
+                    local node = block.nodes[block.entryNode]
+                    return {
+                        key = node.textKey,
+                        fallback = node.fallback or node.text,
+                    }
+                end
+            end
+
+            if (act == "act.trade.ask_who" or topic == "identity" or (intent == "QUESTION" and act ~= "act.trade.ask_whereabouts")) and Semantics and Semantics.SelectDialogueBlock then
+                local block = Semantics.SelectDialogueBlock("identity", context, session.id)
                 if block and block.nodes and block.nodes[block.entryNode] then
                     local node = block.nodes[block.entryNode]
                     return {
