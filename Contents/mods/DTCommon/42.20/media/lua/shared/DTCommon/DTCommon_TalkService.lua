@@ -36,15 +36,15 @@ end
 local function playerKey(player)
     if player and type(player.getOnlineID) == "function" then
         local value = player:getOnlineID()
-        if value ~= nil then return "online:" .. tostring(value) end
+        if value ~= nil then return "player:online:" .. tostring(value) end
     end
     if player and type(player.getUsername) == "function" then
         local value = player:getUsername()
         if value ~= nil and tostring(value) ~= "" then
-            return "user:" .. tostring(value)
+            return "player:user:" .. tostring(value)
         end
     end
-    return "object:" .. tostring(player)
+    return "player:object:" .. tostring(player)
 end
 
 local function boundedText(value, maximum)
@@ -181,6 +181,41 @@ function Service.Open(player, traderID, mode, options)
             local decision = result and result.decision or {}
             local gossip = context and context.npcGossip or nil
             local intent = result and result.ir and result.ir.intent
+            local Semantics = PsychopatzCore and PsychopatzCore.Semantics
+
+            if intent == "GREETING" and Semantics and Semantics.SelectDialogueBlock then
+                local block = Semantics.SelectDialogueBlock("greeting", context, session.id)
+                if block and block.nodes and block.nodes[block.entryNode] then
+                    local node = block.nodes[block.entryNode]
+                    return {
+                        key = node.textKey,
+                        fallback = node.fallback or node.text,
+                    }
+                end
+            end
+
+            if intent == "FAREWELL" and Semantics and Semantics.SelectDialogueBlock then
+                local block = Semantics.SelectDialogueBlock("farewell", context, session.id)
+                if block and block.nodes and block.nodes[block.entryNode] then
+                    local node = block.nodes[block.entryNode]
+                    return {
+                        key = node.textKey,
+                        fallback = node.fallback or node.text,
+                    }
+                end
+            end
+
+            if (intent == "GOSSIP" or intent == "GOSSIP_RECEIVED") and Semantics and Semantics.SelectDialogueBlock then
+                local block = Semantics.SelectDialogueBlock("rumor", context, session.id)
+                if block and block.nodes and block.nodes[block.entryNode] then
+                    local node = block.nodes[block.entryNode]
+                    return {
+                        key = node.textKey,
+                        fallback = node.fallback or node.text,
+                    }
+                end
+            end
+
             if (intent == "GOSSIP" or intent == "GOSSIP_RECEIVED"
                 or intent == "QUESTION") and gossip
                 and type(gossip.statements) == "table"
@@ -256,17 +291,23 @@ function Service.Submit(player, traderID, talkSessionID, text, options)
         return session.requests[requestID]
     end
     local knowledge = knowledgeFor(session)
-    local context = knowledge and {
-        worldKnowledge = knowledge.worldKnowledge,
-        npcGossip = knowledge.npcGossip,
-    } or nil
-    local result, reason = session.service:Submit(text, context, {
+    local context = {
         source = "dynamictrading",
         mode = mode,
         traderID = traderID,
         playerKey = playerKey(player),
-    }, {
+        traderRole = (record.ca and record.ca.role) or "trader",
+        worldKnowledge = knowledge and knowledge.worldKnowledge or nil,
+        npcGossip = knowledge and knowledge.npcGossip or nil,
+        capabilities = {
+            ["core.conversation"] = true,
+            ["dynamictrading.trade"] = true,
+            ["dynamictrading.radio"] = mode == "radio",
+        },
+    }
+    local result, reason = session.service:Submit(text, context, {
         language = boundedText(options.language, 16),
+        collectActions = true,
     })
     if not result then return nil, reason end
     session.lastAt = now()
