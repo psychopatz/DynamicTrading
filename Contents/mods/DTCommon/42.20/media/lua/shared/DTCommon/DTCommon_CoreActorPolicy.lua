@@ -39,14 +39,37 @@ end
 
 local function playerKeys(player)
     local output = {}
-    if player and type(player.getOnlineID) == "function" then
-        local id = player:getOnlineID()
-        if id ~= nil then output[#output + 1] = "player:online:" .. tostring(id) end
+    local canonical = nil
+    if PsychopatzCore and PsychopatzCore.Actors and PsychopatzCore.Actors.PlayerIdentity
+        and type(PsychopatzCore.Actors.PlayerIdentity.GetTargetKey) == "function"
+    then
+        canonical = PsychopatzCore.Actors.PlayerIdentity.GetTargetKey(player)
     end
-    if player and type(player.getUsername) == "function" then
-        local username = player:getUsername()
-        if username ~= nil and tostring(username) ~= "" then
-            output[#output + 1] = "player:user:" .. tostring(username)
+    if canonical then
+        output[#output + 1] = canonical
+    end
+
+    if PsychopatzCore and PsychopatzCore.Actors and PsychopatzCore.Actors.PlayerIdentity
+        and type(PsychopatzCore.Actors.PlayerIdentity.GetLegacyKeys) == "function"
+    then
+        local legacy = PsychopatzCore.Actors.PlayerIdentity.GetLegacyKeys(player)
+        for _, k in ipairs(legacy) do
+            if k ~= canonical then output[#output + 1] = k end
+        end
+    else
+        if player and type(player.getUsername) == "function" then
+            local username = player:getUsername()
+            if username ~= nil and tostring(username) ~= "" then
+                local k = "player:user:" .. tostring(username)
+                if k ~= canonical then output[#output + 1] = k end
+            end
+        end
+        if player and type(player.getOnlineID) == "function" then
+            local id = player:getOnlineID()
+            if id ~= nil then
+                local k = "player:online:" .. tostring(id)
+                if k ~= canonical then output[#output + 1] = k end
+            end
         end
     end
     return output
@@ -281,6 +304,10 @@ function Policy.RecordTradeEvent(record, player, tradeDetails)
 
     local actor = actors.Get(actorID)
     if not actor or not actor.social then return nil, "actor_social_unavailable" end
+
+    if Social.MigrateAliases and type(Social.MigrateAliases) == "function" then
+        Social.MigrateAliases(actor.social, primaryKey, keys)
+    end
 
     tradeDetails = type(tradeDetails) == "table" and tradeDetails or {}
     local requestID = tostring(tradeDetails.requestID or ("trade:" .. tostring(os.time())))

@@ -34,15 +34,21 @@ local function authority()
 end
 
 local function playerKey(player)
-    if player and type(player.getOnlineID) == "function" then
-        local value = player:getOnlineID()
-        if value ~= nil then return "player:online:" .. tostring(value) end
+    if PsychopatzCore and PsychopatzCore.Actors and PsychopatzCore.Actors.PlayerIdentity
+        and type(PsychopatzCore.Actors.PlayerIdentity.GetTargetKey) == "function"
+    then
+        local canonical = PsychopatzCore.Actors.PlayerIdentity.GetTargetKey(player)
+        if canonical then return canonical end
     end
     if player and type(player.getUsername) == "function" then
         local value = player:getUsername()
         if value ~= nil and tostring(value) ~= "" then
             return "player:user:" .. tostring(value)
         end
+    end
+    if player and type(player.getOnlineID) == "function" then
+        local value = player:getOnlineID()
+        if value ~= nil then return "player:online:" .. tostring(value) end
     end
     return "player:object:" .. tostring(player)
 end

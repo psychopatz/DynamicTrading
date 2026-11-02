@@ -24,14 +24,23 @@ T.truthy(actor, createErr)
 T.load("DTCommon", "shared", "DTCommon/DTCommon_CoreActorPolicy.lua")
 local Policy = DTCommon.CoreActorPolicy
 
+local playerModData = { PNC_CharacterUUID = "char_alice_1" }
 local player = {
     getOnlineID = function() return 12 end,
     getUsername = function() return "alice" end,
+    getModData = function() return playerModData end,
 }
 
 local keys = Policy.PlayerKeys(player)
-T.equal(keys[1], "player:online:12", "primary online key")
-T.equal(keys[2], "player:user:alice", "secondary user key")
+T.equal(keys[1], "player:alice:char_alice_1", "canonical player key is primary")
+local hasLegacyUser = false
+local hasLegacyOnline = false
+for _, k in ipairs(keys) do
+    if k == "player:user:alice" then hasLegacyUser = true end
+    if k == "player:online:12" then hasLegacyOnline = true end
+end
+T.truthy(hasLegacyUser, "legacy user key preserved as alias")
+T.truthy(hasLegacyOnline, "legacy online key preserved as alias")
 
 local traderRecord = {
     s = "READY",
