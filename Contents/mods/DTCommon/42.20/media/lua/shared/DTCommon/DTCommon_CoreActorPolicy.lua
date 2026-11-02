@@ -260,6 +260,66 @@ function Policy.PriceContext(record, player)
     }
 end
 
+function Policy.PlayerKeys(player)
+    return playerKeys(player)
+end
+
+function Policy.RecordTradeEvent(record, player, tradeDetails)
+    local policy = Policy.Get(record)
+    local actorID = policy.actorID
+    local actors = PsychopatzCore and PsychopatzCore.Actors or nil
+    if not actorID or not actors or type(actors.Get) ~= "function" then
+        return nil, "core_actor_unavailable"
+    end
+    local Social = actors.Social
+    if not Social or type(Social.RecordAuthorizedEvent) ~= "function" then
+        return nil, "core_social_unavailable"
+    end
+    local keys = playerKeys(player)
+    if #keys == 0 then return nil, "player_key_unavailable" end
+    local primaryKey = keys[1]
+
+    local actor = actors.Get(actorID)
+    if not actor or not actor.social then return nil, "actor_social_unavailable" end
+
+    tradeDetails = type(tradeDetails) == "table" and tradeDetails or {}
+    local requestID = tostring(tradeDetails.requestID or ("trade:" .. tostring(os.time())))
+    local eventID = "dt:trade:" .. requestID
+
+    local approvalDelta = tonumber(tradeDetails.approvalDelta) or 1
+    local respectDelta = tonumber(tradeDetails.respectDelta) or 0
+    local familiarityDelta = tonumber(tradeDetails.familiarityDelta) or 1
+
+    local event = {
+        targetKey = primaryKey,
+        eventID = eventID,
+        type = "commercial_trade",
+        approvalDelta = approvalDelta,
+        respectDelta = respectDelta,
+        familiarityDelta = familiarityDelta,
+        authority = "server",
+        authorized = true,
+        createdAt = tradeDetails.createdAt or (getGameTime and getGameTime():getWorldAgeHours() or 0),
+        tags = { trade = true, dynamic_trading = true },
+    }
+    local updatedSocial, reason = Social.RecordAuthorizedEvent(actor.social, event)
+    if not updatedSocial then return nil, reason end
+
+    -- Update commercial metadata extension in relationship
+    local ext = Social.GetExtension and Social.GetExtension(updatedSocial, primaryKey, "DynamicTrading") or {}
+    ext.totalTrades = (tonumber(ext.totalTrades) or 0) + 1
+    ext.lastTradeValue = tonumber(tradeDetails.totalValue) or 0
+    ext.commercialReliability = math.min(100, (tonumber(ext.commercialReliability) or 50) + 1)
+    if Social.SetExtension then
+        Social.SetExtension(updatedSocial, primaryKey, "DynamicTrading", ext, "server")
+    end
+
+    if actors.DefaultRegistry and type(actors.DefaultRegistry.Commit) == "function" then
+        actors.DefaultRegistry:Commit(actorID, { social = updatedSocial })
+    end
+    return updatedSocial
+end
+
 function Policy.MarkVisit(record, options)
     options = type(options) == "table" and options or {}
     if options.authority ~= "server" then

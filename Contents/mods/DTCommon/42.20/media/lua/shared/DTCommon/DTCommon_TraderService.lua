@@ -1062,6 +1062,14 @@ function Service.ExecuteTradeBasket(player, request)
     end
 
     Stock.SaveAndTransmit()
+    if Policy and type(Policy.RecordTradeEvent) == "function" then
+        pcall(Policy.RecordTradeEvent, record, player, {
+            requestID = requestID,
+            totalValue = netTotal,
+            buyTotal = buyTotal,
+            sellTotal = sellTotal,
+        })
+    end
     local snapshot, snapshotReason = Service.Snapshot(traderID, player)
     result = {
         accepted = true,
