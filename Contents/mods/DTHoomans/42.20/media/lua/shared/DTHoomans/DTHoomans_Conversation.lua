@@ -148,7 +148,15 @@ local function registerTradeChoiceProvider()
                 {
                     id = "dynamictrading.trade",
                     topic = "trade",
-                    groupID = "conversation_branch",
+                    groupID = context.activeHubID == "whats_up"
+                        and "semantic_hub.whats_up" or "conversation_branch",
+                    semanticOwner = "dynamictrading.trader",
+                    contextReason = "enabled_trader_provider",
+                    eligibility = {
+                        status = "allowed",
+                        allowed = true,
+                        reason = "enabled_trader_provider",
+                    },
                     source = { kind = "dynamic_trading" },
                     frame = {
                         kind = "semantic_click_frame",
@@ -163,6 +171,10 @@ local function registerTradeChoiceProvider()
                             topic = "trade",
                             providerID = TRADE_PROVIDER_ID,
                             role = MERCHANT_ROLE,
+                            hubID = context.activeHubID == "whats_up"
+                                and "whats_up" or nil,
+                            hubAvenue = context.activeHubID == "whats_up"
+                                or nil,
                         },
                         textKey =
                             "UI_PNC_Conversation_Suggestion_Trade_Utterance",

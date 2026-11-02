@@ -307,6 +307,8 @@ local function onExcursion(payload)
     return true
 end
 
+Resident.OnExcursion = onExcursion
+
 function Resident.Register()
     local excursions = PNC and PNC.CommunityExcursionService or nil
     if not excursions then return false, "excursion_service_unavailable" end
