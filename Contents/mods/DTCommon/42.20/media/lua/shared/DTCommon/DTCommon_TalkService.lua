@@ -349,11 +349,14 @@ function Service.Open(player, traderID, mode, options)
                 or string.find(rawText, "road news", 1, true)
                 or string.find(rawText, "news", 1, true)
             then
-                if gossip and type(gossip.statements) == "table" and #gossip.statements > 0 then
+                local statements = (gossip and type(gossip.statements) == "table" and gossip.statements)
+                    or (worldKnowledge and type(worldKnowledge.statements) == "table" and worldKnowledge.statements)
+                if statements and #statements > 0 then
                     return {
                         key = "DTCommon_WorldKnowledge_Gossip",
-                        fallback = gossip.statements[1],
-                        evidence = gossip.factRefs and gossip.factRefs[1],
+                        fallback = statements[1],
+                        evidence = (gossip and gossip.factRefs and gossip.factRefs[1])
+                            or (worldKnowledge and worldKnowledge.factRefs and worldKnowledge.factRefs[1]),
                     }
                 else
                     return {
@@ -465,8 +468,8 @@ function Service.Submit(player, traderID, talkSessionID, text, options)
         origin = options.origin,
         settlement = options.settlement,
         traderRole = (record.ca and record.ca.role) or (policy and policy.role) or "trader",
-        worldKnowledge = knowledge and knowledge.worldKnowledge or nil,
-        npcGossip = knowledge and knowledge.npcGossip or nil,
+        worldKnowledge = options.worldKnowledge or (knowledge and knowledge.worldKnowledge) or nil,
+        npcGossip = options.npcGossip or (knowledge and knowledge.npcGossip) or nil,
         capabilities = {
             ["core.conversation"] = true,
             ["dynamictrading.trade"] = true,

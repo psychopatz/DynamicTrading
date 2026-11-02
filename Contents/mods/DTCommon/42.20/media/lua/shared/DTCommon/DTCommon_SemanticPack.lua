@@ -521,10 +521,30 @@ local function registerPack()
     return true
 end
 
-function Pack.Init()
-    if not Pack._registered then
-        registerPack()
+function Pack.Register()
+    Pack._registered = false
+    return registerPack()
+end
+
+function Pack.Unregister()
+    local Semantics = PsychopatzCore and PsychopatzCore.Semantics or nil
+    if not Semantics or not Semantics.PackRegistry then
+        return false, "core_semantics_unavailable"
     end
+    local ok, err = Semantics.PackRegistry.UnregisterPack(Pack.PACK_ID)
+    if ok then
+        Pack._registered = false
+    end
+    return ok, err
+end
+
+function Pack.Init()
+    local Semantics = PsychopatzCore and PsychopatzCore.Semantics or nil
+    local isRegistered = Semantics and Semantics.PackRegistry and Semantics.PackRegistry.GetPack(Pack.PACK_ID) ~= nil
+    if not Pack._registered or not isRegistered then
+        return registerPack()
+    end
+    return true
 end
 
 Pack.Init()
