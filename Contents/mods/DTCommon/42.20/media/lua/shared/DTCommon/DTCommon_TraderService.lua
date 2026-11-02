@@ -295,6 +295,14 @@ local function itemProtectionReason(player, item)
 end
 
 local function liveNPC(npcID)
+    if PsychopatzCore and PsychopatzCore.Actors and PsychopatzCore.Actors.Registry
+        and type(PsychopatzCore.Actors.Registry.Get) == "function"
+    then
+        local actor = PsychopatzCore.Actors.Registry:Get(npcID)
+        if actor and actor.x and actor.y then
+            return actor
+        end
+    end
     local registry = PNC and PNC.Registry or nil
     local body
     if not registry or type(registry.Get) ~= "function" then return nil end
