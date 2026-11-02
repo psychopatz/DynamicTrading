@@ -6,7 +6,17 @@ DTCommon.TraderService = Service
 local Inventory = require "PsychopatzCore/Inventory/PsychopatzInventory"
 local C = require "PsychopatzCore/Inventory/PsychopatzInventoryConstants"
 require "PsychopatzCore/Economy/PsychopatzCurrency"
-local Storage = DTCommon.Storage
+local Storage = setmetatable({}, {
+    __index = function(_, k)
+        local s = DTCommon and DTCommon.Storage
+        return s and s[k]
+    end,
+    __newindex = function(_, k, v)
+        if DTCommon and DTCommon.Storage then
+            DTCommon.Storage[k] = v
+        end
+    end,
+})
 local Stock = DTCommon.TraderStock
 local Support = DTCommon.TraderSupport
 local Policy = require "DTCommon/DTCommon_CoreActorPolicy"

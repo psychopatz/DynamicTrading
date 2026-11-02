@@ -14,7 +14,17 @@ if not loaded or type(Core) ~= "table" then Core = nil end
 
 local TraderService = DTCommon.TraderService
 local Policy = DTCommon.CoreActorPolicy
-local Storage = DTCommon.Storage
+local Storage = setmetatable({}, {
+    __index = function(_, k)
+        local s = DTCommon and DTCommon.Storage
+        return s and s[k]
+    end,
+    __newindex = function(_, k, v)
+        if DTCommon and DTCommon.Storage then
+            DTCommon.Storage[k] = v
+        end
+    end,
+})
 local EventPresentation = DTCommon.MarketEventPresentation
 local MAX_CONTEXT = 4
 local MAX_TRACE = 64
