@@ -186,8 +186,14 @@ function Service.Open(player, traderID, mode, options)
         responsePlanner = function(_, result, _, context)
             local decision = result and result.decision or {}
             local gossip = context and context.npcGossip or nil
+            local worldKnowledge = context and context.worldKnowledge or nil
+            local policy = context and context.policy or nil
+            local traderRecord = context and context.traderRecord or nil
             local intent = result and result.ir and result.ir.intent
             local topic = result and result.ir and (result.ir.topic or (result.ir.analysis and result.ir.analysis.topic))
+            local act = result and result.ir and result.ir.speechAct
+            local factClass = result and result.ir and result.ir.factClass
+            local rawText = result and result.ir and string.lower(result.ir.rawText or "")
             local Semantics = PsychopatzCore and PsychopatzCore.Semantics
 
             if intent == "GREETING" and Semantics and Semantics.SelectDialogueBlock then
@@ -199,6 +205,7 @@ function Service.Open(player, traderID, mode, options)
                         fallback = node.fallback or node.text,
                     }
                 end
+                return { key = "DTCommon_Talk_Greeting", fallback = "Hello traveler." }
             end
 
             if intent == "FAREWELL" and Semantics and Semantics.SelectDialogueBlock then
@@ -210,22 +217,176 @@ function Service.Open(player, traderID, mode, options)
                         fallback = node.fallback or node.text,
                     }
                 end
+                return { key = "DTCommon_Talk_Farewell", fallback = "Safe travels out there." }
             end
 
-            local act = result and result.ir and result.ir.speechAct
+            if intent == "TRADE" then
+                return {
+                    key = "DTCommon_Talk_Opening_Trade",
+                    fallback = "Let's trade.",
+                }
+            end
 
-            if (act == "act.trade.ask_whereabouts" or topic == "whereabouts" or intent == "WHEREABOUTS") and Semantics and Semantics.SelectDialogueBlock then
-                local block = Semantics.SelectDialogueBlock("whereabouts", context, session.id)
-                if block and block.nodes and block.nodes[block.entryNode] then
-                    local node = block.nodes[block.entryNode]
+            -- 1. Caravan story / storytelling (Authored non-factual flavor)
+            if factClass == "caravan_story"
+                or string.find(rawText, "caravan story", 1, true)
+                or string.find(rawText, "tell me a story", 1, true)
+            then
+                return {
+                    key = "DTCommon_Talk_Caravan_Story",
+                    fallback = "I remember a run through Muldraugh back when the fog was thick... barely made it out with the wagon wheels intact.",
+                }
+            end
+
+            -- 2. Trader location ("where is the trader")
+            if factClass == "trader_location" or string.find(rawText, "where is the trader", 1, true) then
+                local role = context and context.traderRole or "trader"
+                if role ~= "guard" then
                     return {
-                        key = node.textKey,
-                        fallback = node.fallback or node.text,
+                        key = "DTCommon_Talk_Trader_Here",
+                        fallback = "I'm the caravan trader. I'm right here if you need supplies or goods.",
+                    }
+                else
+                    local loc = (traderRecord and (traderRecord.location or traderRecord.x))
+                        or (policy and policy.currentSettlementID)
+                    if loc then
+                        return {
+                            key = "DTCommon_Talk_Trader_Located",
+                            fallback = "The merchant is located at " .. tostring(loc) .. ".",
+                            evidence = tostring(loc),
+                        }
+                    else
+                        return {
+                            key = "DTCommon_Talk_Trader_Unknown",
+                            fallback = "I don't have the merchant's exact location right now.",
+                        }
+                    end
+                end
+            end
+
+            -- 3. Destination ("where are you heading", "what settlement are you going to", "where are you going")
+            if factClass == "destination"
+                or string.find(rawText, "where are you heading", 1, true)
+                or string.find(rawText, "where are you going", 1, true)
+                or string.find(rawText, "settlement are you going", 1, true)
+                or string.find(rawText, "destination", 1, true)
+            then
+                local dest = (policy and (policy.destinationSettlementID or policy.nextSettlementID))
+                    or (context and context.destination)
+                if not dest and gossip and gossip.statements and #gossip.statements > 0 then
+                    for i, stmt in ipairs(gossip.statements) do
+                        if string.find(string.lower(stmt), "heading", 1, true)
+                            or string.find(string.lower(stmt), "destination", 1, true)
+                        then
+                            return {
+                                key = "DTCommon_Talk_Destination_Gossip",
+                                fallback = stmt,
+                                evidence = gossip.factRefs and gossip.factRefs[i],
+                            }
+                        end
+                    end
+                end
+                if dest then
+                    return {
+                        key = "DTCommon_Talk_Destination_Grounded",
+                        fallback = "We are heading toward " .. tostring(dest) .. ".",
+                        evidence = tostring(dest),
+                    }
+                else
+                    return {
+                        key = "DTCommon_Talk_Destination_Unknown",
+                        fallback = "I cannot confirm where we are heading next; route orders haven't been finalized.",
                     }
                 end
             end
 
-            if (act == "act.trade.ask_who" or topic == "identity" or (intent == "QUESTION" and act ~= "act.trade.ask_whereabouts")) and Semantics and Semantics.SelectDialogueBlock then
+            -- 4. Origin ("where did you come from", "where are you from")
+            if factClass == "origin"
+                or string.find(rawText, "where did you come from", 1, true)
+                or string.find(rawText, "where are you from", 1, true)
+            then
+                local orig = (policy and (policy.lastSettlementID or policy.originSettlementID or policy.homeSettlementID))
+                    or (context and context.origin)
+                if orig then
+                    return {
+                        key = "DTCommon_Talk_Origin_Grounded",
+                        fallback = "We came from " .. tostring(orig) .. ".",
+                        evidence = tostring(orig),
+                    }
+                else
+                    return {
+                        key = "DTCommon_Talk_Origin_Unknown",
+                        fallback = "I don't have confirmed departure records for this caravan.",
+                    }
+                end
+            end
+
+            -- 5. Settlement ("where is the settlement", "what settlement")
+            if factClass == "settlement"
+                or string.find(rawText, "where is the settlement", 1, true)
+                or string.find(rawText, "what settlement", 1, true)
+            then
+                local sett = (policy and (policy.currentSettlementID or policy.homeSettlementID))
+                    or (context and context.settlement)
+                if sett then
+                    return {
+                        key = "DTCommon_Talk_Settlement_Grounded",
+                        fallback = "Our primary trading settlement is " .. tostring(sett) .. ".",
+                        evidence = tostring(sett),
+                    }
+                else
+                    return {
+                        key = "DTCommon_Talk_Settlement_Unknown",
+                        fallback = "I have no confirmed reports on nearby settlements right now.",
+                    }
+                end
+            end
+
+            -- 6. Road News / Gossip / Rumors
+            if factClass == "road_news"
+                or intent == "GOSSIP" or intent == "GOSSIP_RECEIVED"
+                or act == "act.trade.ask_rumors"
+                or string.find(rawText, "road news", 1, true)
+                or string.find(rawText, "news", 1, true)
+            then
+                if gossip and type(gossip.statements) == "table" and #gossip.statements > 0 then
+                    return {
+                        key = "DTCommon_WorldKnowledge_Gossip",
+                        fallback = gossip.statements[1],
+                        evidence = gossip.factRefs and gossip.factRefs[1],
+                    }
+                else
+                    return {
+                        key = "DTCommon_WorldKnowledge_NoNews",
+                        fallback = "I haven't heard any news lately.",
+                    }
+                end
+            end
+
+            -- 7. General whereabouts / routes
+            if act == "act.trade.ask_whereabouts" or topic == "whereabouts" or intent == "WHEREABOUTS" then
+                if gossip and type(gossip.statements) == "table" and #gossip.statements > 0 then
+                    return {
+                        key = "DTCommon_WorldKnowledge_Whereabouts",
+                        fallback = gossip.statements[1],
+                        evidence = gossip.factRefs and gossip.factRefs[1],
+                    }
+                end
+                if policy and policy.currentSettlementID then
+                    return {
+                        key = "DTCommon_Talk_Route_Grounded",
+                        fallback = "We are currently operating around " .. tostring(policy.currentSettlementID) .. ".",
+                        evidence = tostring(policy.currentSettlementID),
+                    }
+                end
+                return {
+                    key = "DTCommon_Talk_Whereabouts_Unknown",
+                    fallback = "I have no confirmed route updates to share right now.",
+                }
+            end
+
+            -- 8. Identity questions ("who are you", "who handles trading", "who is in charge")
+            if (act == "act.trade.ask_who" or topic == "identity" or intent == "QUESTION") and Semantics and Semantics.SelectDialogueBlock then
                 local block = Semantics.SelectDialogueBlock("identity", context, session.id)
                 if block and block.nodes and block.nodes[block.entryNode] then
                     local node = block.nodes[block.entryNode]
@@ -236,39 +397,9 @@ function Service.Open(player, traderID, mode, options)
                 end
             end
 
-            if (intent == "GOSSIP" or intent == "GOSSIP_RECEIVED") and Semantics and Semantics.SelectDialogueBlock then
-                local block = Semantics.SelectDialogueBlock("rumor", context, session.id)
-                if block and block.nodes and block.nodes[block.entryNode] then
-                    local node = block.nodes[block.entryNode]
-                    return {
-                        key = node.textKey,
-                        fallback = node.fallback or node.text,
-                    }
-                end
-            end
-
-            if (intent == "GOSSIP" or intent == "GOSSIP_RECEIVED"
-                or intent == "QUESTION") and gossip
-                and type(gossip.statements) == "table"
-                and type(gossip.statements[1]) == "string"
-            then
-                return {
-                    key = "DTCommon_WorldKnowledge_Gossip",
-                    fallback = gossip.statements[1],
-                }
-            end
-            if (intent == "GOSSIP" or intent == "GOSSIP_RECEIVED")
-                and gossip
-            then
-                return {
-                    key = "DTCommon_WorldKnowledge_NoNews",
-                    fallback = "I haven't heard any news lately.",
-                }
-            end
             if type(decision.response) == "table" then
                 return decision.response
             end
-            local intent = result and result.ir and result.ir.intent
             if intent == "QUESTION" then
                 return {
                     key = "DTCommon_Talk_Uncertain",
@@ -322,12 +453,18 @@ function Service.Submit(player, traderID, talkSessionID, text, options)
         return session.requests[requestID]
     end
     local knowledge = knowledgeFor(session)
+    local policy = Policy and type(Policy.Get) == "function" and Policy.Get(record)
     local context = {
         source = "dynamictrading",
         mode = mode,
         traderID = traderID,
         playerKey = playerKey(player),
-        traderRole = (record.ca and record.ca.role) or "trader",
+        traderRecord = record,
+        policy = policy,
+        destination = options.destination,
+        origin = options.origin,
+        settlement = options.settlement,
+        traderRole = (record.ca and record.ca.role) or (policy and policy.role) or "trader",
         worldKnowledge = knowledge and knowledge.worldKnowledge or nil,
         npcGossip = knowledge and knowledge.npcGossip or nil,
         capabilities = {

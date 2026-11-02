@@ -158,19 +158,62 @@ T.equal(turn.result.responses[1].text,
 T.truthy(turn.result.actions, "turn actions present")
 T.equal(turn.result.actions[1].id, "dynamictrading.trade", "trade choice offered")
 
--- 6. P11 Standalone Identity & Whereabouts verification
--- Parsing verification
+-- 6. P15 Standalone Utterance Families & Factual Grounding Verification
+-- A. Parsing verification across all mandatory families
 local parsedWho = Semantics.Parse("who are you", { capabilities = { ["dynamictrading.trade"] = true } })
 T.truthy(parsedWho, "Parses 'who are you'")
 T.equal(parsedWho.intent, "QUESTION", "Intent is QUESTION")
 T.equal(parsedWho.speechAct, "act.trade.ask_who", "Speech act is act.trade.ask_who")
 
-local parsedWhere = Semantics.Parse("where are you heading", { capabilities = { ["dynamictrading.trade"] = true } })
-T.truthy(parsedWhere, "Parses 'where are you heading'")
-T.equal(parsedWhere.intent, "QUESTION", "Intent is QUESTION")
-T.equal(parsedWhere.speechAct, "act.trade.ask_whereabouts", "Speech act is act.trade.ask_whereabouts")
+local parsedWhoTrade = Semantics.Parse("who handles trading", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedWhoTrade, "Parses 'who handles trading'")
+T.equal(parsedWhoTrade.speechAct, "act.trade.ask_who")
 
--- Dialogue block selection: trader identity vs guard identity
+local parsedWhereTrader = Semantics.Parse("where is the trader", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedWhereTrader, "Parses 'where is the trader'")
+T.equal(parsedWhereTrader.speechAct, "act.trade.ask_who")
+
+local parsedWhereHeading = Semantics.Parse("where are you heading", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedWhereHeading, "Parses 'where are you heading'")
+T.equal(parsedWhereHeading.speechAct, "act.trade.ask_whereabouts")
+
+local parsedWhereFrom = Semantics.Parse("where did you come from", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedWhereFrom, "Parses 'where did you come from'")
+T.equal(parsedWhereFrom.speechAct, "act.trade.ask_whereabouts")
+
+local parsedWhereSettlement = Semantics.Parse("where is the settlement", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedWhereSettlement, "Parses 'where is the settlement'")
+T.equal(parsedWhereSettlement.speechAct, "act.trade.ask_whereabouts")
+
+local parsedWhatSettlement = Semantics.Parse("what settlement are you going to", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedWhatSettlement, "Parses 'what settlement are you going to'")
+T.equal(parsedWhatSettlement.speechAct, "act.trade.ask_whereabouts")
+
+local parsedRoadNews = Semantics.Parse("road news", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedRoadNews, "Parses 'road news'")
+T.equal(parsedRoadNews.intent, "GOSSIP", "road news intent is GOSSIP")
+
+local parsedStory = Semantics.Parse("tell me a caravan story", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedStory, "Parses 'tell me a caravan story'")
+T.equal(parsedStory.intent, "GOSSIP", "story intent is GOSSIP")
+
+local parsedGoodbye = Semantics.Parse("goodbye", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedGoodbye, "Parses 'goodbye'")
+T.equal(parsedGoodbye.intent, "FAREWELL", "farewell intent is FAREWELL")
+
+local parsedBuy = Semantics.Parse("buy", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedBuy, "Parses 'buy'")
+T.equal(parsedBuy.intent, "TRADE")
+
+local parsedSell = Semantics.Parse("sell", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedSell, "Parses 'sell'")
+T.equal(parsedSell.intent, "TRADE")
+
+local parsedTrade = Semantics.Parse("trade", { capabilities = { ["dynamictrading.trade"] = true } })
+T.truthy(parsedTrade, "Parses 'trade'")
+T.equal(parsedTrade.intent, "TRADE")
+
+-- B. Dialogue block selection
 local traderIdentityBlock = Semantics.SelectDialogueBlock("identity", {
     traderRole = "trader",
     capabilities = { ["dynamictrading.trade"] = true },
@@ -185,7 +228,6 @@ local guardIdentityBlock = Semantics.SelectDialogueBlock("identity", {
 T.truthy(guardIdentityBlock, "guard identity block selected")
 T.equal(guardIdentityBlock.id, "dt_block_who_guard")
 
--- Whereabouts selection: friend vs stranger
 local friendWhereabouts = Semantics.SelectDialogueBlock("whereabouts", friendContext, "seed_where")
 T.truthy(friendWhereabouts, "friend whereabouts selected")
 T.equal(friendWhereabouts.id, "dt_block_whereabouts_friend")
@@ -194,7 +236,9 @@ local strangerWhereabouts = Semantics.SelectDialogueBlock("whereabouts", strange
 T.truthy(strangerWhereabouts, "stranger whereabouts selected")
 T.equal(strangerWhereabouts.id, "dt_block_whereabouts_neutral")
 
--- TalkService turn submission with identity & whereabouts questions
+-- C. TalkService Turn Submission & Factual Grounding (P15B)
+
+-- 1. Identity question
 local turnWho, turnWhoErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "who are you", {
     mode = "radio",
     requestID = "turn-who",
@@ -204,13 +248,87 @@ T.equal(turnWho.result.responses[1].text,
     "I'm the caravan trader. If you need supplies, weapons, or provisions, I'm the one to talk to.",
     "trader identity delivered via TalkService")
 
-local turnWhere, turnWhereErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "where are you heading", {
+-- 2. Where is the trader (speaker is trader)
+local turnWhereTrader, turnWhereTraderErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "where is the trader", {
     mode = "radio",
-    requestID = "turn-where",
+    requestID = "turn-where-trader",
 })
-T.truthy(turnWhere, turnWhereErr)
-T.equal(turnWhere.result.responses[1].text,
-    "We just came through the southern outpost and we're heading toward the central market next. Safe travels if you're taking the highways.",
-    "friend whereabouts delivered via TalkService")
+T.truthy(turnWhereTrader, turnWhereTraderErr)
+T.equal(turnWhereTrader.result.responses[1].text,
+    "I'm the caravan trader. I'm right here if you need supplies or goods.",
+    "trader says they are right here")
+
+-- 3. UNGROUNDED (NO EVIDENCE) Destination check: must return bounded uncertainty, NOT hardcoded fiction
+local turnWhereUnk, turnWhereUnkErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "where are you heading", {
+    mode = "radio",
+    requestID = "turn-where-unk",
+})
+T.truthy(turnWhereUnk, turnWhereUnkErr)
+T.equal(turnWhereUnk.result.responses[1].text,
+    "I cannot confirm where we are heading next; route orders haven't been finalized.",
+    "unseeded destination yields bounded uncertainty")
+
+-- 4. GROUNDED (KNOWN EVIDENCE) Destination check: seed destination evidence in policy / options
+local turnWhereGrounded, turnWhereGroundedErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "where are you heading", {
+    mode = "radio",
+    requestID = "turn-where-grounded",
+    destination = "West Point Outpost",
+})
+T.truthy(turnWhereGrounded, turnWhereGroundedErr)
+T.equal(turnWhereGrounded.result.responses[1].text,
+    "We are heading toward West Point Outpost.",
+    "grounded destination rendered from seeded evidence")
+
+-- 5. GROUNDED Origin check
+local turnOrigGrounded, turnOrigGroundedErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "where did you come from", {
+    mode = "radio",
+    requestID = "turn-orig-grounded",
+    origin = "March Ridge Depot",
+})
+T.truthy(turnOrigGrounded, turnOrigGroundedErr)
+T.equal(turnOrigGrounded.result.responses[1].text,
+    "We came from March Ridge Depot.",
+    "grounded origin rendered from seeded evidence")
+
+-- 6. GROUNDED Settlement check
+local turnSettGrounded, turnSettGroundedErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "where is the settlement", {
+    mode = "radio",
+    requestID = "turn-sett-grounded",
+    settlement = "Riverside Safehouse",
+})
+T.truthy(turnSettGrounded, turnSettGroundedErr)
+T.equal(turnSettGrounded.result.responses[1].text,
+    "Our primary trading settlement is Riverside Safehouse.",
+    "grounded settlement rendered from seeded evidence")
+
+-- 7. UNGROUNDED News check: no seeded news -> bounded no-news
+local turnNoNews, turnNoNewsErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "road news", {
+    mode = "radio",
+    requestID = "turn-no-news",
+})
+T.truthy(turnNoNews, turnNoNewsErr)
+T.equal(turnNoNews.result.responses[1].text,
+    "I haven't heard any news lately.",
+    "unseeded road news yields bounded no-news")
+
+-- 8. Caravan Story check (Authored non-factual flavor)
+local turnStory, turnStoryErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "tell me a caravan story", {
+    mode = "radio",
+    requestID = "turn-story",
+})
+T.truthy(turnStory, turnStoryErr)
+T.equal(turnStory.result.responses[1].text,
+    "I remember a run through Muldraugh back when the fog was thick... barely made it out with the wagon wheels intact.",
+    "caravan story delivered")
+
+-- 9. Farewell / Goodbye check
+local turnFarewell, turnFarewellErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "goodbye", {
+    mode = "radio",
+    requestID = "turn-farewell",
+})
+T.truthy(turnFarewell, turnFarewellErr)
+T.equal(turnFarewell.result.responses[1].text,
+    "Safe travels out there, friend. Until our next deal.",
+    "friendly farewell delivered based on relationship approval")
 
 T.finish("dt_standalone_semantic_story_smoke")

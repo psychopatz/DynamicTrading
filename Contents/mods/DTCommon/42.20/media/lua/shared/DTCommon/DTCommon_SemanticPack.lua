@@ -32,13 +32,43 @@ local function registerPack()
             },
             {
                 id = "concept.trade.rumors",
-                aliases = { "rumor", "news", "stories", "gossip", "word on the road", "road" },
+                aliases = { "rumor", "news", "stories", "gossip", "word on the road", "road", "road news", "news on the road", "any news", "commercial news", "what's the news" },
                 kind = "intent",
                 priority = 80,
             },
             {
+                id = "concept.trade.story",
+                aliases = { "tell me a caravan story", "caravan story", "tell me a story", "caravan stories", "travel story" },
+                kind = "intent",
+                priority = 85,
+            },
+            {
+                id = "concept.trade.destination",
+                aliases = { "where are you heading", "where are you going", "what settlement are you going to", "where is this caravan going", "destination", "next stop" },
+                kind = "intent",
+                priority = 90,
+            },
+            {
+                id = "concept.trade.origin",
+                aliases = { "where did you come from", "where are you from", "origin", "last stop" },
+                kind = "intent",
+                priority = 90,
+            },
+            {
+                id = "concept.trade.settlement",
+                aliases = { "where is the settlement", "what settlement", "which settlement", "nearest settlement" },
+                kind = "intent",
+                priority = 85,
+            },
+            {
+                id = "concept.trade.trader_location",
+                aliases = { "where is the trader", "where is the merchant", "where can i find the trader" },
+                kind = "intent",
+                priority = 90,
+            },
+            {
                 id = "concept.trade.whereabouts",
-                aliases = { "where are you heading", "where did you come from", "where is this caravan going", "where are you going", "routes", "settlement", "destination" },
+                aliases = { "whereabouts", "routes", "route", "direction", "which way", "what route", "where are you travelling" },
                 kind = "intent",
                 priority = 70,
             },
@@ -73,6 +103,10 @@ local function registerPack()
                 metadata = { priority = 80 },
             },
             {
+                definition = { id = "act.trade.ask_story", intent = "GOSSIP" },
+                metadata = { priority = 85 },
+            },
+            {
                 definition = { id = "act.trade.ask_whereabouts", intent = "QUESTION" },
                 metadata = { priority = 70 },
             },
@@ -93,22 +127,64 @@ local function registerPack()
         -- 3. Patterns
         patterns = {
             {
+                id = "pattern.trade.concept_farewell",
+                priority = 90,
+                match = { { concept = "concept.social.farewell" } },
+                emit = { intent = "FAREWELL", speechAct = "act.trade.farewell" },
+            },
+            {
+                id = "pattern.trade.concept_greeting",
+                priority = 90,
+                match = { { concept = "concept.social.greeting" } },
+                emit = { intent = "GREETING", speechAct = "act.trade.greeting" },
+            },
+            {
                 id = "pattern.trade.concept_who",
                 priority = 85,
                 match = { { concept = "concept.trade.who" } },
                 emit = { intent = "QUESTION", speechAct = "act.trade.ask_who", topic = "identity" },
             },
             {
+                id = "pattern.trade.concept_trader_location",
+                priority = 88,
+                match = { { concept = "concept.trade.trader_location" } },
+                emit = { intent = "QUESTION", speechAct = "act.trade.ask_who", topic = "identity", factClass = "trader_location" },
+            },
+            {
+                id = "pattern.trade.concept_destination",
+                priority = 86,
+                match = { { concept = "concept.trade.destination" } },
+                emit = { intent = "QUESTION", speechAct = "act.trade.ask_whereabouts", topic = "whereabouts", factClass = "destination" },
+            },
+            {
+                id = "pattern.trade.concept_origin",
+                priority = 86,
+                match = { { concept = "concept.trade.origin" } },
+                emit = { intent = "QUESTION", speechAct = "act.trade.ask_whereabouts", topic = "whereabouts", factClass = "origin" },
+            },
+            {
+                id = "pattern.trade.concept_settlement",
+                priority = 86,
+                match = { { concept = "concept.trade.settlement" } },
+                emit = { intent = "QUESTION", speechAct = "act.trade.ask_whereabouts", topic = "whereabouts", factClass = "settlement" },
+            },
+            {
                 id = "pattern.trade.concept_whereabouts",
                 priority = 80,
                 match = { { concept = "concept.trade.whereabouts" } },
-                emit = { intent = "QUESTION", speechAct = "act.trade.ask_whereabouts", topic = "whereabouts" },
+                emit = { intent = "QUESTION", speechAct = "act.trade.ask_whereabouts", topic = "whereabouts", factClass = "whereabouts" },
             },
             {
                 id = "pattern.trade.concept_rumors",
                 priority = 75,
                 match = { { concept = "concept.trade.rumors" } },
-                emit = { intent = "GOSSIP", speechAct = "act.trade.ask_rumors", topic = "rumors" },
+                emit = { intent = "GOSSIP", speechAct = "act.trade.ask_rumors", topic = "rumors", factClass = "road_news" },
+            },
+            {
+                id = "pattern.trade.concept_story",
+                priority = 82,
+                match = { { concept = "concept.trade.story" } },
+                emit = { intent = "GOSSIP", speechAct = "act.trade.ask_story", topic = "story", factClass = "caravan_story" },
             },
             {
                 id = "pattern.trade.concept_open",
@@ -138,7 +214,7 @@ local function registerPack()
                 id = "pattern.trade.rumors",
                 priority = 80,
                 match = { { kind = "literal", value = "news" } },
-                emit = { intent = "GOSSIP", speechAct = "act.trade.ask_rumors" },
+                emit = { intent = "GOSSIP", speechAct = "act.trade.ask_rumors", factClass = "road_news" },
             },
             {
                 id = "pattern.trade.greeting_hello",
@@ -156,6 +232,12 @@ local function registerPack()
                 id = "pattern.trade.farewell",
                 priority = 50,
                 match = { { kind = "literal", value = "bye" } },
+                emit = { intent = "FAREWELL", speechAct = "act.trade.farewell" },
+            },
+            {
+                id = "pattern.trade.farewell_goodbye",
+                priority = 55,
+                match = { { kind = "literal", value = "goodbye" } },
                 emit = { intent = "FAREWELL", speechAct = "act.trade.farewell" },
             },
         },
@@ -409,7 +491,7 @@ local function registerPack()
                 nodes = {
                     opening = {
                         textKey = "DTCommon_Talk_Whereabouts_Friend",
-                        fallback = "We just came through the southern outpost and we're heading toward the central market next. Safe travels if you're taking the highways.",
+                        fallback = "I can check our route logs and road reports for you, friend.",
                     },
                 },
             },
@@ -422,7 +504,7 @@ local function registerPack()
                 nodes = {
                     opening = {
                         textKey = "DTCommon_Talk_Whereabouts_Neutral",
-                        fallback = "We move across Knox County supplying outposts. The roads are getting harder to hold, but we keep our deliveries moving.",
+                        fallback = "Route information depends on current road conditions and confirmed contracts.",
                     },
                 },
             },
