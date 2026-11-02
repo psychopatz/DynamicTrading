@@ -9,4 +9,18 @@ DTHoomans.SPAWN_COMMAND = "SpawnTrader"
 require "DTHoomans/DTHoomans_Conversation"
 require "DTHoomans/DTHoomans_CoreProvider"
 
+if DTCommon and DTCommon.PlacePresentation and type(DTCommon.PlacePresentation.RegisterResolver) == "function" then
+    DTCommon.PlacePresentation.RegisterResolver("hoomans_community", function(placeID)
+        if not placeID then return nil end
+        local Communities = PNC and PNC.Communities
+        if Communities and type(Communities.Get) == "function" then
+            local community = Communities.Get(placeID)
+            if community and type(community.name) == "string" and community.name ~= "" then
+                return community.name
+            end
+        end
+        return nil
+    end, 100)
+end
+
 return DTHoomans

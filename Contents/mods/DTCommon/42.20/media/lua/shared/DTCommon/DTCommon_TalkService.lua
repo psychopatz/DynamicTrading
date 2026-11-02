@@ -27,6 +27,88 @@ Service.Sessions = Service.Sessions or {}
 Service.SessionOrder = Service.SessionOrder or {}
 Service.Serial = tonumber(Service.Serial) or 0
 
+local PlacePresentation = DTCommon.PlacePresentation or {}
+DTCommon.PlacePresentation = PlacePresentation
+
+PlacePresentation.Resolvers = PlacePresentation.Resolvers or {}
+
+function PlacePresentation.RegisterResolver(id, resolverFn, priority)
+    if not id or type(resolverFn) ~= "function" then return false end
+    PlacePresentation.Resolvers[id] = {
+        fn = resolverFn,
+        priority = tonumber(priority) or 50,
+    }
+    return true
+end
+
+function PlacePresentation.UnregisterResolver(id)
+    if not id then return false end
+    PlacePresentation.Resolvers[id] = nil
+    return true
+end
+
+function PlacePresentation.IsMachineIdentifier(id)
+    if type(id) ~= "string" or id == "" then return true end
+    if string.find(id, "^community_")
+        or string.find(id, "^settlement_[%d_]+")
+        or string.find(id, "^loc_[%d_]+")
+        or string.find(id, "^actor:")
+        or string.find(id, "^id_[%d_]+")
+    then
+        return true
+    end
+    return false
+end
+
+function PlacePresentation.Resolve(placeID, context)
+    if not placeID or placeID == "" then return nil end
+    local str = tostring(placeID)
+
+    -- 1. Try registered resolvers in priority order
+    local list = {}
+    for id, entry in pairs(PlacePresentation.Resolvers) do
+        list[#list + 1] = { id = id, fn = entry.fn, priority = entry.priority }
+    end
+    table.sort(list, function(a, b) return a.priority > b.priority end)
+
+    for _, entry in ipairs(list) do
+        local ok, name = pcall(entry.fn, str, context)
+        if ok and type(name) == "string" and name ~= "" and name ~= str and not PlacePresentation.IsMachineIdentifier(name) then
+            return name
+        end
+    end
+
+    -- 2. Try WorldKnowledge facts if present in context
+    if context and context.worldKnowledge and type(context.worldKnowledge.candidates) == "table" then
+        for _, cand in ipairs(context.worldKnowledge.candidates) do
+            if cand.payload and (cand.payload.marketID == str or cand.payload.scopeID == str or cand.payload.communityID == str) then
+                if cand.payload.marketName and not PlacePresentation.IsMachineIdentifier(cand.payload.marketName) then
+                    return cand.payload.marketName
+                end
+                if cand.payload.name and not PlacePresentation.IsMachineIdentifier(cand.payload.name) then
+                    return cand.payload.name
+                end
+            end
+        end
+    end
+
+    -- 3. If translation exists (e.g. DTCommon.T)
+    if DTCommon and type(DTCommon.T) == "function" then
+        local translated = DTCommon.T("Place_" .. str, nil)
+        if translated and translated ~= "" and translated ~= ("Place_" .. str) then
+            return translated
+        end
+    end
+
+    -- 4. If it is a machine identifier and was not resolved, do NOT expose it to player dialogue!
+    if PlacePresentation.IsMachineIdentifier(str) then
+        return nil, "unpresentable_machine_id"
+    end
+
+    -- 5. Otherwise, assume human-authored string (e.g. "Riverside", "West Point Outpost")
+    return str
+end
+
 local function authority()
     return DTCommon.Storage
         and type(DTCommon.Storage.IsAuthority) == "function"
@@ -271,10 +353,11 @@ function Service.Open(player, traderID, mode, options)
                 or string.find(rawText, "settlement are you going", 1, true)
                 or string.find(rawText, "destination", 1, true)
             then
-                local dest = (context and context.destination)
+                local destID = (context and context.destination)
                     or (policy and (policy.destinationSettlementID or policy.destination or policy.nextSettlementID))
                     or (traderRecord and (traderRecord.destination or traderRecord.destinationSettlementID))
-                if not dest and gossip and gossip.statements and #gossip.statements > 0 then
+                local destName = destID and PlacePresentation.Resolve(destID, context) or nil
+                if not destName and gossip and gossip.statements and #gossip.statements > 0 then
                     for i, stmt in ipairs(gossip.statements) do
                         if string.find(string.lower(stmt), "heading", 1, true)
                             or string.find(string.lower(stmt), "destination", 1, true)
@@ -287,11 +370,11 @@ function Service.Open(player, traderID, mode, options)
                         end
                     end
                 end
-                if dest then
+                if destName then
                     return {
                         key = "DTCommon_Talk_Destination_Grounded",
-                        fallback = "We are heading toward " .. tostring(dest) .. ".",
-                        evidence = tostring(dest),
+                        fallback = "We are heading toward " .. tostring(destName) .. ".",
+                        evidence = tostring(destID),
                     }
                 else
                     return {
@@ -306,14 +389,15 @@ function Service.Open(player, traderID, mode, options)
                 or string.find(rawText, "where did you come from", 1, true)
                 or string.find(rawText, "where are you from", 1, true)
             then
-                local orig = (context and context.origin)
+                local origID = (context and context.origin)
                     or (policy and (policy.originSettlementID or policy.lastSettlementID or policy.homeSettlementID or policy.origin))
                     or (traderRecord and (traderRecord.origin or traderRecord.originSettlementID or traderRecord.lastSettlementID))
-                if orig then
+                local origName = origID and PlacePresentation.Resolve(origID, context) or nil
+                if origName then
                     return {
                         key = "DTCommon_Talk_Origin_Grounded",
-                        fallback = "We came from " .. tostring(orig) .. ".",
-                        evidence = tostring(orig),
+                        fallback = "We came from " .. tostring(origName) .. ".",
+                        evidence = tostring(origID),
                     }
                 else
                     return {
@@ -328,14 +412,15 @@ function Service.Open(player, traderID, mode, options)
                 or string.find(rawText, "where is the settlement", 1, true)
                 or string.find(rawText, "what settlement", 1, true)
             then
-                local sett = (context and context.settlement)
+                local settID = (context and context.settlement)
                     or (policy and (policy.currentSettlementID or policy.homeSettlementID or policy.settlementID))
                     or (traderRecord and (traderRecord.currentSettlementID or traderRecord.homeSettlementID or traderRecord.settlementID))
-                if sett then
+                local settName = settID and PlacePresentation.Resolve(settID, context) or nil
+                if settName then
                     return {
                         key = "DTCommon_Talk_Settlement_Grounded",
-                        fallback = "Our primary trading settlement is " .. tostring(sett) .. ".",
-                        evidence = tostring(sett),
+                        fallback = "Our primary trading settlement is " .. tostring(settName) .. ".",
+                        evidence = tostring(settID),
                     }
                 else
                     return {
@@ -378,11 +463,14 @@ function Service.Open(player, traderID, mode, options)
                         evidence = gossip.factRefs and gossip.factRefs[1],
                     }
                 end
-                if policy and policy.currentSettlementID then
+                local locID = (context and (context.destination or context.settlement))
+                    or (policy and (policy.destinationSettlementID or policy.currentSettlementID or policy.homeSettlementID))
+                local locName = locID and PlacePresentation.Resolve(locID, context) or nil
+                if locName then
                     return {
                         key = "DTCommon_Talk_Route_Grounded",
-                        fallback = "We are currently operating around " .. tostring(policy.currentSettlementID) .. ".",
-                        evidence = tostring(policy.currentSettlementID),
+                        fallback = "We are currently operating around " .. tostring(locName) .. ".",
+                        evidence = tostring(locID),
                     }
                 end
                 return {

@@ -17,9 +17,15 @@ local CoreActors = require "PsychopatzCore/Actors/PsychopatzActors"
 local Social = CoreActors.Social
 
 -- Initialize standalone DT
+local simulatedStorage = { v = 1, r = 0, t = {} }
 DTCommon = {
     STATUS_READY = "READY",
-    Storage = { IsAuthority = function() return true end },
+    Storage = {
+        IsAuthority = function() return true end,
+        GetData = function() return simulatedStorage end,
+        Touch = function() simulatedStorage.r = simulatedStorage.r + 1 end,
+        Transmit = function() end,
+    },
     T = function(_, fallback) return fallback end,
 }
 
@@ -125,13 +131,19 @@ registry:Commit(coreActor.actorId, {
 })
 
 local traderRecord = {
+    traderID = "trader:standalone",
     s = "READY",
     v = 1,
     b = 500,
     ca = { actorID = coreActor.actorId, providerRevision = 1, role = "trader" },
 }
 
-DTCommon.TraderService.GetRecord = function(id) return traderRecord end
+DTCommon.TraderService.GetRecord = function(id)
+    if simulatedStorage and simulatedStorage.t and simulatedStorage.t[id] then
+        return simulatedStorage.t[id]
+    end
+    return traderRecord
+end
 DTCommon.TraderService.ValidateTalkAccess = function() return true end
 
 local playerAlice = {
@@ -290,8 +302,15 @@ T.equal(turnOrigGrounded.result.responses[1].text,
     "We came from March Ridge Depot.",
     "grounded origin rendered from production Policy state")
 
--- 6. GROUNDED Settlement check: seed settlement via Policy
-Policy.SetCurrentSettlement(traderRecord, "Riverside Safehouse")
+-- 6. GROUNDED Settlement check: seed settlement via Policy with distinct canonical ID vs display name (P19B)
+DTCommon.PlacePresentation.RegisterResolver("test_community_resolver", function(id)
+    if id == "community_123_456" then return "Riverside Safehouse" end
+    if id == "community_dest_789" then return "West Point Outpost" end
+    if id == "community_orig_321" then return "March Ridge Depot" end
+    return nil
+end, 100)
+
+Policy.SetCurrentSettlement(traderRecord, "community_123_456")
 local turnSettGrounded, turnSettGroundedErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "where is the settlement", {
     mode = "radio",
     requestID = "turn-sett-grounded",
@@ -299,7 +318,24 @@ local turnSettGrounded, turnSettGroundedErr = TalkService.Submit(playerAlice, "t
 T.truthy(turnSettGrounded, turnSettGroundedErr)
 T.equal(turnSettGrounded.result.responses[1].text,
     "Our primary trading settlement is Riverside Safehouse.",
-    "grounded settlement rendered from production Policy state")
+    "grounded settlement rendered with human-facing display name")
+T.falsy(string.find(turnSettGrounded.result.responses[1].text, "community_123_456"),
+    "raw machine ID does not leak into player dialogue")
+T.equal(turnSettGrounded.result.responses[1].evidence, "community_123_456",
+    "exact canonical machine ID preserved in evidence")
+
+-- 6B. Unresolvable machine ID produces bounded uncertainty instead of leaking raw machine string
+Policy.SetDestinationSettlement(traderRecord, "community_999_unknown_raw")
+local turnUnres, turnUnresErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "where are you heading", {
+    mode = "radio",
+    requestID = "turn-dest-unres",
+})
+T.truthy(turnUnres, turnUnresErr)
+T.equal(turnUnres.result.responses[1].text,
+    "I cannot confirm where we are heading next; route orders haven't been finalized.",
+    "unresolvable machine ID produces bounded uncertainty")
+T.falsy(string.find(turnUnres.result.responses[1].text, "community_999_unknown_raw"),
+    "unresolvable machine ID never leaks into dialogue")
 
 -- 7A. UNGROUNDED News check: no seeded news -> bounded no-news
 local turnNoNews, turnNoNewsErr = TalkService.Submit(playerAlice, "trader:standalone", session.sessionID, "road news", {
@@ -359,5 +395,79 @@ T.truthy(turnFarewell, turnFarewellErr)
 T.equal(turnFarewell.result.responses[1].text,
     "Safe travels out there, friend. Until our next deal.",
     "friendly farewell delivered based on relationship approval")
+
+-- 10. REAL PERSISTENCE & RELOAD (P19C)
+-- Set up full state on traderRecord
+Policy.SetDestinationSettlement(traderRecord, "community_dest_789")
+Policy.SetOriginSettlement(traderRecord, "community_orig_321")
+Policy.SetCurrentSettlement(traderRecord, "community_123_456")
+
+-- Persist into DT storage
+local storageData = DTCommon.Storage.GetData()
+storageData.t = storageData.t or {}
+storageData.t[traderRecord.traderID or traderRecord.id or traderRecord.t] = traderRecord
+local savedPayload = DTCommon.WorldKnowledge.Save()
+T.truthy(savedPayload, "WorldKnowledge successfully saved to storage")
+
+-- Simulate full runtime reset
+TalkService.Sessions = {}
+CoreWK.Reset({ maxFacts = 16, maxActors = 8, maxRefs = 8 })
+traderRecord = nil
+
+-- Verify reset wiped out in-memory state
+local reloadedData = DTCommon.Storage.GetData()
+local reloadedTrader = reloadedData.t["trader:standalone"]
+T.truthy(reloadedTrader, "persisted trader record retrieved from storage")
+local loadOk, loadErr = DTCommon.WorldKnowledge.Load()
+T.truthy(loadOk, loadErr)
+
+-- Re-open session and query
+local reloadedSession, sessErr = TalkService.Open(playerAlice, "trader:standalone", "radio")
+T.truthy(reloadedSession, sessErr)
+
+-- Destination query
+local turnDestReload, turnDestReloadErr = TalkService.Submit(playerAlice, "trader:standalone", reloadedSession.sessionID, "where are you going", {
+    mode = "radio",
+    requestID = "turn-dest-reload",
+})
+T.truthy(turnDestReload, turnDestReloadErr)
+T.equal(turnDestReload.result.responses[1].text, "We are heading toward West Point Outpost.", "reloaded destination resolves display name")
+T.equal(turnDestReload.result.responses[1].evidence, "community_dest_789", "reloaded destination preserves canonical machine ID evidence")
+
+-- Origin query
+local turnOrigReload, turnOrigReloadErr = TalkService.Submit(playerAlice, "trader:standalone", reloadedSession.sessionID, "where did you come from", {
+    mode = "radio",
+    requestID = "turn-orig-reload",
+})
+T.truthy(turnOrigReload, turnOrigReloadErr)
+T.equal(turnOrigReload.result.responses[1].text, "We came from March Ridge Depot.", "reloaded origin resolves display name")
+T.equal(turnOrigReload.result.responses[1].evidence, "community_orig_321", "reloaded origin preserves canonical machine ID evidence")
+
+-- Settlement query
+local turnSettReload, turnSettReloadErr = TalkService.Submit(playerAlice, "trader:standalone", reloadedSession.sessionID, "where is the settlement", {
+    mode = "radio",
+    requestID = "turn-sett-reload",
+})
+T.truthy(turnSettReload, turnSettReloadErr)
+T.equal(turnSettReload.result.responses[1].text, "Our primary trading settlement is Riverside Safehouse.", "reloaded settlement resolves display name")
+T.equal(turnSettReload.result.responses[1].evidence, "community_123_456", "reloaded settlement preserves canonical machine ID evidence")
+
+-- Road news query
+local turnNewsReload, turnNewsReloadErr = TalkService.Submit(playerAlice, "trader:standalone", reloadedSession.sessionID, "road news", {
+    mode = "radio",
+    requestID = "turn-news-reload",
+})
+T.truthy(turnNewsReload, turnNewsReloadErr)
+T.contains(turnNewsReload.result.responses[1].text, "FOOD SHORTAGE", "reloaded world knowledge fact text survives")
+T.equal(turnNewsReload.result.responses[1].evidence, "fact:market:food-shortage:rosewood", "reloaded fact ID evidence survives")
+
+-- Complete trip / clear destination -> bounded uncertainty
+Policy.SetDestinationSettlement(reloadedTrader, nil)
+local turnDestCleared, turnDestClearedErr = TalkService.Submit(playerAlice, "trader:standalone", reloadedSession.sessionID, "where are you going", {
+    mode = "radio",
+    requestID = "turn-dest-cleared",
+})
+T.truthy(turnDestCleared, turnDestClearedErr)
+T.equal(turnDestCleared.result.responses[1].text, "I cannot confirm where we are heading next; route orders haven't been finalized.", "cleared destination yields bounded uncertainty")
 
 T.finish("dt_standalone_semantic_story_smoke")

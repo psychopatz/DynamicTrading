@@ -182,20 +182,55 @@ local function onExcursion(payload)
         return false, "resident_trader_missing"
     end
     if payload.state == "PREPARING" then
-        if TraderService and TraderService.SetCurrentSettlement then
-            TraderService.SetCurrentSettlement(
-                traderID, payload.homeCommunityID)
+        if TraderService then
+            if TraderService.SetCurrentSettlement then
+                TraderService.SetCurrentSettlement(
+                    traderID, payload.homeCommunityID)
+            end
+            if TraderService.SetOriginSettlement then
+                TraderService.SetOriginSettlement(
+                    traderID, payload.homeCommunityID)
+            end
+            local dest = payload.destination and payload.destination.communityID or nil
+            if dest and TraderService.SetDestinationSettlement then
+                TraderService.SetDestinationSettlement(traderID, dest)
+            end
         end
         return true
     end
-    if payload.state == "OUTBOUND"
-        or payload.state == "RETURNING_HOME"
-    then
-        if TraderService and TraderService.SetCurrentSettlement then
-            TraderService.SetCurrentSettlement(traderID, nil)
+    if payload.state == "OUTBOUND" then
+        if TraderService then
+            if TraderService.SetCurrentSettlement then
+                TraderService.SetCurrentSettlement(traderID, nil)
+            end
+            if TraderService.SetOriginSettlement and payload.homeCommunityID then
+                TraderService.SetOriginSettlement(traderID, payload.homeCommunityID)
+            end
+            local dest = payload.destination and payload.destination.communityID or nil
+            if dest and TraderService.SetDestinationSettlement then
+                TraderService.SetDestinationSettlement(traderID, dest)
+            end
         end
         return applyAvailability(traderID, false,
-            "community_excursion_" .. string.lower(payload.state))
+            "community_excursion_outbound")
+    end
+    if payload.state == "RETURNING_HOME" then
+        if TraderService then
+            if TraderService.SetCurrentSettlement then
+                TraderService.SetCurrentSettlement(traderID, nil)
+            end
+            local visited = payload.visitedCommunityID
+                or (payload.destination and payload.destination.communityID)
+                or (record and record.ca and record.ca.lastSettlementID)
+            if visited and TraderService.SetOriginSettlement then
+                TraderService.SetOriginSettlement(traderID, visited)
+            end
+            if payload.homeCommunityID and TraderService.SetDestinationSettlement then
+                TraderService.SetDestinationSettlement(traderID, payload.homeCommunityID)
+            end
+        end
+        return applyAvailability(traderID, false,
+            "community_excursion_returning_home")
     end
     if payload.state == "VISITING" then
         destination = payload.destination
@@ -217,13 +252,28 @@ local function onExcursion(payload)
                 .. tostring(traderID) .. " reason=" .. tostring(reason))
             return false, reason
         end
+        if TraderService then
+            if TraderService.SetCurrentSettlement then
+                TraderService.SetCurrentSettlement(traderID, destination)
+            end
+            local nextDest = payload.nextDestination
+                and payload.nextDestination.communityID or nil
+            if TraderService.SetDestinationSettlement then
+                TraderService.SetDestinationSettlement(traderID, nextDest)
+            end
+        end
         return applyAvailability(traderID, false,
             "resident_trader_visiting")
     end
     if payload.state == "AT_HOME" then
-        if TraderService and TraderService.SetCurrentSettlement then
-            TraderService.SetCurrentSettlement(
-                traderID, payload.homeCommunityID)
+        if TraderService then
+            if TraderService.SetCurrentSettlement then
+                TraderService.SetCurrentSettlement(
+                    traderID, payload.homeCommunityID)
+            end
+            if TraderService.SetDestinationSettlement then
+                TraderService.SetDestinationSettlement(traderID, nil)
+            end
         end
         return applyAvailability(traderID, true, "resident_trader_home")
     end
@@ -231,15 +281,25 @@ local function onExcursion(payload)
         if payload.departedAt ~= nil
             and not payload.completedAt
         then
-            if TraderService and TraderService.SetCurrentSettlement then
-                TraderService.SetCurrentSettlement(traderID, nil)
+            if TraderService then
+                if TraderService.SetCurrentSettlement then
+                    TraderService.SetCurrentSettlement(traderID, nil)
+                end
+                if TraderService.SetDestinationSettlement then
+                    TraderService.SetDestinationSettlement(traderID, nil)
+                end
             end
             return applyAvailability(traderID, false,
                 "resident_excursion_failed")
         end
-        if TraderService and TraderService.SetCurrentSettlement then
-            TraderService.SetCurrentSettlement(
-                traderID, payload.homeCommunityID)
+        if TraderService then
+            if TraderService.SetCurrentSettlement then
+                TraderService.SetCurrentSettlement(
+                    traderID, payload.homeCommunityID)
+            end
+            if TraderService.SetDestinationSettlement then
+                TraderService.SetDestinationSettlement(traderID, nil)
+            end
         end
         return applyAvailability(traderID, true,
             "resident_excursion_not_departed")

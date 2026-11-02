@@ -25,6 +25,9 @@ T.load("DTCommon", "shared", "DTCommon/DTCommon_CoreActorPolicy.lua")
 local Policy = DTCommon.CoreActorPolicy
 
 local playerModData = { PNC_CharacterUUID = "char_alice_1" }
+if CoreActors.PlayerIdentity and CoreActors.PlayerIdentity.RegisterIssuedIdentity then
+    CoreActors.PlayerIdentity.RegisterIssuedIdentity("char_alice_1", "alice", { source = "hoom_created" })
+end
 local player = {
     getOnlineID = function() return 12 end,
     getUsername = function() return "alice" end,
