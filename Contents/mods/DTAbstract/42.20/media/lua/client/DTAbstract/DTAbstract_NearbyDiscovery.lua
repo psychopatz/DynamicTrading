@@ -51,7 +51,7 @@ end
 
 local function actorForRecord(record)
     local ca = record and record.ca or nil
-    local actorID = ca and (ca.actorID or ca.coreActorID) or nil
+    local actorID = ca and (ca.actorID) or nil
     if not actorID or not CoreClient then return nil, actorID end
     return CoreClient.GetActor(actorID), actorID
 end

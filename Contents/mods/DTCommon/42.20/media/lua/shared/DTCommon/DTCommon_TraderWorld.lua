@@ -18,39 +18,6 @@ World.MAX_ROAMING_TRADERS = 2
 World.INTERVAL_HOURS = 1
 World.COOLDOWN_HOURS = 4
 World.DEFAULT_ROLE = "roaming"
-World.ChangeListeners = World.ChangeListeners or {}
-World.MAX_CHANGE_LISTENERS = 16
-
-function World.RegisterChangeListener(id, callback)
-    id = tostring(id or "")
-    if id == "" or type(callback) ~= "function" then
-        return false, "invalid_change_listener"
-    end
-    local count = 0
-    for _ in pairs(World.ChangeListeners) do count = count + 1 end
-    if not World.ChangeListeners[id]
-        and count >= World.MAX_CHANGE_LISTENERS
-    then
-        return false, "change_listener_capacity_exceeded"
-    end
-    World.ChangeListeners[id] = callback
-    return true
-end
-
-function World.UnregisterChangeListener(id)
-    id = tostring(id or "")
-    if id == "" or not World.ChangeListeners[id] then return false end
-    World.ChangeListeners[id] = nil
-    return true
-end
-
-function World.NotifyChange(kind, payload)
-    for _, callback in pairs(World.ChangeListeners) do
-        pcall(callback, tostring(kind or "changed"), payload or {})
-    end
-    return true
-end
-
 World.LastTickSummary = World.LastTickSummary or {
     managed = 0, activeCount = 0, spawned = 0, departed = 0,
     advanced = 0, arrived = 0, skipped = "not_run",
@@ -97,10 +64,6 @@ local function savePolicy(record, policy)
         math.floor(tonumber(policy.worldRevision) or 0)) + 1
     record.ca = policy
     persist()
-    World.NotifyChange("policy_changed", {
-        actorID = policy.actorID,
-        worldRevision = policy.worldRevision,
-    })
     return true
 end
 
@@ -437,8 +400,8 @@ function World.BeginExternalJourney(traderID, destinationSettlementID, spec)
     savePolicy(record, policy)
 
     if spec.available ~= nil then
-        if Service and type(Service.SetCoreActorAvailability) == "function" then
-            Service.SetCoreActorAvailability(
+        if Service and type(Service.SetActorAvailability) == "function" then
+            Service.SetActorAvailability(
                 traderID,
                 spec.available == true,
                 spec.availabilityReason
@@ -496,8 +459,8 @@ function World.UpdateExternalState(traderID, spec)
     savePolicy(record, policy)
 
     if spec.available ~= nil then
-        if Service and type(Service.SetCoreActorAvailability) == "function" then
-            Service.SetCoreActorAvailability(
+        if Service and type(Service.SetActorAvailability) == "function" then
+            Service.SetActorAvailability(
                 traderID,
                 spec.available == true,
                 spec.availabilityReason
@@ -693,7 +656,6 @@ function World.ReconcileProviders()
     end)
     if summary.changed > 0 then
         persist()
-        World.NotifyChange("provider_reconciled", summary)
     end
     return summary
 end

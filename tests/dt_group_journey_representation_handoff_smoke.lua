@@ -27,16 +27,6 @@ DTCommon.TraderService = {
     end,
 }
 
-local notifications = {}
-DTCommon.TraderWorld = {
-    NotifyChange = function(kind, payload)
-        notifications[#notifications + 1] = {
-            kind = kind,
-            payload = payload,
-        }
-    end,
-}
-
 local materializePosition
 local rebasedPosition
 Providers.Register("AbstractGroup", {
@@ -121,11 +111,5 @@ T.equal(rebasedPosition.y, 210,
     "group rebase did not receive final body Y")
 T.equal(record.ca.provider, "AbstractGroup",
     "provider did not return to abstract group")
-T.equal(#notifications, 2,
-    "representation transitions did not emit both notifications")
-T.equal(notifications[1].kind, "representation_materialized",
-    "materialization notification mismatch")
-T.equal(notifications[2].kind, "representation_dematerialized",
-    "dematerialization notification mismatch")
 
 T.finish("dt_group_journey_representation_handoff_smoke")

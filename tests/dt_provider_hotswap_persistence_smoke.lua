@@ -120,7 +120,7 @@ local record = {
     ca = Policy.New({ actorID = actorID }),
 }
 data.t[traderID] = record
-local bound, bindReason = TraderService.BindCoreActor(traderID, actorID)
+local bound, bindReason = TraderService.BindActor(traderID, actorID)
 T.truthy(bound, bindReason)
 
 local function commit(nextActor, previous)
@@ -133,7 +133,7 @@ end
 
 local function syncLease(nextActor, abstractAccess, bodyID)
     local lease = nextActor.providerLease
-    local synced, syncReason = TraderService.SetCoreProviderLease(traderID, {
+    local synced, syncReason = TraderService.SetProviderLease(traderID, {
         actorID = actorID,
         provider = lease.provider,
         state = lease.state,

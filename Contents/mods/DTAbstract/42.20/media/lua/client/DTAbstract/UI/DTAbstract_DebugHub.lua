@@ -52,8 +52,8 @@ function DebugHub.ListTraders()
         local record = row.record
         local ca = record and record.ca or nil
         local provider = row.provider
-        if ca and (ca.actorID or ca.coreActorID) then
-            local actorID = ca.actorID or ca.coreActorID
+        if ca and (ca.actorID) then
+            local actorID = ca.actorID
             local projection = CoreClient.GetActor(actorID)
             local pos = projection and projection.position or nil
             local distance = nil
@@ -78,9 +78,9 @@ function DebugHub.ListTraders()
                 displayName = record.n or traderID,
                 actorID = actorID,
                 provider = projection and projection.provider
-                    or ca.provider or ca.coreProvider or "PsychopatzCore",
+                    or ca.provider or "PsychopatzCore",
                 providerState = projection and projection.providerState
-                    or ca.providerState or ca.coreProviderState or "abstract",
+                    or ca.providerState or "abstract",
                 budget = record.b or 0,
                 stockVersion = record.v or 0,
                 position = pos and {

@@ -19,8 +19,23 @@ local originRegistry = Actors.NewRegistry()
 local originStorageData = { t = {}, v = 1, r = 1 }
 
 DTCommon = DTCommon or {}
-local Directory = T.load("DTCommon", "shared", "DTCommon/DTCommon_SettlementDirectory.lua")
-Directory.EnsureDefaults()
+local Directory = T.load(
+    "DTCommon",
+    "shared",
+    "DTCommon/DTCommon_SettlementDirectory.lua"
+)
+assert(Directory.Register({
+    settlementID = "settlement:muldraugh",
+    name = "Muldraugh",
+    position = { x = 10630, y = 9980, z = 0 },
+    provider = "fixture",
+}))
+assert(Directory.Register({
+    settlementID = "settlement:westpoint",
+    name = "West Point",
+    position = { x = 11900, y = 6900, z = 0 },
+    provider = "fixture",
+}))
 
 local Policy = T.load("DTCommon", "shared", "DTCommon/DTCommon_CoreActorPolicy.lua")
 local coreProvider = T.load("DTAbstract", "shared", "DTAbstract/DTAbstract_CoreProvider.lua")

@@ -46,14 +46,6 @@ local Providers = T.load(
     "DTCommon", "shared", "DTCommon/DTCommon_TraderProviderRegistry.lua")
 DTCommon.TraderProviders = Providers
 
-local changes = {}
-DTCommon.TraderWorld = {
-    NotifyChange = function(kind, payload)
-        changes[#changes + 1] = { kind = kind, payload = payload }
-        return true
-    end,
-}
-
 local materialized = 0
 local dematerialized = 0
 Providers.Register("FixtureAbstract", {
@@ -130,11 +122,5 @@ T.equal(records["trader:native"].ca.provider, "FixturePhysical",
 T.equal(records["trader:native"].ca.returnProviderID, nil,
     "native physical trader gained a fabricated return provider")
 
-T.truthy(#changes >= 2,
-    "representation transitions did not emit common change notifications")
-T.equal(changes[1].kind, "representation_materialized",
-    "materialize change kind mismatch")
-T.equal(changes[#changes].kind, "representation_dematerialized",
-    "dematerialize change kind mismatch")
 
 T.finish("dt_trader_representation_runtime_smoke")

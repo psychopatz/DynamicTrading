@@ -105,8 +105,8 @@ The current first-time seed is a bootstrap, not the desired ongoing market lifec
 
 - `Service.Restock(traderID, options)`;
 - `Service.MarkSettlementVisit(traderID, options)`;
-- `Service.SetCoreActorAvailability(...)`;
-- `Service.BindCoreActor(...)`;
+- `Service.SetActorAvailability(...)`;
+- `Service.BindActor(...)`;
 - existing server-authoritative stock/settlement transaction paths.
 
 This means the new market should evolve the existing settlement visit/restock seam rather than create a parallel lifecycle.

@@ -185,7 +185,7 @@ function Runtime.MaterializeTrader(traderID, options)
         return nil, "physical_provider_unavailable"
     end
 
-    local actorID = record.ca.actorID or record.ca.coreActorID
+    local actorID = record.ca.actorID
     local current = actorID and reg:Get(actorID) or nil
     if not current then return nil, "core_actor_not_found" end
 
@@ -359,7 +359,7 @@ function Runtime.DematerializeTrader(traderID, options)
         return nil, "physical_provider_unavailable"
     end
 
-    local actorID = record.ca.actorID or record.ca.coreActorID
+    local actorID = record.ca.actorID
     local current = actorID and reg:Get(actorID) or nil
     if not current then return nil, "core_actor_not_found" end
     local lease = current.providerLease or {}
@@ -447,7 +447,7 @@ function Runtime.RecoverMissingBody(traderID, options)
     local service = actors()
     if not reg or not service then return nil, "core_actor_unavailable" end
 
-    local actorID = record.ca.actorID or record.ca.coreActorID
+    local actorID = record.ca.actorID
     local current = actorID and reg:Get(actorID) or nil
     if not current then return nil, "core_actor_not_found" end
 
@@ -543,7 +543,7 @@ function Runtime.GetPosition(traderID, now)
     local record = trader(traderID)
     if not record or not record.ca then return nil, "trader_not_found" end
     local reg = registry()
-    local actorID = record.ca.actorID or record.ca.coreActorID
+    local actorID = record.ca.actorID
     local actor = reg and actorID and reg:Get(actorID) or nil
     if not actor then return nil, "core_actor_not_found" end
 

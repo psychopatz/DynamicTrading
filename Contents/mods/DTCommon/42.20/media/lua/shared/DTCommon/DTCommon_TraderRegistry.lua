@@ -8,13 +8,21 @@ local Stock = DTCommon.TraderStock
 local Support = DTCommon.TraderSupport
 local Policy = require "DTCommon/DTCommon_CoreActorPolicy"
 
+local function canonicalRecord(record)
+    if type(record) ~= "table" then return record end
+    -- Old save aliases are accepted only by Policy.Normalize. All live
+    -- callers see and subsequently persist the canonical actor/provider keys.
+    record.ca = Policy.Normalize(record.ca)
+    return record
+end
+
 function Service.ForEach(callback)
     if type(callback) ~= "function" then return false end
     local data = Storage.GetData()
     local id
     local record
     for id, record in pairs(data.t) do
-        callback(tostring(id), record)
+        callback(tostring(id), canonicalRecord(record))
     end
     return true
 end
@@ -22,7 +30,7 @@ end
 function Service.GetRecord(traderID)
     traderID = Support.Bounded(traderID, 128)
     if traderID == "" then return nil end
-    return Storage.GetData().t[traderID]
+    return canonicalRecord(Storage.GetData().t[traderID])
 end
 
 function Service.Get(traderID)
@@ -41,13 +49,13 @@ function Service.Get(traderID)
         leaderNPCID = record.l and Support.Bounded(record.l, 128) or nil,
         memberNPCIDs = type(record.m) == "table" and record.m or {},
         abstractAccessEnabled = record.a == 1,
-        coreActorID = record.ca and record.ca.actorID or nil,
-        coreActorAvailable = record.ca == nil
+        actorID = record.ca and record.ca.actorID or nil,
+        actorAvailable = record.ca == nil
             or record.ca.available ~= false,
-        coreProvider = record.ca and record.ca.provider or nil,
-        coreProviderState = record.ca and record.ca.providerState or nil,
-        coreProviderLeaseID = record.ca and record.ca.providerLeaseID or nil,
-        coreProviderBodyID = record.ca and record.ca.providerBodyID or nil,
+        provider = record.ca and record.ca.provider or nil,
+        providerState = record.ca and record.ca.providerState or nil,
+        providerLeaseID = record.ca and record.ca.providerLeaseID or nil,
+        providerBodyID = record.ca and record.ca.providerBodyID or nil,
         homeSettlementID = record.ca and record.ca.homeSettlementID or nil,
         currentSettlementID = record.ca and record.ca.currentSettlementID or nil,
         lastSettlementID = record.ca and record.ca.lastSettlementID or nil,

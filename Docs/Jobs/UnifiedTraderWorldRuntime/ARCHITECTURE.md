@@ -86,9 +86,11 @@ DTCommon_TraderRepresentationRuntime.lua
 - native-physical protection;
 - missing-body recovery coordination.
 
-DTCommon_TraderProjectionServer.lua and DTCommon_TraderPresentation.lua
+DTCommon_TraderPresentation.lua
 
-- one provider-agnostic DynamicTrading projection source and client read model.
+- commercial trader-record binding/read model only;
+- canonical actor position, route, portrait, discovery and map projection come from PsychopatzCore SurvivorWorld;
+- no DynamicTrading-owned actor projection source exists.
 
 DTCommon_TraderContacts.lua
 

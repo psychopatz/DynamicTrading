@@ -62,6 +62,22 @@ local Policy = T.load(
 local Stock = T.load(
     "DTCommon", "shared", "DTCommon/DTCommon_TraderStock.lua")
 
+-- Retired save aliases are accepted only as normalization inputs. The live
+-- policy shape immediately becomes canonical and carries no duplicate keys.
+local migrated = Policy.Normalize({
+    coreActorID = "npc:p7:migrated",
+    coreProvider = "DTAbstract",
+    providerState = "abstract",
+})
+T.equal(migrated.actorID, "npc:p7:migrated",
+    "retired actor key did not migrate")
+T.equal(migrated.provider, "DTAbstract",
+    "retired provider key did not migrate")
+T.equal(migrated.coreActorID, nil,
+    "retired actor key leaked into canonical policy")
+T.equal(migrated.coreProvider, nil,
+    "retired provider key leaked into canonical policy")
+
 local record = {
     b = 500,
     v = 1,

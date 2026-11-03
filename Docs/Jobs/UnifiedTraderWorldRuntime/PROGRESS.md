@@ -14,17 +14,19 @@ Native Project Zomboid acceptance is still required before release or publish.
 
 DTCommon now owns:
 
-- bounded roaming population and lifecycle cadence;
-- canonical route and destination intent;
-- common journey and commercial location state;
+- bounded roaming commercial population and lifecycle cadence;
+- commercial destination intent;
+- compact commercial journey/location metadata (not world geometry);
 - exactly-once settlement arrival, visit, and exchange;
 - cooldown and scheduling;
 - provider registry and representation switching policy;
-- provider-independent trader actor projection and client presentation state;
+- commercial trader binding/presentation metadata;
 - common trader contact and action construction;
 - optional-adopter seams for display name, capacity, access, geography, and trade presentation.
 
-Primary modules are DTCommon_TraderWorld, TraderWorldRuntime, TraderProviderRegistry, TraderRepresentationRuntime, TraderProjectionServer, TraderPresentation, TraderContacts, IntegrationRegistry, and TradePresentationRegistry.
+Primary modules are DTCommon_TraderWorld, TraderWorldRuntime, TraderProviderRegistry, TraderRepresentationRuntime, TraderPresentation, TraderContacts, IntegrationRegistry, and TradePresentationRegistry.
+
+> 2026-11-04 SurvivorWorld S9 cleanup: generic actor/world projection moved fully to PsychopatzCore SurvivorWorld. The former DTCommon_TraderProjectionServer was removed; TraderPresentation now exposes commercial record bindings only.
 
 ### DTAbstract adapter
 
@@ -39,7 +41,7 @@ Deleted obsolete production ownership:
 
 ### DTHoomans adapter
 
-DTHoomans retains Hoomans-specific caravan, faction, member, body, mobile-group, resident-excursion participant travel, settlement geography, physical access, and trade presentation mechanics.
+DTHoomans retains Hoomans-specific caravan, faction, member, body, mobile-group, resident-excursion participant travel, physical access, and trade presentation mechanics. Canonical community geography is supplied by PsychopatzCore SurvivorWorld.
 
 Commercial destination, location, arrival, visit, exchange, and cooldown state route through DTCommon.
 

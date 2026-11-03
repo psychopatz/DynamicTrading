@@ -19,6 +19,8 @@ local Service = DTCommon and DTCommon.TraderService
 local Directory = DTCommon and DTCommon.SettlementDirectory
 local Runtime = DTAbstract.SurvivorWorldRuntime
     or require "DTAbstract/DTAbstract_SurvivorWorldRuntime"
+local WorldMigration = require
+    "DTAbstract/DTAbstract_TraderWorldMigration"
 
 Provider.ID = "DTAbstract"
 Provider.DEFAULT_SPEED = 60
@@ -120,35 +122,10 @@ local function releaseAcquired(actor, now)
     return true
 end
 
-local function legacyAbstractActorID(actorID)
-    actorID = tostring(actorID or "")
-    return string.sub(actorID, 1, 15) == "actor:dt:world:"
-        or string.sub(actorID, 1, 15) == "actor:abstract:"
-end
-
-local function actorUsedElsewhere(actorID, traderID)
-    local used = false
-    if Service and type(Service.ForEach) == "function" then
-        Service.ForEach(function(otherID, other)
-            if tostring(otherID) ~= tostring(traderID) then
-                local ca = other and other.ca or nil
-                local otherActorID = ca
-                    and (ca.actorID or ca.coreActorID) or nil
-                if tostring(otherActorID or "")
-                    == tostring(actorID or "")
-                then
-                    used = true
-                end
-            end
-        end)
-    end
-    return used
-end
-
 function Provider.ownsRecord(_, record)
     local ca = record and record.ca or nil
     return ca ~= nil
-        and tostring(ca.provider or ca.coreProvider or "") == Provider.ID
+        and tostring(ca.provider or "") == Provider.ID
 end
 
 function Provider.isAvailable()
@@ -207,11 +184,8 @@ function Provider.spawnTrader(spec)
         budget = spec.budget or 1000,
         abstractAccessEnabled = true,
         actorID = candidate.actorID,
-        coreActorID = candidate.actorID,
         provider = Provider.ID,
         providerState = "abstract",
-        coreProvider = Provider.ID,
-        coreProviderState = "abstract",
         homeSettlementID = settlementID,
         currentSettlementID = settlementID,
         worldManaged = true,
@@ -241,115 +215,6 @@ function Provider.spawnTrader(spec)
     }
 end
 
-local function directoryHas(settlementID)
-    return settlementID ~= nil
-        and Directory
-        and type(Directory.Get) == "function"
-        and Directory.Get(settlementID) ~= nil
-end
-
-function Provider.RebindLegacyRecord(traderID, record, now)
-    local ca = record and record.ca or nil
-    local oldActorID = ca and (ca.actorID or ca.coreActorID) or nil
-    if not legacyAbstractActorID(oldActorID) then
-        return nil, "legacy_actor_not_recognized"
-    end
-
-    now = worldAge(now)
-    local reg = registry()
-    if not reg then return nil, "actor_registry_unavailable" end
-    local oldActor = reg:Get(oldActorID)
-
-    local anchor
-    local api = actors()
-    if oldActor and oldActor.world and api and api.World then
-        anchor = api.World.ProjectPosition(oldActor.world, now)
-    end
-
-    local candidate, reason = Runtime.SelectTraderCandidate({
-        anchor = anchor,
-        now = now,
-        actorRegistry = reg,
-    })
-    if not candidate then
-        return nil, reason or "canonical_trader_candidate_unavailable"
-    end
-
-    local replacement = reg:Get(candidate.actorID)
-    if not replacement then return nil, "core_actor_not_found" end
-    local committed
-    committed, reason = acquire(replacement, now)
-    if not committed then return nil, reason end
-
-    -- Retire only the recognized pre-S7 standalone actor and only when no
-    -- other trader record still references it. Never delete canonical actors.
-    if oldActor and not actorUsedElsewhere(oldActorID, traderID) then
-        local lease = oldActor.providerLease or {}
-        if lease.provider == Provider.ID
-            and lease.state ~= "released"
-        then
-            local released, releaseReason =
-                releaseAcquired(oldActor, now)
-            if not released then
-                releaseAcquired(committed, now)
-                return nil, releaseReason
-            end
-        end
-    end
-
-    local Policy = DTCommon and DTCommon.CoreActorPolicy
-    if not Policy or type(Policy.Get) ~= "function"
-        or type(Policy.SetProviderLease) ~= "function"
-    then
-        releaseAcquired(committed, now)
-        return nil, "trader_policy_unavailable"
-    end
-
-    local policy = Policy.Get(record)
-    policy.actorID = candidate.actorID
-    policy.homeSettlementID = directoryHas(policy.homeSettlementID)
-        and policy.homeSettlementID or candidate.communityID
-    policy.currentSettlementID = directoryHas(policy.currentSettlementID)
-        and policy.currentSettlementID or candidate.communityID
-
-    -- Legacy standalone travel used the retired Kentucky directory and an
-    -- actor-owned journey. It cannot be safely projected onto a canonical
-    -- group route by ID, so migrate at the canonical home and let DTCommon
-    -- choose the next commercial destination normally.
-    policy.originSettlementID = nil
-    policy.destinationSettlementID = nil
-    policy.lifecycleState = "idle"
-    policy.journeyID = nil
-    policy.journeyState = nil
-    policy.cooldownUntil = 0
-    record.ca = policy
-
-    local synced
-    synced, reason = Policy.SetProviderLease(
-        record,
-        committed.providerLease
-    )
-    if not synced then
-        releaseAcquired(committed, now)
-        return nil, reason
-    end
-
-    if oldActor
-        and not actorUsedElsewhere(oldActorID, traderID)
-    then
-        reg:Remove(oldActorID)
-    end
-
-    Provider.LastLegacyRebind = {
-        traderID = tostring(traderID),
-        oldActorID = tostring(oldActorID),
-        actorID = candidate.actorID,
-        groupID = candidate.groupID,
-        communityID = candidate.communityID,
-    }
-    return candidate, "legacy_rebound"
-end
-
 function Provider.canTravelTo(_, _, settlement)
     return settlement ~= nil
         and settlement.enabled ~= false
@@ -361,7 +226,7 @@ end
 function Provider.startMovement(traderID, record, request)
     if not authority() then return nil, "server_authority_required" end
     local ca = record and record.ca or nil
-    local actorID = ca and (ca.actorID or ca.coreActorID) or nil
+    local actorID = ca and ca.actorID or nil
     if not actorID then return nil, "core_actor_missing" end
 
     local world, reason = Runtime.Ensure({
@@ -422,7 +287,7 @@ end
 
 function Provider.pollMovement(_, record, request)
     local ca = record and record.ca or nil
-    local actorID = ca and (ca.actorID or ca.coreActorID) or nil
+    local actorID = ca and ca.actorID or nil
     if not actorID then return nil, "core_actor_missing" end
 
     local world = Runtime.GetRegistry()
@@ -464,7 +329,7 @@ end
 
 function Provider.getPosition(_, record, now)
     local ca = record and record.ca or nil
-    local actorID = ca and (ca.actorID or ca.coreActorID) or nil
+    local actorID = ca and ca.actorID or nil
     if not actorID then return nil, "core_actor_missing" end
 
     local world = Runtime.GetRegistry()
@@ -486,7 +351,7 @@ end
 function Provider.rebaseMovement(_, record, options)
     options = type(options) == "table" and options or {}
     local ca = record and record.ca or nil
-    local actorID = ca and (ca.actorID or ca.coreActorID) or nil
+    local actorID = ca and ca.actorID or nil
     if not actorID then return nil, "core_actor_missing" end
     local position = options.position
     if type(position) ~= "table"
@@ -523,7 +388,7 @@ end
 
 function Provider.releaseTrader(traderID, record, now)
     local ca = record and record.ca or nil
-    local actorID = ca and (ca.actorID or ca.coreActorID) or nil
+    local actorID = ca and ca.actorID or nil
     if not actorID then return false, "core_actor_missing" end
 
     local world = Runtime.GetRegistry()
@@ -581,7 +446,7 @@ end
 function Provider.reconcileRecord(traderID, record)
     local ca = record and record.ca or nil
     if not ca then return false, "trader_policy_missing" end
-    local actorID = ca.actorID or ca.coreActorID
+    local actorID = ca.actorID
     local actorRegistry = registry()
     local actor = actorRegistry and actorID
         and actorRegistry:Get(actorID) or nil
@@ -590,19 +455,28 @@ function Provider.reconcileRecord(traderID, record)
 
     local group = actor and Runtime.FindGroupForActor(actorID) or nil
 
-    -- Pre-S7 standalone DTAbstract traders used actor:dt:world:* actors with
-    -- no canonical SurvivorWorld group. Rebind those records once to an
-    -- existing Core trader group, preserving the DTCommon commercial record.
+    -- Retired standalone actors are handled by a bounded one-way migration
+    -- module; active provider code never interprets their old world model.
     if (not actor or not group)
-        and legacyAbstractActorID(actorID)
+        and WorldMigration.IsRetiredActorID(actorID)
     then
-        local rebound, reboundReason =
-            Provider.RebindLegacyRecord(
+        local rebound, reboundReason, migration =
+            WorldMigration.Rebind(
                 traderID,
                 record,
-                worldAge()
+                worldAge(),
+                {
+                    registry = registry,
+                    actors = actors,
+                    runtime = Runtime,
+                    directory = Directory,
+                    service = Service,
+                    acquire = acquire,
+                    releaseAcquired = releaseAcquired,
+                }
             )
         if rebound then
+            Provider.LastWorldMigration = migration
             ca = record.ca
             actorID = ca and ca.actorID or nil
             actor = actorRegistry and actorID
@@ -611,11 +485,11 @@ function Provider.reconcileRecord(traderID, record)
                 and Runtime.FindGroupForActor(actorID)
                 or nil
             Policy.SetAvailable(record, true, nil)
-            Provider.LastLegacyRebindError = nil
+            Provider.LastWorldMigrationError = nil
             return true, "changed"
         end
-        Provider.LastLegacyRebindError = tostring(
-            reboundReason or "legacy_rebind_failed"
+        Provider.LastWorldMigrationError = tostring(
+            reboundReason or "world_migration_failed"
         )
     end
 

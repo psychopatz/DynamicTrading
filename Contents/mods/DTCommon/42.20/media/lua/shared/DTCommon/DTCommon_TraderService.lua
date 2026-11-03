@@ -652,7 +652,7 @@ function Service.ExecuteTrade(player, request)
     return Service.ExecuteTradeBasket(player, basket)
 end
 
-function Service.BindCoreActor(traderID, actorID, definition)
+function Service.BindActor(traderID, actorID, definition)
     if not authority() then return false, "server_authority_required" end
     local record = Service.GetRecord(traderID)
     if not record then return false, "trader_not_found" end
@@ -681,7 +681,7 @@ function Service.BindCoreActor(traderID, actorID, definition)
     return true
 end
 
-function Service.SetCoreProviderLease(traderID, lease)
+function Service.SetProviderLease(traderID, lease)
     if not authority() then return false, "server_authority_required" end
     local record = Service.GetRecord(traderID)
     if not record then return false, "trader_not_found" end
@@ -718,7 +718,7 @@ function Service.SetCoreProviderLease(traderID, lease)
     return true
 end
 
-function Service.SetCoreActorAvailability(traderID, available, reason)
+function Service.SetActorAvailability(traderID, available, reason)
     if not authority() then return false, "server_authority_required" end
     local record = Service.GetRecord(traderID)
     if not record then return false, "trader_not_found" end
@@ -839,34 +839,6 @@ function Service.MarkSettlementVisit(traderID, options)
         restock = restockResult,
         exchange = exchangeResult,
     }
-end
-
--- Optional presentation projection. DT contributes merchant capability and
--- provider metadata; Core remains authoritative for actor identity, body,
--- portrait, social state, and personal inventory.
-function Service.ProjectCoreMapEntry(traderID, core, mapRegistry, spec)
-    if type(mapRegistry) ~= "table"
-        or type(mapRegistry.ProjectActor) ~= "function"
-    then return nil, "core_map_unavailable" end
-    local record = Service.GetRecord(traderID)
-    local actorID = record and record.ca and record.ca.actorID or nil
-    local actors = core and core.Actors
-    if not actorID or not actors or type(actors.Get) ~= "function" then
-        return nil, "core_actor_unavailable"
-    end
-    local actor = actors.Get(actorID)
-    if not actor then return nil, "core_actor_unavailable" end
-    spec = type(spec) == "table" and spec or {}
-    spec.provider = "DynamicTrading"
-    spec.capabilities = spec.capabilities or {
-        talk = true, inspect = true, trade = true,
-    }
-    local existing = type(mapRegistry.Get) == "function"
-        and mapRegistry:Get(actorID) or nil
-    if existing and type(mapRegistry.Update) == "function" then
-        return mapRegistry:Update(actor, spec)
-    end
-    return mapRegistry:ProjectActor(actor, spec)
 end
 
 function Service.ExecuteTradeBasket(player, request)

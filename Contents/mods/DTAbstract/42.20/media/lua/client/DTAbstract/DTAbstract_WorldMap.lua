@@ -230,7 +230,7 @@ function WorldMap.GetTraderMarkers(_, showAll)
                     == "DTAbstract")
         then
             local actorID = tostring(
-                ca.actorID or ca.coreActorID or ""
+                ca.actorID or ""
             )
             local entry = actors[actorID]
             local rawEntry = rawActors[actorID] or entry

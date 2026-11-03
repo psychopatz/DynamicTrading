@@ -34,7 +34,7 @@ DTCommon.TraderService = {
         end
     end,
     GetRecord = function(id) return storeData.t[id] end,
-    SetCoreProviderLease = function(traderID, lease)
+    SetProviderLease = function(traderID, lease)
         local record = storeData.t[traderID]
         if not record then return nil, "trader_not_found" end
         record.ca = record.ca or Policy.New({ actorID = lease.actorID })
@@ -129,7 +129,7 @@ T.equal(currentActor.providerLease.provider, "DTHoomans", "current provider is D
 T.equal(currentActor.providerLease.state, "materialized", "current state is materialized")
 
 -- Sync DT trader record
-DTCommon.TraderService.SetCoreProviderLease(traderID, currentActor.providerLease)
+DTCommon.TraderService.SetProviderLease(traderID, currentActor.providerLease)
 traderRecord.p = materialized.bodyID
 T.equal(traderRecord.ca.actorID, actorID, "same canonical actor ID preserved")
 T.equal(traderRecord.ca.provider, "DTHoomans", "provider updated to DTHoomans")
@@ -168,7 +168,7 @@ local abstractResumed, absReason = abstract.Acquire(currentActor, core, {
 T.truthy(abstractResumed, absReason)
 currentActor = actorRegistry:Commit(actorID, abstractResumed, currentActor.revision)
 
-DTCommon.TraderService.SetCoreProviderLease(traderID, currentActor.providerLease)
+DTCommon.TraderService.SetProviderLease(traderID, currentActor.providerLease)
 traderRecord.p = nil
 T.equal(currentActor.providerLease.provider, "DTAbstract", "provider returned to DTAbstract")
 T.equal(currentActor.providerLease.state, "abstract", "state returned to abstract")

@@ -206,4 +206,4 @@ T.equal(rolledBack.providerLease.state, "released",
 T.equal(Provider.LastRollbackError, nil,
     "failed bind rollback itself failed")
 
-T.finish("dt_abstract_legacy_rebind_smoke")
+T.finish("dt_abstract_retired_world_migration_smoke")

@@ -84,7 +84,7 @@ end
 
 local function providerFor(record)
     local policy = record and record.ca or nil
-    local id = policy and (policy.provider or policy.coreProvider) or nil
+    local id = policy and policy.provider or nil
     local provider = id and Providers.Get(id) or nil
     return provider, id, policy
 end
@@ -135,15 +135,7 @@ function Runtime.MaterializeTrader(traderID, options)
         if position then request.position = position end
     end
 
-    local actor, result = target.materializeTrader(traderID, request)
-    if actor then
-        World.NotifyChange("representation_materialized", {
-            traderID = traderID,
-            fromProvider = currentID,
-            toProvider = target.id,
-        })
-    end
-    return actor, result
+    return target.materializeTrader(traderID, request)
 end
 
 function Runtime.DematerializeTrader(traderID, options)
@@ -193,12 +185,6 @@ function Runtime.DematerializeTrader(traderID, options)
                     or tostring(rebased)
             end
         end
-
-        World.NotifyChange("representation_dematerialized", {
-            traderID = traderID,
-            fromProvider = currentID,
-            toProvider = returnProviderID,
-        })
     end
     return actor, result
 end
@@ -233,10 +219,6 @@ function Runtime.Tick(now)
             if recovered and reason == "recovered_missing_body" then
                 summary.recovered = summary.recovered + 1
                 provider, providerID, policy = providerFor(record)
-                World.NotifyChange("representation_recovered", {
-                    traderID = traderID,
-                    toProvider = providerID,
-                })
             end
         end
 

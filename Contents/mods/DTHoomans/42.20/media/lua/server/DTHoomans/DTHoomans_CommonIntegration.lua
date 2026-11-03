@@ -9,7 +9,7 @@ local Integrations = DTCommon and DTCommon.Integrations
 local function matches(record)
     if type(record) ~= "table" then return false end
     local ca = record.ca or {}
-    if tostring(ca.provider or ca.coreProvider or "") == "DTHoomans" then
+    if tostring(ca.provider or "") == "DTHoomans" then
         return true
     end
     return record.g ~= nil

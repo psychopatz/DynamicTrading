@@ -60,12 +60,12 @@ PsychopatzCore.Actors = {
     end,
 }
 
-local bound, bindReason = Service.BindCoreActor("trader:p7", "npc:p7:service", {
+local bound, bindReason = Service.BindActor("trader:p7", "npc:p7:service", {
     restockItems = { { fullType = "Base.Bandage", quantity = 2 } },
 })
 T.truthy(bound, bindReason)
 T.equal(record.ca.provider, "PsychopatzCore", "default generic Core provider")
-local leaseBound, leaseReason = Service.SetCoreProviderLease("trader:p7", {
+local leaseBound, leaseReason = Service.SetProviderLease("trader:p7", {
     provider = "DTHoomans",
     state = "abstract",
     leaseID = "lease:npc:p7:service",
@@ -144,18 +144,6 @@ T.equal(failedExchangeReason, "exchange_failed",
     "exchange failure reason is preserved")
 T.equal(record.s, "AWAY", "failed exchange restores trader status")
 
-local mapRegistry = {
-    ProjectActor = function(self, actor, spec)
-        return { actorID = actor.actorId, provider = spec.provider,
-            capabilities = spec.capabilities }
-    end,
-}
-local mapEntry, mapReason = Service.ProjectCoreMapEntry("trader:p7",
-    PsychopatzCore, mapRegistry)
-T.truthy(mapEntry, mapReason)
-T.equal(mapEntry.provider, "DynamicTrading", "DT map provider projection")
-T.equal(mapEntry.capabilities.trade, true, "DT trade capability projection")
-
 local duplicate, duplicateReason = Service.MarkSettlementVisit("trader:p7", {
     authority = "server", atSettlement = true, earned = true,
     settlementID = "community_p7",
@@ -164,7 +152,7 @@ local duplicate, duplicateReason = Service.MarkSettlementVisit("trader:p7", {
 T.equal(duplicate, nil, "service rejects duplicate arrival")
 T.equal(duplicateReason, "duplicate_visit", "service arrival dedupe reason")
 
-local available, availabilityReason = Service.SetCoreActorAvailability(
+local available, availabilityReason = Service.SetActorAvailability(
     "trader:p7", false, "journey")
 T.truthy(available, availabilityReason)
 local unavailable, unavailableReason = Service.Snapshot("trader:p7", {

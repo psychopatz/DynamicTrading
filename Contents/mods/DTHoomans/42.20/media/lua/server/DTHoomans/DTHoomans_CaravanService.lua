@@ -701,7 +701,6 @@ local function finalize(state, generated)
         caravanID = "caravan_" .. tostring(faction.id),
         abstractAccessEnabled = true,
         actorID = merchantID,
-        coreActorID = merchantID,
         provider = "DTHoomans",
         providerState = "materialized",
         worldManaged = state.worldManaged == true,
@@ -731,9 +730,9 @@ local function finalize(state, generated)
     local coreActor = coreRegistry and type(coreRegistry.Get) == "function"
         and coreRegistry:Get(merchantID) or nil
     if coreActor and coreActor.providerLease
-        and Service and type(Service.SetCoreProviderLease) == "function"
+        and Service and type(Service.SetProviderLease) == "function"
     then
-        pcall(Service.SetCoreProviderLease, traderID, coreActor.providerLease)
+        pcall(Service.SetProviderLease, traderID, coreActor.providerLease)
     end
 
     local caravan = {

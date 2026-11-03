@@ -149,7 +149,7 @@ local function usedActorIDs()
         service.ForEach(function(_, record)
             local ca = record and record.ca or nil
             local actorID = ca
-                and (ca.actorID or ca.coreActorID) or nil
+                and (ca.actorID) or nil
             if actorID then used[tostring(actorID)] = true end
         end)
     end
