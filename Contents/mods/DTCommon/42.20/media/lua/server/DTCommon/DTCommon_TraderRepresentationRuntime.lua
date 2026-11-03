@@ -121,6 +121,20 @@ function Runtime.MaterializeTrader(traderID, options)
     local request = {}
     for key, value in pairs(options) do request[key] = value end
     request.returnProviderID = currentID
+
+    -- Freeze the source provider's canonical projection into the handoff
+    -- request. This is essential for group-shared journeys where the actor
+    -- itself intentionally carries no duplicate personal journey.
+    if request.position == nil then
+        local position = positionFor(
+            current,
+            traderID,
+            record,
+            request.now
+        )
+        if position then request.position = position end
+    end
+
     local actor, result = target.materializeTrader(traderID, request)
     if actor then
         World.NotifyChange("representation_materialized", {
@@ -155,6 +169,31 @@ function Runtime.DematerializeTrader(traderID, options)
     request.returnProviderID = returnProviderID
     local actor, result = current.dematerializeTrader(traderID, request)
     if actor then
+        local returnProvider = Providers.Get(returnProviderID)
+        local position = type(result) == "table"
+            and (result.position or result.finalPosition)
+            or nil
+        if returnProvider
+            and type(returnProvider.rebaseMovement) == "function"
+            and type(position) == "table"
+        then
+            local ok, rebased, rebaseReason = pcall(
+                returnProvider.rebaseMovement,
+                traderID,
+                record,
+                {
+                    position = position,
+                    now = request.now,
+                    reason = request.reason,
+                }
+            )
+            if not ok or rebased == false or rebased == nil then
+                return nil, ok
+                    and (rebaseReason or "return_provider_rebase_failed")
+                    or tostring(rebased)
+            end
+        end
+
         World.NotifyChange("representation_dematerialized", {
             traderID = traderID,
             fromProvider = currentID,

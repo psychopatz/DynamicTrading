@@ -148,7 +148,7 @@ end
 
 function Provider.canTravelTo(_, record, settlement, now)
     if not settlement
-        or tostring(settlement.provider or "") ~= "DTHoomans"
+        or tostring(settlement.settlementID or "") == ""
     then
         return false
     end

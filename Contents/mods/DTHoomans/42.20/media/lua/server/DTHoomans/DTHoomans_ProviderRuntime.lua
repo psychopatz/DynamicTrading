@@ -117,12 +117,24 @@ local function bodyPosition(body, fallback)
     }
 end
 
-local function commitProjectedLocation(reg, actor, now)
+local function commitProjectedLocation(reg, actor, now, explicit)
     local service = actors()
     if not service or not actor or not actor.world then
         return nil, "actor_world_unavailable"
     end
-    local projected = service.World.ProjectPosition(actor.world, now)
+    local projected
+    if type(explicit) == "table"
+        and tonumber(explicit.x) ~= nil
+        and tonumber(explicit.y) ~= nil
+    then
+        projected = {
+            x = tonumber(explicit.x),
+            y = tonumber(explicit.y),
+            z = tonumber(explicit.z) or 0,
+        }
+    else
+        projected = service.World.ProjectPosition(actor.world, now)
+    end
     if not projected then return nil, "actor_position_unavailable" end
 
     local nextWorld, reason = service.World.NewState(
@@ -196,7 +208,12 @@ function Runtime.MaterializeTrader(traderID, options)
 
     -- Freeze the live spawn point at the current canonical journey projection
     -- before switching provider ownership.
-    local positioned, reason = commitProjectedLocation(reg, current, now)
+    local positioned, reason = commitProjectedLocation(
+        reg,
+        current,
+        now,
+        options.position
+    )
     if not positioned then return nil, reason end
     current = positioned
 
@@ -416,6 +433,8 @@ function Runtime.DematerializeTrader(traderID, options)
         DTCommon.TraderService.ClearPhysical(traderID)
     end
     releaseProviderProjection(actorID)
+    if type(result) ~= "table" then result = {} end
+    result.position = capturedPosition
     return resumed, result
 end
 

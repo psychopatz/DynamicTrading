@@ -1,8 +1,9 @@
 -- Server and client shared settlement directory.
 --
--- DTCommon owns this bounded settlement directory registry. It provides authoritative
--- settlement identities, display names, and map coordinates for routing, simulation
--- and map presentation without duplicating market state or depending on Project Hoomans.
+-- DTCommon owns only the commercial settlement lookup facade. Canonical
+-- settlement identity/position comes from registered world providers (normally
+-- PsychopatzCore SurvivorWorld). The built-in Kentucky list below is an explicit
+-- legacy/test bootstrap helper and is never activated automatically.
 
 DTCommon = DTCommon or {}
 
@@ -245,12 +246,14 @@ function Directory.EnsureDefaults()
     end
 end
 
+Directory.RegisterLegacyDefaultsForMigration =
+    Directory.EnsureDefaults
+
 function Directory.Reset()
     entries = {}
     providers = {}
 end
 
--- Initialize default settlements on load so standalone mode has instant access
-Directory.EnsureDefaults()
-
+-- No automatic fallback registration. Production standalone geography is
+-- supplied by the Core SurvivorWorld provider.
 return Directory

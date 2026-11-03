@@ -13,6 +13,8 @@ local TraderWorld = DTCommon and DTCommon.TraderWorld
 local TraderRuntime = DTCommon and DTCommon.TraderWorldRuntime
 local Provider = DTAbstract.TraderWorldProvider
     or require "DTAbstract/DTAbstract_TraderWorldProvider"
+local SurvivorRuntime = DTAbstract.SurvivorWorldRuntime
+    or require "DTAbstract/DTAbstract_SurvivorWorldRuntime"
 
 local function log(level, message)
     print("[DTAbstract][" .. tostring(level) .. "] " .. tostring(message))
@@ -201,22 +203,17 @@ function Server.TeleportPlayerToTrader(player, traderID)
         return false, "trader_not_found"
     end
 
-    local reg = Provider.GetActorRegistry()
-    local actor = reg and reg:Get(record.ca.actorID)
-    if not actor or not actor.world then
+    local pos, positionReason = Provider.getPosition(
+        traderID,
+        record
+    )
+    if not pos then
         send(player, "TraderDebugActionResult", {
             accepted = false,
             action = "teleport",
-            reason = "actor_world_not_found",
+            reason = positionReason or "trader_position_unavailable",
         })
-        return false, "actor_world_not_found"
-    end
-
-    local Actors = PsychopatzCore and PsychopatzCore.Actors
-    local World = Actors and Actors.World
-    local pos = World and World.ProjectPosition and World.ProjectPosition(actor.world)
-    if not pos then
-        pos = actor.world.location and actor.world.location.position or { x = 0, y = 0, z = 0 }
+        return false, positionReason or "trader_position_unavailable"
     end
 
     local teleport = resolveTeleport()
@@ -287,9 +284,10 @@ local function onClientCommand(module, command, player, args)
             return
         end
 
-        local reg = Provider.GetActorRegistry()
-        local actor = reg and reg:Get(record.ca.actorID)
-        local journey = actor and actor.world and actor.world.journey
+        local group = SurvivorRuntime.FindGroupForActor(
+            record.ca.actorID
+        )
+        local journey = group and group.journey
         if not journey or journey.state ~= "en_route" then
             send(player, "TraderDebugActionResult", {
                 accepted = false,
@@ -299,7 +297,7 @@ local function onClientCommand(module, command, player, args)
             return
         end
 
-        -- Advance with destination arrival time
+        -- Advance the canonical group journey past its ETA.
         local destTime = (tonumber(journey.eta) or 0) + 1
         local status = TraderWorld.AdvanceTrader(traderID, destTime)
             send(player, "TraderDebugActionResult", {
@@ -358,17 +356,25 @@ local function onClientCommand(module, command, player, args)
             return
         end
 
-        local actorID = record.ca and record.ca.actorID
-        if actorID then
-            local reg = Provider.GetActorRegistry()
-            if reg then reg:Remove(actorID) end
+        local released, releaseReason = Provider.releaseTrader(
+            traderID,
+            record
+        )
+        if released == false then
+            send(player, "TraderDebugActionResult", {
+                accepted = false,
+                action = "remove_trader",
+                reason = releaseReason or "provider_release_failed",
+                traderID = traderID,
+            })
+            return
         end
-        DTCommon.TraderService.Remove(traderID)
 
+        DTCommon.TraderService.Remove(traderID)
         send(player, "TraderDebugActionResult", {
             accepted = true,
             action = "remove_trader",
-            reason = "removed",
+            reason = "commercial_role_removed",
             traderID = traderID,
         })
         return
