@@ -2,354 +2,259 @@
 
 ## Parent completion boundary
 
-The parent goal is complete only when DTAbstract is a real standalone abstract trader-world provider and all mandatory P0–P7 gates pass.
+The parent goal is complete only when DTAbstract works as a standalone abstract trader-world provider in real production wiring and the shared Core map/presentation migration is clean.
 
-A phase, commit, smoke test or debug window is not the parent completion boundary.
+The previous “P0–P7 complete” status is superseded by the 2026-11-03 audit.
 
-Developer-side completion requires:
+## Evidence status of original phases
 
-- standalone abstract traders exist and persist;
-- authoritative settlement geography exists for standalone routing/presentation;
-- abstract traders travel through real Core world/journey state;
-- trader and settlement markers work on the vanilla world map;
-- moving trader markers use the same projected position as proximity/debug logic;
-- nearby trader detection and one-shot/cooldown notification work;
-- dedicated DTAbstract spawn/debug tooling works through server authority;
-- existing radio/Talk/trade behavior remains intact;
-- hybrid DTAbstract ↔ DTHoomans provider handoff preserves one canonical trader/actor;
-- persistence/performance/regression gates pass;
-- only explicit native SP/MP acceptance may remain user-owned.
+| Phase | Current status | Reason |
+| --- | --- | --- |
+| P0 contracts/audit | ACCEPTED FOUNDATION | Useful fail-first tests/contracts exist. |
+| P1 settlement/projected position | PARTIAL | Core projected-position math is valid; settlement ownership cleanup remains. |
+| P2 standalone lifecycle | PARTIAL | Server lifecycle exists; production actor persistence/recovery is incomplete. |
+| P3 world map | REOPENED | Marker model exists; one-Core-map-host integration and client projection are missing. |
+| P4 nearby discovery | REOPENED | Algorithm exists; authoritative client world projection is missing. |
+| P5 Debug Manager | REOPENED | registration/helpers exist; actual UI/result receiver is missing. |
+| P6 hybrid handoff | REOPENED | adapters interoperate synthetically; production orchestration is absent. |
+| P7 persistence/integration | REOPENED | codec smoke exists; production save/load and integration proof are missing. |
 
-## P0 — Ground truth, fail-first coverage and contracts
+The recovery phases below are mandatory and replace the old completion claim.
 
-### P0A — Reproduce the missing product surface
+## R0 — Recovery baseline and fail-first integration tests
 
-Add focused tests/fixtures that fail for the audited gaps without implementing them yet.
+Add tests that fail against the current source for the newly verified gaps.
 
-Required fail-first coverage:
+Mandatory fail-first evidence:
 
-- no DTAbstract server lifecycle/director exists;
-- no standalone abstract trader can be spawned through a DTAbstract server command;
-- no authoritative standalone settlement directory can resolve name + position;
-- no production trader/settlement map projection exists;
-- no nearby discovery notification path exists;
-- no dedicated DTAbstract Debug Hub tool exists.
+1. one Core production world-map host exists and owns the only `ISWorldMap` patch;
+2. ProjectHoomans registers its generic layers/tools through Core rather than its own host;
+3. DTAbstract registers through Core and has no direct fallback map monkey patch;
+4. mixed load order still installs both adopter layers;
+5. server actor/world projection reaches a distinct client-side projection store;
+6. DTAbstract map/discovery/debug use the client projection rather than a shared in-process server registry;
+7. Debug Hub action opens a real manager UI;
+8. `TraderDebugActionResult` is received/presented;
+9. explicit `Spawn At` coordinates are honored;
+10. production save/load restores DTAbstract actor/journey/provider state;
+11. production runtime drives hybrid provider handoff.
 
-The tests must exercise production module entry points where possible, not merely assert file names.
+### R0 gate
 
-### P0B — Settlement and map contract audit
+No implementation starts until each production gap is represented by a test or an explicit native-only acceptance item that cannot be meaningfully automated.
 
-Audit before implementation:
+## R1 — PsychopatzCore map host + Hoomans migration
 
-- current DTCommon settlement-market IDs and lifecycle policy;
-- current DTHoomans caravan count/cadence/destination policy so standalone mode does not accidentally diverge for arbitrary reasons;
-- current Core actor journey/world/provider APIs;
-- current Hoomans world-map behavior only as presentation/reference, not as a standalone dependency;
-- current vanilla map hooks;
-- current persistence/storage ownership;
-- installed dependency/mod-info requirements.
+Implement the missing reusable Core world-map mechanism.
 
-Decide and document the smallest implementation for:
+Core responsibilities:
 
-1. bounded settlement directory/provider;
-2. canonical projected current journey position;
-3. generic vs DT-specific vanilla-map overlay seam.
+- require/load the vanilla map deterministically;
+- own the single production `ISWorldMap` render integration;
+- ordered overlay registry with register/unregister;
+- generic map tool/toolbar registry where needed;
+- safe load-order behavior;
+- consumer failure isolation;
+- no Hoomans/DT policy in Core.
 
-### P0 gate
+Migrate ProjectHoomans generic infrastructure:
 
-P0 passes when the failing product gaps are captured, the settlement geography source is explicit, moving-position ownership is explicit, and no implementation depends on copying PNC state or inventing UI-only coordinates.
+- PNC map layers become Core registry consumers;
+- Hoomans-specific display/debug policy stays in Hoomans;
+- old generic PNC host/toolbar monkey patches are removed or reduced to thin compatibility adapters only while needed;
+- no duplicate active host remains.
 
-Then continue immediately to P1.
+Then migrate DTAbstract:
 
-## P1 — Settlement directory and canonical actor/world bootstrap
+- register its layer through Core;
+- remove the direct `ISWorldMap.render` fallback;
+- keep DT-specific marker construction in DTAbstract.
 
-### Work
+### R1 gate
 
-Implement the bounded settlement-directory/provider contract needed by both route planning and map presentation.
+Static/source test proves exactly one production map render hook in the intended mod matrix.
+
+Core-only + Hoomans-only + DTAbstract-only + combined map registration tests pass.
+
+## R2 — Authoritative actor presentation sync
+
+Add the smallest reusable Core authority→client projection mechanism required by map/debug/discovery.
 
 Requirements:
 
-- stable settlement ID;
-- display name;
-- authoritative position;
-- provider/source ID;
-- enabled/valid state;
-- profile/economic context where appropriate;
-- bounded indexed enumeration/query;
-- Hoomans adapter when available;
-- standalone DTAbstract data/provider source when Hoomans is absent;
-- no duplicate market-state storage.
-
-Establish one canonical Core actor binding for standalone traders:
-
-```text
-DT trader record
-  ↔ Core actor ID
-  ↔ DTAbstract provider lease
-```
-
-Existing compatible trader records must migrate/adopt safely instead of creating duplicate identities.
-
-If Core lacks a reusable current-position projection for an active journey, add the smallest generic Core API and tests there.
-
-### P1 gate
-
-- two standalone settlements resolve distinct stable IDs/names/positions;
-- save/reload or registry reconstruction preserves canonical identity semantics;
-- one standalone trader binds one Core actor;
-- projected position is deterministic at origin/mid-journey/arrival;
-- no Hoomans dependency is required for standalone fixtures;
-- existing Core provider and DT radio-provider smokes remain green.
-
-## P2 — Standalone server lifecycle and debug-spawn foundation
-
-### Work
-
-Add a real `server/DTAbstract` composition/lifecycle.
-
-The director must:
-
-- ensure a bounded standalone trader population according to explicit shared/configured policy;
-- create trader + Core actor + DTAbstract lease coherently;
-- choose only valid settlement destinations;
-- start Core abstract journeys;
-- advance them by authoritative game time at bounded cadence;
-- update current/origin/destination settlement context coherently;
-- apply exactly one normal DT settlement visit/exchange on arrival;
-- choose/queue the next route after the accepted cooldown/policy;
-- recover safely when destination/provider data becomes invalid;
-- never run a per-frame all-trader scan.
-
-Add the first dedicated debug command:
-
-**Spawn Abstract Trader Near Player**
-
-It must:
-
-- be debug-authorized;
-- be server-authoritative;
-- create an abstract trader, not a Hoomans body;
-- choose a deterministic/safe nearby world position;
-- return trader ID, actor ID, position, provider state and explicit reason/status;
-- remain distinct from gameplay nearby-detection notification.
-
-### P2 gate
-
-A deterministic standalone scenario proves:
-
-```text
-no trader
-→ debug/production create
-→ canonical Core actor
-→ DTAbstract lease
-→ journey A → B
-→ mid-journey position changes
-→ arrival B
-→ exactly one settlement exchange
-→ next lifecycle state
-```
-
-Repeat arrival/tick/reload cannot duplicate the economic mutation.
-
-## P3 — Functional world-map presentation
-
-### Work
-
-Render DTAbstract traders and trading settlements on the vanilla world map.
-
-Mandatory behavior:
-
-- trader markers use canonical projected current position;
-- settlement markers use settlement-directory position;
-- trader marker moves as the abstract journey advances;
-- marker labels/state are data-driven;
-- debug mode can show all;
-- normal mode respects chosen discovery/visibility policy;
-- map rendering never mutates trader/world/market state;
-- no Hoomans dependency is required in standalone mode.
-
-If a reusable Core overlay host is introduced, it must remain domain-agnostic and have Core-only tests. Do not move trader policy into Core.
-
-### P3 gate
-
-With two settlements and one traveling trader:
-
-- both settlement markers render at their authoritative coordinates;
-- trader marker renders at the same position returned by the canonical projected-position query;
-- after time advances, the marker moves;
-- on arrival it converges to the destination;
-- no duplicate marker appears after refresh/reload/provider change;
-- map can open/close repeatedly without rebuilding simulation state.
-
-## P4 — Nearby discovery and notification
-
-### Work
-
-Implement bounded nearby trader detection over the same projected position used by the map/debug systems.
-
-Required state behavior:
-
-- outside detection radius;
-- one enter transition;
-- one discovery/known-state update;
-- one notification;
-- no repeated notification while remaining inside;
-- exit hysteresis/cooldown before re-eligibility;
-- no client-authoritative spawn/travel mutation.
-
-Use PsychopatzCore's notification presentation rather than a new DT popup framework.
-
-Notification content must identify the event truthfully without exposing debug internals.
-
-### P4 gate
-
-Tests prove:
-
-- outside → inside triggers exactly once;
-- repeated checks inside do not spam;
-- inside → partial edge jitter does not flap;
-- true exit + cooldown permits a later new detection if policy allows;
-- multiple traders are bounded/deterministic;
-- map visibility/discovery changes as designed;
-- gameplay notification and debug spawn result are independently observable.
-
-## P5 — Dedicated DTAbstract Trader Manager
-
-### Work
-
-Register a DTAbstract-specific tool in the PsychopatzCore Debug Hub.
-
-Minimum read-only inspection:
-
-- trader ID/name;
-- actor ID;
+- bounded actor presentation snapshot/delta;
+- actor ID + revision;
 - provider/provider state;
 - current projected position;
-- current/origin/destination settlement;
-- journey state/progress/ETA where available;
-- distance from player;
-- discovered/known state;
-- merchant stock/version summary without duplicating the stock owner.
+- bounded journey summary;
+- server authority;
+- client read-only application;
+- stale/out-of-order rejection;
+- disconnect/reconnect/resync path;
+- no full private actor dump if unnecessary.
 
-Minimum actions:
+DTAbstract map, nearby discovery and debug list must stop reading an unsynchronized server registry assumption.
 
-- Spawn Abstract Trader Near Player;
-- spawn at explicit world/map position where safe;
-- force one lifecycle tick;
-- force/advance arrival for deterministic testing;
-- show/locate on map;
-- teleport player to trader;
-- reset/mark discovery;
-- remove a debug-created abstract trader;
-- request materialize/dematerialize only when the physical provider is available.
+### R2 gate
 
-All mutations go through server commands with explicit action results.
-
-### P5 gate
-
-The Debug Hub can create, inspect and drive a standalone abstract trader without DTHoomans installed, and every action has deterministic success/failure feedback.
-
-Debug actions do not bypass ordinary merchant stock/settlement exchange/provider invariants.
-
-## P6 — Hybrid DTAbstract ↔ DTHoomans provider handoff
-
-### Work
-
-Use the existing Core provider contract to make the same canonical actor switch representation when physical integration is available.
-
-Required behavior:
-
-- DTAbstract remains the far/offscreen abstract representation;
-- approved nearby/materialization condition can request physical handoff;
-- DTHoomans materializes the same actor identity;
-- merchant stock remains the same DTCommon record;
-- personal actor state remains Core/Hoomans-owned;
-- provider/body uniqueness remains enforced;
-- dematerialization persists live state and returns ownership cleanly;
-- journey/current position does not reset to origin;
-- no duplicate settlement visit/exchange occurs because of provider transition;
-- physical-provider absence degrades safely to abstract-only behavior.
-
-Do not create a second physical simulation path inside DTAbstract.
-
-### P6 gate
-
-Standalone, physical and hybrid tests prove one actor/trader identity through:
+A split server/client harness proves:
 
 ```text
-DTAbstract abstract
-→ materialize DTHoomans
-→ interact/trade state preserved
-→ dematerialize
-→ DTAbstract resumes
-→ save/reload
+server journey advances
+-> projection emitted
+-> separate client store applies
+-> map/debug/discovery all observe same revision/position
 ```
 
-No duplicate body, stock, identity or arrival mutation is observed.
+No shared Lua registry object is permitted in this acceptance test.
 
-## P7 — Persistence, performance, regression and native handoff
+## R3 — Production persistence and recovery
 
-### Persistence
+Wire canonical actor registry persistence into the actual production save/load lifecycle used by Core/DTAbstract.
 
-Prove save/reload for:
+Requirements:
 
-- trader ↔ actor binding;
-- DTAbstract provider lease;
-- world position;
-- active journey and progress/timing;
-- current/origin/destination settlement context;
-- discovery/cooldown state only where durable persistence is actually required;
-- settlement-directory provider data/reference as designed;
-- debug-only state does not contaminate normal persistent gameplay unnecessarily.
+- save actor registry/projection state through the real storage owner;
+- load before DTAbstract lifecycle relies on actor links;
+- preserve provider lease/journey/current position;
+- deterministic recovery for trader record with missing actor;
+- no duplicate actor creation on delayed load;
+- save/reload in SP and server-authoritative MP design remains coherent.
 
-### Performance
+Clean settlement-directory ownership in the same phase:
 
-Measure or assert bounded behavior for representative trader/settlement counts.
+- remove direct PNC special-case lookup from DTCommon;
+- provide an optional Hoomans/DTHoomans settlement provider adapter;
+- document whether standalone defaults are fixed trading hubs, generated settlements, or both.
 
-Reject:
+### R3 gate
 
-- per-frame all-trader scans;
-- per-frame all-settlement map rebuilds;
-- full MarketSense scans for movement/discovery;
-- unbounded notification history;
-- duplicate map registries per refresh.
+Fresh-process persistence test must call production save/load entry points, not manually call `registry:Save()` from the test.
+
+## R4 — Real DTAbstract Trader Manager + result presentation
+
+Build the actual player-facing Debug Hub manager.
+
+Required UI:
+
+- trader list + refresh;
+- ID/name/provider/state;
+- position/distance;
+- current/origin/destination settlement;
+- journey progress;
+- Spawn Near;
+- Spawn At;
+- Force Tick;
+- Force Arrival;
+- Locate on Map;
+- Teleport;
+- discovery reset/mark;
+- Remove;
+- Materialize/Dematerialize when available.
+
+Implement client `OnServerCommand` handling for:
+
+- `TraderSpawned`;
+- `TraderDebugActionResult`.
+
+Show clear action result/status without conflating it with gameplay nearby notification.
+
+Fix `Spawn At` so explicit coordinates are actually respected.
+
+### R4 gate
+
+UI construction test must instantiate the production manager surface and verify controls/actions are reachable.
+
+A helper API test alone is insufficient.
+
+## R5 — Nearby discovery over synchronized authority
+
+Refactor nearby discovery to consume the R2 client presentation projection.
+
+Preserve:
+
+- enter radius;
+- exit hysteresis;
+- cooldown;
+- no spam;
+- one discovery transition;
+- existing Core notification UI.
+
+Add server/client separation tests and reconnect/resync behavior.
+
+### R5 gate
+
+Distinct server/client fixture proves movement into range becomes visible to the client without sharing actor registry tables.
+
+## R6 — Production provider-handoff orchestration
+
+Implement the real runtime policy that drives the already-compatible provider adapters.
+
+Requirements:
+
+- approved proximity/materialization condition;
+- DTAbstract relinquishes according to Core lease rules;
+- DTHoomans materializes the same actor;
+- no duplicate body/trader/stock;
+- physical exit/dematerialization returns updated projection;
+- DTAbstract resumes from the correct world state;
+- save/reload/reconnect during each provider state is coherent;
+- absence of DTHoomans leaves actor abstract safely.
+
+### R6 gate
+
+The test calls production orchestration entry points, not a handwritten sequence of adapter calls.
+
+## R7 — Cleanup, regression and native handoff
+
+### Legacy/redundancy cleanup
+
+Audit and remove/reduce obsolete active infrastructure after migrations:
+
+- duplicate `ISWorldMap` patches;
+- obsolete generic PNC map host/toolbar files;
+- stale fallback code;
+- stale compatibility routes that are no longer required;
+- stale DTAbstract module metadata/description.
+
+Do not delete Hoomans-specific layers/policy merely because their host moved to Core.
 
 ### Regression
 
-Run the full relevant DynamicTrading suite plus affected Core/Hoomans suites when those repositories change.
+Mandatory:
 
-Mandatory preserved behavior includes:
+- full DynamicTrading suite;
+- Core map/actor/provider/persistence suites;
+- Hoomans map/discovery/travel/debug suites;
+- DTHoomans lifecycle/provider suites;
+- Kahlua/Lua parse checks;
+- `git diff --check`.
 
-- `dt_npc_provider_adapter_smoke.lua`;
-- `dt_radio_os_abstract_provider_smoke.lua`;
-- DT settlement visit/exchange tests;
-- DTHoomans caravan/settlement trader tests;
-- existing Radio OS/Talk/trade/security tests.
+### Native handoff
 
-### Native user acceptance
+Only after R0–R7 developer gates pass may the job return to user-owned native acceptance.
 
-Only after all developer-side gates pass, hand off normal Project Zomboid SP/MP validation for:
+Native matrix:
 
-- map visuals/interaction;
-- live notification presentation;
-- Debug Hub buttons;
-- standalone DTAbstract world behavior;
-- hybrid materialization/dematerialization;
-- no duplicate traders or stale markers after save/reload.
+- standalone DTAbstract map markers;
+- moving trader marker;
+- actual Abstract Trader Manager UI;
+- spawn result feedback;
+- nearby gameplay notification;
+- save/reload;
+- Hoomans map controls still present through Core host;
+- combined Hoomans + DTAbstract map without duplicate hooks/markers;
+- hybrid materialize/dematerialize;
+- MP reconnect/authority sanity.
 
-Do not claim native acceptance from Lua mocks.
+## Stop conditions
 
-## Optional later work — not part of completion
+Do not stop after:
 
-Do not expand this job into:
+- Core map registry creation;
+- one green mock;
+- Debug Hub registration;
+- actor snapshot transport;
+- a commit.
 
-- a full new strategic map UI;
-- manual player route assignment UI;
-- quests/contracts;
-- full faction macro-simulation;
-- new Radio OS art;
-- broad Hoomans map refactor unrelated to the reusable seam;
-- full physical long-distance pathfinding;
-- an unlimited procedural settlement generator.
-
-Complete P0–P7 first.
+Stop only when R0–R7 are developer-side accepted or a genuine blocker prevents further work.

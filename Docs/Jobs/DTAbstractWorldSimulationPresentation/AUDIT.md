@@ -1,162 +1,194 @@
 # Audit — DTAbstract World Simulation & Presentation
 
-## Baseline
+## Current re-audit
 
-Repository: `/home/psychopatz/Zomboid/Workshop/DynamicTrading`
+Date: 2026-11-03
 
-Audited branch/revision:
+Repositories inspected:
 
-- branch: `main`
-- HEAD: `89cfe191e2258e0309ba290db6eeda9931834272`
-- upstream: `origin/main`
-- worktree was clean when this job was authored.
+- DynamicTrading `main` at `57140979111109ba620a690811484b17cbab34e2`, ahead of `origin/main` by 9.
+- PsychopatzCore `main` at `23be8741ad3298ed02332a1cc40df257905fc122`, ahead of `origin/main` by 1.
+- ProjectHoomans `main` at `a68dd50e3c2ec7d127cb86de02b85c2505b410aa`, matching `origin/main`.
 
-This audit is source/static evidence. It is not native Project Zomboid acceptance.
+Worktrees were clean at audit time.
 
-## Verified current DTAbstract surface
+DynamicTrading `tests/run_tests.py` was rerun and reported **PASS 50/50**. That result is real, but the current suite does not prove several production integration requirements below.
 
-The current DTAbstract runtime contains only shared/client code:
+## Preserved implementation foundation
+
+The agent added real useful code:
+
+- `DTCommon.SettlementDirectory`.
+- Core `Journey.ProjectPosition` / `World.ProjectPosition`.
+- DTAbstract server lifecycle and server debug command router.
+- DTAbstract map marker model/renderer.
+- DTAbstract nearby-discovery algorithm.
+- DTAbstract Debug Hub registration and command helper functions.
+- provider adapter compatibility tests.
+- persistence/performance smoke fixtures.
+
+Do not discard this foundation wholesale.
+
+## Finding A — the one-Core-map-host migration is not complete
+
+The earlier Core NPC Foundation adopter contract explicitly required:
+
+> Register Hoomans map layers through one Core registry; avoid duplicate ISWorldMap monkey patches.
+
+Current production source does not satisfy that contract.
+
+### ProjectHoomans still owns an active generic map host
+
+ProjectHoomans still composes and actively uses:
+
+- `PNC_MapLayerRegistry.lua`
+- `PNC_MapToolbar.lua`
+- `PNC_MapHoomansMenu*.lua`
+- `PNC_MapDisplaySettings.lua`
+- `PNC_WorldDiscoveryDebugMap.lua`
+- marker/icon/map runtime files
+
+`PNC_ClientComposition.lua` still requires `PNC/UI/Map/PNC_MapRuntime`.
+
+These are not merely dead historical files.
+
+### PsychopatzCore has no production MapOverlayRegistry
+
+DTAbstract checks for:
+
+`PsychopatzCore.MapOverlayRegistry.Register(...)`
+
+but no such production registry exists in PsychopatzCore.
+
+Therefore DTAbstract falls back to its own direct `ISWorldMap.render` monkey patch when `ISWorldMap` happens to exist at module load time.
+
+Result:
 
 ```text
-Contents/mods/DTAbstract/42.20/media/lua/
-├── shared/DTAbstract/
-│   ├── 00_DTAbstract_Init.lua
-│   └── DTAbstract_CoreProvider.lua
-└── client/DTAbstract/
-    ├── 00_DTAbstract_Client_Init.lua
-    ├── DTAbstract_Client.lua
-    ├── DTAbstract_RadioOS.lua
-    └── UI/DTA_RadioOSPreview.lua
+ProjectHoomans -> PNC.MapLayers -> patches ISWorldMap.render
+DTAbstract     -> own fallback -> patches ISWorldMap.render
+PsychopatzCore -> no generic production map overlay host
 ```
 
-There is no `server/DTAbstract` implementation.
+This is redundant active infrastructure and violates the intended migration architecture.
 
-Its current `mod.info` describes it as:
+## Finding B — DTAbstract map attachment is not actually proven
 
-> Optional remote and radio access to Dynamic Trading traders.
+`DTAbstract_WorldMap.lua` does not explicitly load `ISUI/Maps/ISWorldMap` before its one-time fallback installation.
 
-That description matches the implementation.
+If `ISWorldMap` is nil when DTAbstract client init runs, the fallback is skipped and there is no retry.
 
-### What works now
+`tests/dt_abstract_map_smoke.lua` directly calls `WorldMap.Render(mockMap)`. It proves marker construction/render math but not that the production vanilla map hook is installed or survives mixed-mod load order.
 
-- `DTAbstract_CoreProvider.lua` adapts Core provider operations:
-  `Project`, `Acquire`, `Materialize`, `Dematerialize`, `Release`, `Switch`.
-- `DTAbstract_Client.lua` lists already-existing eligible trader records and adds radio context actions.
-- `DTAbstract_RadioOS.lua` exposes eligible existing abstract traders as Radio OS contacts and delegates Talk/trade to DTCommon.
-- `tests/dt_npc_provider_adapter_smoke.lua` proves the Core provider adapter can acquire/release an abstract lease and hand an actor to DTHoomans.
-- `tests/dt_radio_os_abstract_provider_smoke.lua` proves an already-existing abstract trader can appear as a radio contact.
+The user's native screenshot showing only vanilla map controls is therefore compatible with a real attachment/composition failure.
 
-These are useful foundations. They do **not** prove that DTAbstract creates, moves, maps or discovers traders.
+## Finding C — the dedicated DTAbstract Trader Manager has no UI
 
-## Verified missing DTAbstract behavior
+`DTAbstract_DebugHub.lua` registers `dtabstract:traders` in the Core Debug Hub, but:
 
-The current DTAbstract module has no production implementation for:
+```lua
+function DebugHub.Open()
+    return true
+end
+```
 
-- standalone abstract trader generation;
-- a server-authoritative abstract trader director/lifecycle;
-- world travel progression;
-- settlement location/directory ownership;
-- trader world-map markers;
-- trading-settlement world-map markers;
-- nearby trader detection;
-- nearby trader discovery notification;
-- dedicated DTAbstract Debug Hub tooling;
-- server-side DTAbstract debug spawn;
-- map-position debug spawn;
-- production policy that drives Core provider materialization/dematerialization;
-- standalone-to-physical handoff orchestration.
+There is no trader-manager window/list/buttons.
 
-Therefore a player seeing no DTAbstract traders/settlements on the map and no DTAbstract spawn-debug/nearby notification is consistent with the current source.
+The smoke test verifies registration and helper-command dispatch only. It does not prove the documented player-facing manager exists.
 
-## DTHoomans is not the missing DTAbstract implementation
+P5 must be reopened.
 
-DTHoomans already contains the physical-caravan features that can make the absence confusing:
+## Finding D — debug results are sent but not received/presented
 
-- `DTHoomans_CaravanLifecycle.lua` maintains roaming physical/Hoomans caravans.
-- `DTHoomans_Server.lua` contains server-authoritative debug caravan spawn and sends `TraderSpawnStarted`, `TraderSpawned` and `TraderDebugActionResult`.
-- `00_DTHoomans_Client_Init.lua` registers a Dynamic Trading **Trader Manager** in the PsychopatzCore Debug Hub.
-- the DTHoomans manager can list/locate/teleport/open traders and drive settlement/roaming debug actions.
+The server emits:
 
-Those features belong to the physical provider and must not be mistaken for standalone DTAbstract coverage.
+- `TraderSpawned`
+- `TraderDebugActionResult`
 
-The new DTAbstract debug spawn must create/test an **abstract** trader actor and must not simply call the DTHoomans live-caravan spawn.
+No DTAbstract client `OnServerCommand` receiver handles those messages.
 
-## Existing Core mechanisms to reuse
+Therefore the explicit debug-result feedback required by the roadmap is not implemented.
 
-PsychopatzCore already provides reusable mechanisms that materially reduce the amount of new architecture required.
+Gameplay nearby notification and debug command result remain conceptually separate, but only the gameplay notification helper currently has presentation logic.
 
-### Core actor world/journey
+## Finding E — client actor/world projection is not synchronized
 
-`PsychopatzActorJourney.lua` and `PsychopatzActorWorld.lua` provide:
+DTAbstract server lifecycle creates/updates Core actors in the server-side actor registry.
 
-- serializable journeys;
-- origin/destination coordinates;
-- abstract mode;
-- start/ETA/progress;
-- bounded `Advance`;
-- arrival state/idempotency support;
-- world location state.
+The client map, nearby discovery, and debug listing read `PsychopatzCore.Actors.DefaultRegistry` or a lifecycle registry if one is injected.
 
-One gap matters for the map: current `World.AdvanceJourney` updates the actor's stored location to the destination only when the journey arrives. A moving map marker therefore needs either a reusable Core projected-current-position query or another generic mechanism; DTAbstract must not invent a second journey math implementation.
+No production Core/DT transport was found that synchronizes the authoritative DTAbstract actor world/journey registry to clients.
 
-### Core actor map data
+The current map/discovery/debug smokes inject one in-process registry into both producer and consumer. That is not equivalent to native client/server separation.
 
-`PsychopatzActorMap.lua` provides:
+This can make the client know the trader record while lacking the actor world needed to determine its current position.
 
-- actor map projection;
-- marker/label/capability metadata;
-- visibility modes;
-- known-to state;
-- bounded registry;
-- `QueryNearby`;
-- journey summary in map entries.
+P3, P4 and P5 therefore remain incomplete even though their algorithmic smokes pass.
 
-It is a **data registry**, not a production vanilla `ISWorldMap` renderer.
+## Finding F — production actor persistence is not wired
 
-### Core notification data/UI
+Core exposes registry `Save`/`Load`, and the P7 smoke manually serializes a registry, reconstructs a fresh registry, and verifies it.
 
-`PsychopatzActorNotifications.lua` provides a bounded duplicate-safe notification queue.
+No production DTAbstract/Core persistence path was found that actually invokes the actor-registry save/load lifecycle for these standalone actors.
 
-`PsychopatzNotificationWindow.lua` provides the reusable client presentation surface through `PsychopatzCore.Notifications.Show(...)`.
+A persisted DT trader can therefore retain `actorID` while the corresponding Core actor is absent after a real restart.
 
-### Core provider lease
+The manual codec proof is valuable but is not production persistence acceptance.
 
-Core already owns provider lease state and validates acquire/materialize/dematerialize/release/switch transitions. DTAbstract must drive these contracts rather than invent a competing provider flag.
+P2/P7 must remain open until real save/reload wiring and recovery are proven.
 
-## Map presentation gap
+## Finding G — provider handoff is adapter compatibility, not production orchestration
 
-Project Hoomans has mature client world-map layers/markers, but those are PNC/Hoomans presentation code and DTAbstract must remain standalone.
+Production DTAbstract lifecycle calls `Acquire`.
 
-PsychopatzCore currently has debug world-map hooks but no general production actor/consumer marker overlay host.
+No production DTAbstract runtime path currently drives the complete:
 
-Implementation must therefore choose the smallest reusable route:
+`Switch/Materialize/Dematerialize/Release`
 
-1. prefer a narrow generic PsychopatzCore vanilla-map overlay/marker registration seam if extraction is justified and does not create Hoomans policy in Core; or
-2. if a generic Core seam is not viable, implement a thin DTAbstract world-map adapter using Core/DTCommon data while avoiding copied PNC business/state logic.
+handoff according to proximity/provider availability.
 
-Do not make DTAbstract depend on Project Hoomans merely to draw its map.
+`dt_abstract_hybrid_handoff_smoke.lua` manually invokes the provider adapters in sequence.
 
-## Settlement geography gap
+That proves the low-level adapters can interoperate; it does not prove automatic runtime handoff exists.
 
-DTCommon owns settlement markets keyed by settlement/community IDs, but current DTCommon market state does not itself provide a standalone global settlement coordinate registry.
+P6 must be reopened.
 
-A market ID is not enough to draw a map marker or plan a journey.
+## Finding H — some documented debug actions are incomplete
 
-The new architecture therefore requires an explicit bounded settlement-directory/provider contract with at least:
+`DebugHub.SpawnAt(x, y, z, ...)` dispatches the same `SpawnAbstractTraderNearPlayer` command, while the server currently computes its own deterministic 25-tile offset and does not honor the supplied explicit position.
 
-- canonical settlement ID;
-- display name;
-- x/y/z or resolved anchor/position;
-- market profile/context where relevant;
-- source/provider identity;
-- availability/enabled state.
+Materialize/dematerialize controls documented in the acceptance contract are also not exposed in the current manager helper set.
 
-When Hoomans is present, its authoritative community identity/position can be adapted into this contract. Standalone DTAbstract must have its own approved data/provider source and must not fabricate coordinates in the UI.
+## Finding I — settlement-directory ownership needs cleanup
 
-## Current parent-goal conclusion
+`DTCommon_SettlementDirectory.lua` provides a useful bounded provider registry and standalone defaults.
 
-The missing behavior is not one broken map callback. DTAbstract currently stops at remote/radio access.
+However:
 
-The correct next step is a real standalone abstract-world vertical slice using existing DTCommon economic authority and PsychopatzCore actor mechanisms, followed by map/discovery/debug/handoff integration.
+- the default entries are fixed Knox population centers, not Hoomans-style generated settlements;
+- the module directly special-cases `PNC.Communities` despite already having a provider-registration seam.
 
-The first implementation chunk must establish fail-first coverage and settle the settlement-directory + moving-position contracts before adding a visual map layer.
+The direct PNC fallback leaks optional adopter knowledge into DTCommon and should become a narrow Hoomans/DTHoomans adapter provider.
+
+Whether standalone DTAbstract should use fixed trading hubs, generated settlements, or both must remain explicit product policy rather than being accidentally implied by the word “settlement.”
+
+## Finding J — metadata is stale
+
+`DTAbstract/42.20/mod.info` still describes the module as only optional remote/radio access even though it now contains standalone simulation code.
+
+## Revised verdict
+
+The initial P0–P7 work is **PARTIAL / REOPENED**.
+
+Current truth:
+
+- projected-position math: implemented and useful;
+- bounded settlement registry: implemented, ownership cleanup required;
+- server abstract lifecycle: substantial implementation, production persistence/recovery incomplete;
+- map marker model: implemented, production Core-host attachment/synchronization incomplete;
+- nearby algorithm: implemented, authoritative client projection incomplete;
+- Debug Hub registration/helpers: implemented, actual manager UI/result receiver incomplete;
+- provider adapters: compatible, production handoff orchestration incomplete;
+- smoke suite: 50/50 green, but missing native-equivalent integration contracts.
+
+The correct next work is a **Core Map/Projection Consolidation recovery**, not more isolated marker styling.

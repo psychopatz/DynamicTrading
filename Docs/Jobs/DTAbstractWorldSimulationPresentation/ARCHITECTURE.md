@@ -1,302 +1,276 @@
 # Architecture — DTAbstract World Simulation & Presentation
 
-## 1. Ownership
+## 1. Stable ownership
 
-### DTCommon owns
+### PsychopatzCore owns reusable mechanisms
 
-- trader merchant identity/record;
-- exact persistent merchant stock and budget;
-- quote/trade authority;
-- settlement-market pressure and exchange;
-- MarketSense-backed economic context;
-- trader commercial policy fields such as current/home/destination settlement IDs;
-- a Dynamic Trading settlement-directory **contract/registry** if a shared cross-provider settlement seam is required.
-
-DTCommon does not own NPC bodies or vanilla map rendering.
-
-### DTAbstract owns
-
-- standalone abstract-trader population/lifecycle policy;
-- which standalone trader should exist;
-- abstract commercial route/destination policy when Hoomans is absent;
-- driving Core actor journey advancement for DTAbstract-owned actors;
-- standalone settlement-provider data/adaptation;
-- DTAbstract client presentation adapters;
-- nearby trader discovery policy;
-- DTAbstract Debug Hub tools and server-authoritative debug commands;
-- deciding when to request a provider handoff based on the approved proximity/presence policy.
-
-DTAbstract does not own intrinsic pricing, duplicate merchant inventory or a second actor identity.
-
-### PsychopatzCore owns
+Core owns:
 
 - canonical generic actor state;
-- provider leases and transitions;
+- actor registry persistence contract;
+- provider leases/transitions;
 - generic world/location/journey mechanics;
-- generic projected journey-position math if required;
+- canonical projected current position;
+- generic client projection/snapshot transport needed by adopters;
 - generic actor map-entry/nearby-query mechanisms;
-- reusable notification mechanisms/UI;
-- reusable Debug Hub;
-- a generic vanilla-map marker/overlay host only if the implementation audit proves it is a reusable mechanism rather than Dynamic Trading policy.
+- reusable notification and Debug Hub mechanisms;
+- **one generic vanilla-world-map overlay/tool host**.
 
-Core must not learn trader economics, settlement-market rules or DTHoomans concepts.
+The last item is mandatory. Adopters must not each monkey-patch `ISWorldMap`.
 
-### DTHoomans / Project Hoomans own when installed
+Core must not learn trader economics, Hoomans community policy, colony rules, or Dynamic Trading route policy.
 
-- physical NPC/caravan bodies;
-- Hoomans live presence and local movement;
-- Hoomans faction/community membership;
-- physical interaction/combat;
-- authoritative Hoomans community/place data that an adapter may expose to the shared DT settlement-directory contract.
+### DTCommon owns commerce
 
-DTAbstract must remain functional when these mods are absent.
+DTCommon owns:
 
-## 2. Identity invariant
+- trader merchant identity/record;
+- merchant stock and budget;
+- quote/trade authority;
+- MarketSense-backed pricing context;
+- settlement market/exchange;
+- trader commercial settlement IDs;
+- the bounded settlement-directory contract if it remains the shared DT seam.
 
-> One commercial trader = one DT trader record + one canonical Core actor identity, regardless of current provider.
+DTCommon must not directly depend on PNC globals. Optional Hoomans geography enters through a registered adapter/provider.
 
-Never create:
+### DTAbstract owns standalone abstract trading policy
+
+DTAbstract owns:
+
+- bounded standalone trader population policy;
+- abstract route/destination policy;
+- driving Core journeys for DTAbstract-owned actors;
+- standalone settlement provider data;
+- DT-specific map layer descriptors;
+- nearby-trader discovery policy;
+- DTAbstract Trader Manager UI and command presentation;
+- server-authoritative DTAbstract debug commands;
+- deciding when the approved physical-provider handoff condition is met.
+
+DTAbstract does not own a second actor registry authority, generic map host, merchant inventory, or physical NPC body.
+
+### ProjectHoomans / DTHoomans own physical policy
+
+Hoomans owns:
+
+- physical bodies;
+- live NPC AI/combat/needs;
+- Hoomans faction/community policy;
+- Hoomans-specific map layers and debug actions;
+- community geography exposed through a narrow provider adapter.
+
+DTHoomans adapts the shared trader/Core actor into that physical representation.
+
+## 2. One trader / one actor / one provider lease
 
 ```text
-DTAbstract trader A
-+
-DTHoomans trader A-copy
+DT trader record
+      |
+      +-- actorID --> Core actor
+                       |
+                       +-- provider lease: DTAbstract OR DTHoomans
 ```
 
 Provider transition changes representation, not identity.
 
-The DT trader record should retain/bind the canonical actor ID. Core provider state determines which representation currently owns it.
+Never create a “DTAbstract copy” and “DTHoomans copy” of one merchant.
 
-## 3. Standalone settlement directory
+## 3. One map host
 
-A settlement that can be routed to or drawn on the map must resolve through one bounded contract.
+Target:
 
-Conceptual descriptor:
+```text
+                 PsychopatzCore Map Host
+                 owns ISWorldMap patch
+                         |
+          +--------------+--------------+
+          |                             |
+ProjectHoomans layers             DTAbstract layers
+communities/groups/etc.           traders/DT settlements
+          |                             |
+          +------ register/unregister --+
+```
+
+Rules:
+
+- exactly one Core production hook into the vanilla map;
+- generic ordered overlay registration;
+- generic toolbar/tool registration where a shared map control surface is required;
+- adopter-specific labels/icons/policy remain in adopter modules;
+- ProjectHoomans legacy generic host files are migrated or reduced to thin adapters, then redundant monkey patches are removed;
+- DTAbstract has no direct fallback `ISWorldMap.render` patch after migration;
+- mixed load order must not decide whether markers exist.
+
+## 4. Authoritative client projection
+
+Server actor state is authoritative.
+
+Clients that need map/debug/discovery information consume a bounded read-only projection synchronized from authority.
+
+Minimum projection for DTAbstract:
 
 ```lua
 {
-    settlementID = "stable:id",
-    name = "Readable Name",
-    position = { x = 0, y = 0, z = 0 },
-    profileID = "default",
-    provider = "DTAbstract",
-    enabled = true,
+  actorID,
+  revision,
+  provider,
+  providerState,
+  position = {x,y,z},
+  journey = {
+    state,
+    origin,
+    destination,
+    startAt,
+    eta,
+    progress,
+    destinationSettlementID,
+  }
+}
+```
+
+The transport may use a generic Core actor projection/snapshot mechanism. Do not synchronize the entire private actor record if the client only needs a bounded presentation projection.
+
+Map, nearby discovery, debug locate, and handoff presentation must consume the same authoritative revision/position semantics.
+
+## 5. Production persistence
+
+Codec capability alone is insufficient.
+
+The runtime must connect Core actor registry persistence to the actual save/load lifecycle used by the game/adopter.
+
+Requirements:
+
+- trader `actorID` cannot outlive its actor silently;
+- load reconstructs the Core actor before lifecycle advancement relies on it;
+- missing/corrupt actor linkage has deterministic recovery/quarantine behavior;
+- active journey/provider lease survives the intended save/restart boundary;
+- no duplicate actor is created merely because the registry was not loaded yet.
+
+## 6. Settlement directory
+
+A routable settlement descriptor has:
+
+```lua
+{
+  settlementID,
+  name,
+  position = {x,y,z},
+  profileID,
+  provider,
+  enabled,
 }
 ```
 
 Rules:
 
-- IDs are stable and persistence-safe.
-- coordinates are authoritative provider data, never UI guesses;
-- Hoomans communities adapt their current canonical IDs/positions when available;
-- standalone DTAbstract uses approved data/provider definitions;
-- the registry is bounded and indexed;
-- market state continues to be owned by `SettlementMarket`, not duplicated into the directory;
-- a settlement directory entry may exist before its market state is lazily provisioned.
+- stable IDs;
+- authoritative coordinates;
+- bounded indexed registry;
+- market state remains separate;
+- standalone DTAbstract provider data may use fixed trading hubs if that is the approved product policy;
+- Hoomans communities register through an adapter/provider, not through a DTCommon special-case PNC lookup;
+- “vanilla town trading hub” and “generated Hoomans settlement” are distinct concepts unless explicitly unified.
 
-## 4. Abstract trader lifecycle
-
-The server-authoritative standalone lifecycle is conceptually:
+## 7. Abstract lifecycle
 
 ```text
-ensure trader/actor
-      |
-      v
-AT_SETTLEMENT / IDLE
-      |
-select valid destination
-      |
-      v
-START CORE JOURNEY
-      |
-      v
-TRAVELING
-      |
-bounded advance by game time
-      |
-      +--> player proximity/discovery presentation
-      |
-      v
-ARRIVED
-      |
-      +--> update current/last settlement
-      +--> one idempotent settlement visit/exchange
-      +--> publish relevant world knowledge
-      |
-      v
-cooldown / select next route
+ensure canonical trader+actor
+        |
+idle at settlement
+        |
+select destination
+        |
+Core journey
+        |
+bounded authoritative advance
+        |
+arrival
+        |
+exactly-once settlement visit/exchange
+        |
+cooldown / next route
 ```
 
-No per-frame economy or all-world scan is allowed.
+No client authority and no full per-frame world simulation.
 
-Use game-time/event/interval advancement with bounded work.
+## 8. Map/discovery position
 
-## 5. Moving-position projection
-
-A trader on a journey must have one canonical **current projected position** for:
+One canonical current position is used by:
 
 - map marker;
-- distance-to-player;
-- nearby discovery;
+- nearby detection;
 - debug locate/teleport;
-- provider handoff policy.
+- provider-handoff decision.
 
-Do not separately interpolate in each consumer.
+Do not reimplement interpolation separately.
 
-If Core does not already expose this, add one generic journey/world query such as conceptual:
+## 9. Nearby discovery
 
-```text
-Actors.World.ProjectPosition(worldState, now)
-```
+Use enter radius + exit hysteresis + cooldown.
 
-or an equivalent narrow reusable contract.
+The server/client boundary must be explicit: the client may present discovery from an authoritative synchronized projection, but must not invent or advance trader world state.
 
-It must derive position from the canonical journey origin/destination/progress/time and agree with arrival state.
+Debug action result and gameplay nearby notification are different event classes.
 
-## 6. Map model
+## 10. Real DTAbstract Trader Manager
 
-The map is presentation of authoritative state, not its own simulation.
+The Core Debug Hub entry must open a real UI.
 
-### Trader markers
+Minimum UI:
 
-Derived from:
+- refreshable trader list;
+- IDs/name/provider/state;
+- current projected position/distance;
+- current/origin/destination settlement;
+- journey state/progress;
+- Spawn Near;
+- Spawn At explicit position where supported;
+- Force Tick;
+- Force Arrival;
+- Locate on Map;
+- Teleport;
+- discovery reset/mark;
+- Remove debug trader;
+- Materialize/Dematerialize when physical provider is available.
 
-```text
-Core actor
-+ projected current position
-+ DT trader display state
-+ discovery/visibility
-→ map marker
-```
+All mutations are server-authoritative.
 
-The map may show:
+A helper function returning `true` is not UI acceptance.
 
-- trader name/label;
-- traveling/at-settlement state;
-- destination where policy/knowledge allows;
-- provider/debug state in debug mode.
+## 11. Provider handoff
 
-### Settlement markers
-
-Derived from the settlement directory, not the trader map registry.
-
-Normal visibility/discovery policy may differ from debug "show all."
-
-### Rendering
-
-Prefer a generic Core map-overlay registration mechanism if it can remain domain-agnostic. Otherwise keep DTAbstract's renderer thin and data-driven.
-
-Do not import PNC/Hoomans internals into standalone DTAbstract.
-
-## 7. Nearby discovery and notification
-
-Use one bounded proximity policy over canonical projected positions.
-
-State machine:
+Production orchestration must actually drive:
 
 ```text
-OUTSIDE
-  |
-enter radius
-  v
-DETECTED
-  +--> mark known/discovered
-  +--> publish/show one notification
-  +--> optional provider-handoff evaluation
-  |
-remain inside
-  v
-NO REPEAT SPAM
-  |
-exit beyond hysteresis radius + cooldown
-  v
-eligible for future detection
+DTAbstract abstract
+   -> approved proximity/materialization condition
+   -> provider transition
+   -> DTHoomans materialized
+   -> leave/dematerialize condition
+   -> persist physical projection
+   -> DTAbstract resumes
 ```
 
-Notification presentation should use the existing PsychopatzCore notification UI.
+Adapter-level manual tests remain useful unit evidence but do not satisfy this requirement.
 
-Debug spawn feedback and gameplay nearby-detection notification are separate events and must remain distinguishable.
-
-## 8. Dedicated DTAbstract debug contract
-
-The Debug Hub tool must inspect **abstract** state directly.
-
-Mandatory capabilities:
-
-- list current abstract traders;
-- show provider/state/current/destination/position/distance;
-- spawn abstract trader near player;
-- spawn at an explicit map/world position if the available safe map context supports it;
-- force one lifecycle tick;
-- force arrival/advance for deterministic testing;
-- locate/show marker;
-- teleport player to trader;
-- reset/mark discovery;
-- remove a debug-created abstract trader;
-- request materialize/dematerialize only when the physical provider exists.
-
-Every mutation is server-authoritative and returns an explicit result/reason.
-
-## 9. Provider handoff
-
-Hybrid mode must prevent two simultaneous lifecycles from owning one actor.
-
-Conceptual transition:
-
-```text
-DTAbstract abstract lease
-       |
-nearby + physical provider available
-       v
-validated provider switch
-       |
-DTHoomans materialized body
-       |
-player leaves / live representation no longer needed
-       v
-persist body projection
-       |
-validated dematerialize/switch
-       v
-DTAbstract resumes abstract lease/journey
-```
-
-Hard rules:
-
-- merchant stock stays in DTCommon;
-- actor personal state stays in Core/Hoomans actor state;
-- no duplicate body;
-- no duplicate settlement exchange on handoff;
-- no journey restart from origin;
-- save/reload preserves provider and world state coherently.
-
-## 10. Performance boundaries
+## 12. Performance
 
 Forbidden:
 
-- per-frame scan of every trader/settlement;
-- per-frame map-data rebuild;
-- repeated full MarketSense scan for movement/presentation;
-- map renderer mutating simulation state;
-- client authority over trader spawn/travel;
-- separate interpolation math in map, detection and debug systems.
+- multiple adopter `ISWorldMap` monkey patches;
+- per-frame full trader/settlement scans for simulation;
+- full actor-record replication when a bounded presentation projection is enough;
+- repeated full MarketSense scans for map/discovery;
+- duplicate notification spam;
+- map renderer mutating simulation state.
 
 Required:
 
-- bounded trader population;
+- bounded population;
+- interval/event-driven lifecycle;
+- bounded projection payload;
+- dirty/revision-based sync where practical;
 - indexed settlement lookup;
-- event/interval-driven lifecycle;
-- cached/dirty map projection where practical;
-- proximity checks only at bounded cadence or relevant movement events;
-- deterministic duplicate protection for arrival/exchange/notifications.
-
-## 11. Compatibility modes
-
-Mandatory developer-side coverage:
-
-1. **Standalone:** Core + MarketSense + DTCommon + DTAbstract.
-2. **Physical:** Core + MarketSense + DTCommon + DTHoomans + Project Hoomans.
-3. **Hybrid:** all above, with one canonical trader actor transitioning providers.
-4. Existing Radio OS / Talk / trade flows remain usable.
-
-Standalone behavior must never silently depend on Hoomans globals.
+- one map host;
+- deterministic cleanup/unregister behavior.

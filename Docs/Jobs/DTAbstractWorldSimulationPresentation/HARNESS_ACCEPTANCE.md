@@ -1,229 +1,213 @@
 # Acceptance — DTAbstract World Simulation & Presentation
 
-## Evidence categories
+## Evidence rule
 
-Report evidence precisely as one of:
+The 2026-11-03 audit showed that green helper-level smokes can coexist with broken production integration.
+
+Use these evidence classes explicitly:
 
 - source/static;
-- deterministic Lua smoke;
-- production-module integration smoke;
-- persistence/reload;
+- unit/helper smoke;
+- production composition smoke;
+- split authority/client integration;
+- production persistence/reload;
 - cross-repository regression;
 - native SP;
 - native MP.
 
-Mocks do not count as native acceptance.
+Do not promote a weaker class into a stronger claim.
 
-## Baseline preservation
+## Existing foundation to preserve
 
-Before changing behavior, retain green coverage for at least:
+Keep green where still relevant:
 
-- `tests/dt_npc_provider_adapter_smoke.lua`;
-- `tests/dt_radio_os_abstract_provider_smoke.lua`;
-- `tests/dt_mapping_smoke.lua`;
-- relevant settlement visit/exchange tests;
-- relevant provider hotswap/persistence tests.
+- `dt_npc_provider_adapter_smoke.lua`;
+- `dt_radio_os_abstract_provider_smoke.lua`;
+- `dt_abstract_settlement_directory_smoke.lua`;
+- `dt_abstract_lifecycle_smoke.lua`;
+- `dt_abstract_map_smoke.lua`;
+- `dt_abstract_nearby_discovery_smoke.lua`;
+- `dt_abstract_debug_hub_smoke.lua`;
+- `dt_abstract_hybrid_handoff_smoke.lua`;
+- `dt_abstract_persistence_performance_smoke.lua`.
 
-Capture exact baseline failures if repository state differs.
+These are foundation tests, not sufficient final acceptance.
 
-## P0 fail-first requirements
+## One-map-host acceptance
 
-Add focused evidence for the currently missing surfaces.
+Required source/composition evidence:
 
-The tests should demonstrate that, before implementation, there is no production path satisfying:
+- PsychopatzCore owns one generic production `ISWorldMap` integration.
+- DTAbstract contains no direct production `ISWorldMap.render` monkey patch after migration.
+- ProjectHoomans generic map host no longer owns a parallel patch.
+- Hoomans-specific layers register through Core.
+- DTAbstract layer registers through Core.
+- unregister works.
+- consumer render failure does not suppress other layers.
+- load order permutations do not change registration.
+- combined Hoomans + DTAbstract produces one render pass host, not nested adopter hooks.
 
-1. standalone DTAbstract server trader creation;
-2. standalone settlement name+position resolution;
-3. moving trader map projection;
-4. nearby detection notification;
-5. dedicated DTAbstract Debug Hub spawn path.
+A direct call to `WorldMap.Render(mockMap)` does not satisfy this gate.
 
-Do not satisfy P0 by grep-only assertions after the implementation is already written; retain behavioral tests that become green in later phases.
+## Client projection acceptance
 
-## Settlement-directory acceptance
+Use **separate server and client stores**.
 
-At minimum:
-
-- register/load two distinct standalone settlements;
-- stable ID/name/position;
-- duplicate ID rejected or deterministically replaced according to contract;
-- invalid coordinates rejected;
-- bounded maximum enforced;
-- lookup is indexed;
-- Hoomans adapter uses canonical community identity when present;
-- market state is not duplicated into directory payload;
-- standalone operation has no Hoomans global dependency.
-
-## Actor/journey-position acceptance
-
-At minimum:
-
-- one trader binds one Core actor;
-- actor carries DTAbstract provider lease;
-- journey origin position is exact;
-- midpoint projection is deterministic;
-- destination projection is exact;
-- arrival and projected position agree;
-- zero/short journey is safe;
-- invalid/stale journey fails or degrades explicitly;
-- map, nearby detection and debug locate consume the same projected-position query.
-
-If Core changes, run Core actor/world/journey/provider suites and static checks.
-
-## Standalone lifecycle acceptance
-
-Flagship scenario:
+Required scenario:
 
 ```text
-settlement A
-settlement B
-no existing trader
-       |
-DTAbstract creates trader T + actor A
-       |
-T is at A
-       |
-DTAbstract selects B
-       |
-Core journey advances
-       |
-midpoint is observable
-       |
-T arrives at B
-       |
-one MarkSettlementVisit/exchange
-       |
-merchant stock/market revisions remain coherent
-       |
-next route/cooldown policy continues
+server actor at A
+server starts journey A -> B
+server projection revision N
+client receives N
+server advances
+server emits N+1
+client applies N+1
+map/debug/discovery read N+1
+stale N is rejected
 ```
 
-Required invariants:
+No shared actor registry table/object may be injected into both sides.
 
-- client cannot create/advance authority;
-- duplicate tick/arrival cannot double exchange;
-- reopening trade UI does not reroll stock;
-- merchant stock remains DTCommon-owned;
-- no physical body is required;
-- lifecycle work is bounded.
-
-## Debug spawn acceptance
-
-**Spawn Abstract Trader Near Player** must prove:
-
-- debug permission checked;
-- server mutation path;
-- no DTHoomans spawn call required;
-- explicit trader/actor IDs;
-- explicit abstract provider state;
-- position near but not invalid/on-top according to policy;
-- clear rejection reason on failure;
-- repeated calls create distinct bounded debug traders or reject deterministically;
-- spawn result message is not mistaken for gameplay nearby detection.
-
-## Map acceptance
-
-Deterministic map-model tests must prove:
-
-- two settlement entries;
-- one trader entry;
-- exact coordinate agreement with simulation state;
-- moving trader position changes after journey advancement;
-- no duplicate marker after refresh;
-- normal visibility vs debug show-all behavior;
-- map read path has no market/trader mutation;
-- standalone map provider loads without Project Hoomans.
-
-Native SP must later prove the actual vanilla map hook paints and updates correctly.
-
-## Nearby/notification acceptance
-
-At minimum:
-
-- distance outside radius: no detection;
-- cross into radius: one detection;
-- one known/discovery state transition;
-- one notification ID;
-- repeated checks inside: no duplicate;
-- edge jitter within hysteresis: no flap;
-- real exit + cooldown: eligible later according to policy;
-- notification queue bounded;
-- client UI presentation can fail without corrupting server discovery state.
-
-## Debug Manager acceptance
-
-Exercise every mandatory action through the production debug command/router path:
-
-- list/refresh;
-- spawn near;
-- optional explicit-position spawn;
-- force tick;
-- force/advance arrival;
-- locate/show;
-- teleport;
-- discovery reset/mark;
-- remove debug trader;
-- provider materialize/dematerialize when available.
-
-Each action returns a structured success/failure result.
-
-## Hybrid provider acceptance
-
-At minimum:
-
-- start with DTAbstract lease;
-- switch/materialize through DTHoomans;
-- same Core actor ID;
-- same DT trader ID;
-- same merchant stock/version;
-- exactly one live body;
-- dematerialize persists live actor projection;
-- switch back/resume abstract state;
-- save/reload;
-- no duplicate visit/exchange;
-- missing physical provider leaves actor safely abstract.
+Test reconnect/full resync and bounded payload size.
 
 ## Persistence acceptance
 
-Reconstruct from fresh storage/module state where the repository harness supports it.
+The test must exercise production persistence lifecycle entry points.
 
-Do not only reuse the same Lua table reference.
+Required:
 
-Prove canonical identity, provider lease, journey, settlement context and merchant state survive the intended reload boundary.
+- save;
+- destroy module/registry state;
+- reconstruct/load through production path;
+- trader actorID resolves to an actual actor;
+- journey/provider lease preserved;
+- lifecycle continues;
+- missing actor linkage follows explicit repair/quarantine path;
+- no duplicate actor on retry.
+
+Manual `registry:Save()` + `registry:Load()` in the test is codec evidence only.
+
+## Debug Manager UI acceptance
+
+The Core Debug Hub action must open a real production UI object.
+
+Test:
+
+- window/panel instantiates;
+- trader list renders/refreshes;
+- each mandatory action is reachable;
+- selected trader binding is correct;
+- action result area/message updates on server result;
+- error results are visible;
+- close/reopen is stable.
+
+`DebugHub.Open() == true` is not acceptance.
+
+## Debug transport acceptance
+
+Server command:
+
+- validates debug authorization;
+- mutates authority only;
+- returns structured result.
+
+Client:
+
+- has registered `OnServerCommand` handler;
+- filters module/command correctly;
+- renders/records result;
+- does not confuse result with gameplay notification.
+
+## Spawn At acceptance
+
+Request explicit coordinates and assert the created actor/projected position matches the requested position subject only to documented safe normalization.
+
+Reusing the near-player offset path while ignoring coordinates fails this gate.
+
+## Nearby discovery acceptance
+
+Run against synchronized client projection.
+
+Required:
+
+- outside: no notification;
+- enter: one detection;
+- remain inside: no spam;
+- hysteresis: no flap;
+- true exit + cooldown: later re-entry can notify;
+- server movement reflected through projection can cause detection even if the client never had the server registry;
+- reconnect/resync does not duplicate notification unexpectedly.
+
+## Provider handoff acceptance
+
+The test invokes production orchestration.
+
+Required:
+
+- DTAbstract abstract state;
+- materialization condition becomes true;
+- production runtime requests provider transition;
+- DTHoomans materializes same actor;
+- one body;
+- same trader stock/budget;
+- leave condition;
+- production runtime dematerializes/releases;
+- DTAbstract resumes;
+- save/reload/reconnect in transition-safe states;
+- no duplicate settlement exchange.
+
+A test that manually calls adapter `Acquire/Release/Materialize/Dematerialize` in sequence is adapter compatibility only.
+
+## Settlement directory acceptance
+
+Preserve bounded registry/index validation.
+
+Additionally:
+
+- DTCommon does not directly reference `PNC.Communities`;
+- Hoomans geography arrives through a registered optional provider;
+- standalone default-settlement policy is documented;
+- generated Hoomans settlements and fixed Knox trading hubs cannot silently collide by ID;
+- map labels/positions use the same directory contract as routing.
+
+## Cleanup acceptance
+
+Search all three repositories for:
+
+- `ISWorldMap.render` patches;
+- generic map registries;
+- toolbar registries;
+- world-discovery debug host registrations;
+- stale `MapOverlayRegistry` assumptions;
+- old compatibility shims.
+
+For every remaining implementation, document why it still owns a unique responsibility.
+
+No “legacy” copy may remain active merely for convenience after all callers have migrated.
 
 ## Performance acceptance
 
-Instrument or bound:
+Measure/bound:
 
-- lifecycle evaluations per interval;
+- actor projection payload count/bytes;
+- update cadence/revision churn;
+- nearby checks;
+- map renders;
+- lifecycle ticks;
 - trader count;
-- settlement count;
-- nearby distance checks;
-- map projection rebuild count;
-- notifications;
-- serialized bytes for new persistent state.
+- settlement count.
 
-Explicit failures:
+Reject:
 
-- `Events.OnTick`/render callback scanning every trader for simulation;
-- full MarketSense registry scan per lifecycle/proximity/map refresh;
-- unbounded settlement/trader map arrays;
-- one notification per proximity check;
-- duplicated journey interpolation logic.
-
-## Static/repository checks
-
-For changed production Lua run applicable:
-
-- `luac -p` or repository Lua parse checks;
-- Kahlua compatibility verification where available;
-- `git diff --check`;
-- focused smoke tests;
-- full relevant DynamicTrading suite;
-- affected PsychopatzCore/ProjectHoomans suites if those repositories changed.
+- full actor registry broadcast every frame;
+- full trader/world scan every render solely for synchronization;
+- multiple map-host patches;
+- duplicate notifications;
+- unbounded debug/history state.
 
 ## Final developer gate
 
-Developer-side acceptance requires all P0–P7 gates green from the exact intended repository revisions.
+Developer-side completion requires all R0–R7 gates in `ROADMAP.md`.
 
-Native SP/MP may remain explicitly user-owned, but only after all non-native implementation/testing is complete.
+Only then return to native SP/MP user acceptance.

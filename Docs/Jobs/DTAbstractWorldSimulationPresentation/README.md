@@ -2,52 +2,63 @@
 
 ## Parent objective
 
-Turn **DTAbstract** from a remote/radio access adapter into a real standalone abstract trader-world provider while preserving the existing Dynamic Trading economy and the optional DTHoomans physical representation.
+Turn **DTAbstract** into a real standalone abstract trader-world provider while preserving DTCommon economic authority, PsychopatzCore actor authority, and optional DTHoomans physical representation.
 
-The completed developer-side system must make the following true:
+## Current status
 
-- DTAbstract can create/maintain abstract trader actors without requiring Project Hoomans or DTHoomans.
-- Abstract traders have authoritative world positions and bounded travel between valid trading settlements.
-- Standalone trading settlements have authoritative IDs, names and coordinates through a data/provider contract rather than UI-only hard-coding.
-- The vanilla world map can show DTAbstract traders and trading settlements using their real simulation coordinates.
-- A moving trader marker represents current journey progress rather than remaining frozen at the origin.
-- Nearby trader discovery is bounded, marks the trader known as appropriate, and produces a one-shot/cooldown notification through the existing PsychopatzCore notification surface.
-- DTAbstract has a dedicated Psychopatz Debug Hub tool, including a server-authoritative **Spawn Abstract Trader Near Player** action and explicit spawn-result feedback.
-- Debug controls can inspect, locate/show, teleport to, advance, force-arrive and remove/test abstract traders without calling the DTHoomans live-caravan debug path.
-- When the physical Hoomans integration is available, one canonical trader/actor can hand off between DTAbstract and DTHoomans without duplicate identities, stock, journeys or bodies.
-- Existing DTCommon merchant stock, MarketSense pricing, settlement markets, radio/Talk, persistence and transaction authority do not regress.
-- Work remains bounded and event/interval driven; no per-frame all-trader/world scan is introduced.
+**REOPENED — native testing on 2026-11-03 exposed developer-side integration gaps.**
 
-## Product interpretation
+The initial P0–P7 implementation added useful foundations and the DynamicTrading smoke suite currently passes, but the parent goal is **not** developer-side complete. The current source still violates the intended one-Core-map-host architecture and several tests prove isolated helper behavior rather than production client/server integration.
 
-DTAbstract currently means "abstract access." This job makes it a genuine **abstract simulation provider**.
+See `AUDIT.md` and `PROGRESS.md` for the current evidence.
 
-The target relationship is:
+## Completion boundary
+
+The job is complete only when all of the following are true in production wiring, not merely direct Lua helper calls:
+
+- DTAbstract creates and maintains bounded standalone abstract traders.
+- Canonical trader/Core actor identity and journey state survive real save/reload.
+- Server-authoritative actor/world projections required by clients are actually synchronized to clients.
+- One generic PsychopatzCore vanilla-world-map host owns the `ISWorldMap` integration.
+- ProjectHoomans and DTAbstract register map layers/tools through that Core host; no parallel map monkey patches remain.
+- DTAbstract traders and settlement markers render from authoritative synchronized state.
+- Nearby detection uses the same synchronized projected position as map/debug presentation and produces bounded notifications.
+- A real DTAbstract Trader Manager UI exists and exposes the documented actions.
+- Debug command results are received and shown to the user separately from gameplay discovery notifications.
+- `Spawn At` honors the requested position.
+- Hybrid DTAbstract ↔ DTHoomans handoff is driven by production orchestration, not only by a synthetic adapter test.
+- Merchant stock/budget remains DTCommon-owned and physical bodies remain Hoomans-owned.
+- No legacy duplicate map host/toolbar ownership remains after migration.
+- Performance remains bounded and no per-frame full-world scan is introduced.
+
+## Ownership summary
 
 ```text
-                  DTCommon
-        trader / market / commerce authority
-                     |
-          canonical trader + Core actor
-                     |
-          +----------+----------+
-          |                     |
-      DTAbstract             DTHoomans
-  abstract representation   physical representation
-  world travel + map        bodies / live interaction
-          |                     |
-          +------ provider handoff
+PsychopatzCore
+  generic actor/world/provider state
+  generic synchronized client projection
+  one generic world-map overlay/tool host
+  generic notifications/debug host
+        |
+        +--------------------+
+        |                    |
+ProjectHoomans           DynamicTrading
+Hoomans-specific         DT-specific
+map layers/tools         trader/settlement layers
+physical bodies          abstract trader policy
+        |                    |
+        +---- shared actor/provider identity ----+
 ```
 
-DTAbstract must still work when DTHoomans/Project Hoomans are absent.
+DTAbstract must still work without ProjectHoomans/DTHoomans.
 
 ## Document map
 
-- `AUDIT.md` — source-verified baseline and missing behavior.
-- `ARCHITECTURE.md` — ownership, identities, settlement directory, simulation, map/discovery and handoff contracts.
-- `ROADMAP.md` — complete mandatory implementation phases and gates.
-- `HARNESS_ACCEPTANCE.md` — deterministic, integration, persistence, performance and native acceptance requirements.
-- `AGENT_RUNBOOK.md` — execution order, repository safety and continuous-roadmap rules.
-- `PROGRESS.md` — current evidence and immediate starting chunk.
+- `AUDIT.md` — current source-backed findings and reopened gaps.
+- `ARCHITECTURE.md` — stable ownership and migration invariants.
+- `ROADMAP.md` — mandatory recovery phases and gates.
+- `HARNESS_ACCEPTANCE.md` — evidence required before completion can be claimed again.
+- `AGENT_RUNBOOK.md` — continuous execution and repository safety.
+- `PROGRESS.md` — current phase, exact evidence, and immediate Next Chunk.
 
-The conversational `/goal` bootstrap is intentionally not checked into the repository.
+The conversational `/goal` bootstrap remains outside the repository.

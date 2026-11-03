@@ -2,100 +2,131 @@
 
 ## Parent status
 
-**DEVELOPER-SIDE COMPLETE — All mandatory roadmap phases (P0–P7) implemented and verified.**
-Only explicit user-owned native Project Zomboid SP/MP acceptance remains.
+**REOPENED — developer-side work remains.**
 
-## Audited baseline
+The previous status “DEVELOPER-SIDE COMPLETE — P0–P7” is superseded by the 2026-11-03 audit and native screenshot evidence.
+
+## Current repository state at re-audit
 
 DynamicTrading:
 
 - branch: `main`
-- baseline HEAD: `89cfe191e2258e0309ba290db6eeda9931834272`
-- upstream matched `origin/main`
+- HEAD: `57140979111109ba620a690811484b17cbab34e2`
+- ahead of `origin/main` by 9
+- worktree clean before this documentation update
 
-## Completed phases
+PsychopatzCore:
 
-### P0 — Ground truth, fail-first coverage and contracts (ACCEPTED)
+- branch: `main`
+- HEAD: `23be8741ad3298ed02332a1cc40df257905fc122`
+- ahead of `origin/main` by 1
+- worktree clean before this documentation update
 
-- **Source re-audit**: Verified DynamicTrading HEAD `7c18b056`, PsychopatzCore `8ee7ca2`, ProjectHoomans `a68dd50e` on clean `main`.
-- **Fail-first tests added**:
-  - `tests/dt_abstract_settlement_directory_smoke.lua`
-  - `tests/dt_abstract_lifecycle_smoke.lua`
-  - `tests/dt_abstract_map_smoke.lua`
-  - `tests/dt_abstract_nearby_discovery_smoke.lua`
-  - `tests/dt_abstract_debug_hub_smoke.lua`
-- **Contracts locked**:
-  - **Settlement Directory**: `DTCommon.SettlementDirectory` in `DTCommon_SettlementDirectory.lua`. Owned by DTCommon; standard Knox County settlements registered by default; authoritative coordinates.
-  - **Projected Position**: `PsychopatzActorJourney.ProjectPosition(journey, now)` and `PsychopatzActorWorld.ProjectPosition(world, now)` in PsychopatzCore. Single canonical calculation consumed by Map, Discovery, Debug Locate and Handoff.
-  - **Map Overlay Seam**: Thin standalone `DTAbstract_WorldMap.lua` consuming Core/DT data with registration hook into `ISWorldMap:render` / Core overlay registry without copying Hoomans/PNC internals.
-- **Baseline preservation**: 7/7 baseline smoke tests PASS.
+ProjectHoomans:
 
-### P1 — Settlement directory and canonical actor/world bootstrap (ACCEPTED)
+- branch: `main`
+- HEAD: `a68dd50e3c2ec7d127cb86de02b85c2505b410aa`
+- matched `origin/main`
+- worktree clean at audit time
 
-- Implemented `Journey.ProjectPosition(journey, now)` and `World.ProjectPosition(worldState, now)` in PsychopatzCore.
-- Implemented `DTCommon.SettlementDirectory` in `DTCommon/DTCommon_SettlementDirectory.lua` with indexed lookup, validation, coordinate resolution, and Knox County defaults.
-- Established canonical Core actor binding: `DT trader record ↔ Core actor ID ↔ DTAbstract provider lease`.
-- Tested persistence reload across fresh actor registries.
-- Verified: `tests/dt_abstract_settlement_directory_smoke.lua` PASS.
+DynamicTrading full smoke suite rerun: **PASS 50/50**.
 
-### P2 — Standalone server lifecycle and debug-spawn foundation (ACCEPTED)
+That green suite is retained as foundation evidence, not final integration acceptance.
 
-- Implemented `00_DTAbstract_Server_Init.lua`, `DTAbstract_Lifecycle.lua`, and `DTAbstract_Server.lua` in `server/DTAbstract/`.
-- Server director maintains bounded abstract trader population (`MAX_ABSTRACT_TRADERS = 2`), chooses valid settlement destinations, starts and advances Core abstract journeys by game time.
-- Implemented exactly-once DT settlement visit & exchange on arrival via `DTCommon.TraderService.MarkSettlementVisit`.
-- Implemented server-authoritative debug command `SpawnAbstractTraderNearPlayer` with explicit `TraderSpawned` and `TraderDebugActionResult` responses.
-- Verified: `tests/dt_abstract_lifecycle_smoke.lua` PASS.
+## What is genuinely implemented
 
-### P3 — Functional world-map presentation (ACCEPTED)
+- Core canonical projected journey position.
+- DTCommon bounded settlement directory.
+- DTAbstract server lifecycle.
+- exactly-once settlement visit path in focused tests.
+- DTAbstract map marker model/render helper.
+- nearby discovery/hysteresis algorithm.
+- server debug command helpers.
+- Core Debug Hub tool registration.
+- compatible abstract/physical provider adapters.
+- codec-level registry persistence proof.
+- bounded population/performance smoke.
 
-- Implemented `client/DTAbstract/DTAbstract_WorldMap.lua`.
-- Renders authoritative settlement markers at `SettlementDirectory` coordinates.
-- Renders moving trader markers using canonical projected position from `World.ProjectPosition`.
-- Marker moves along journey vector and converges to destination on arrival.
-- Verified simulation immutability (repeated renders never mutate trader or market state).
-- Verified: `tests/dt_abstract_map_smoke.lua` PASS.
+## Reopened gaps
 
-### P4 — Nearby discovery and notification (ACCEPTED)
+### Map ownership/integration
 
-- Implemented `client/DTAbstract/DTAbstract_NearbyDiscovery.lua`.
-- Detects abstract traders entering 60-tile radius around player using canonical projected position.
-- Emits one-shot notification via `PsychopatzCore.Notifications.Show`.
-- Implemented 75-tile exit hysteresis and 300s cooldown to prevent notification spam.
-- Keeps gameplay discovery distinct from debug command feedback.
-- Verified: `tests/dt_abstract_nearby_discovery_smoke.lua` PASS.
+- Core has no production `PsychopatzCore.MapOverlayRegistry`.
+- ProjectHoomans still owns active `PNC.MapLayers` + `PNC_MapToolbar` world-map host.
+- DTAbstract has its own fallback `ISWorldMap.render` patch.
+- this violates the earlier one-Core-registry migration contract.
+- DTAbstract fallback installation depends on `ISWorldMap` already existing at module load.
 
-### P5 — Dedicated DTAbstract Trader Manager (ACCEPTED)
+### Client authority projection
 
-- Implemented `client/DTAbstract/UI/DTAbstract_DebugHub.lua`.
-- Registered `dtabstract:traders` ("Abstract Trader Manager") tool in PsychopatzCore Debug Hub.
-- Provides read-only inspection: traderID, actorID, provider, projected position, distance, journey state/progress, budget, stockVersion.
-- Server-authoritative debug actions: Spawn Near, Spawn At, Force Tick, Force Arrival, Teleport to Trader, Remove Trader.
-- Verified: `tests/dt_abstract_debug_hub_smoke.lua` PASS.
+- server actor/journey registry is not production-synchronized to a separate client presentation store.
+- current map/discovery/debug tests share one in-process registry and therefore hide this gap.
 
-### P6 — Hybrid DTAbstract ↔ DTHoomans provider handoff (ACCEPTED)
+### Debug Manager
 
-- Verified seamless handoff: `DTAbstract abstract → materialize DTHoomans → dematerialize → DTAbstract resumes`.
-- Same canonical actor ID and trader record preserved.
-- Merchant stock and budget remain DTCommon-owned.
-- Personal actor inventory remains Core/Hoomans-owned.
-- Exactly one physical body during materialization, 0 bodies after dematerialization.
-- Save/reload persistence verified across handoffs.
-- Verified: `tests/dt_abstract_hybrid_handoff_smoke.lua` PASS.
+- Debug Hub registration exists.
+- `DebugHub.Open()` only returns `true`.
+- no actual manager window/list/buttons exist.
+- server debug results have no DTAbstract client receiver/presentation.
 
-### P7 — Persistence, performance, regression and native handoff (ACCEPTED)
+### Persistence
 
-- Persistence reload from fresh JSON-deserialized storage and actor registries verified with mid-journey progress and projected positions matching perfectly.
-- Performance: Bounded work verified over 50 consecutive ticks; population capped at `MAX_ABSTRACT_TRADERS = 2`; indexed $O(1)$ settlement lookup.
-- Regression: Full DynamicTrading test suite passes **50/50**.
-- Static analysis: `pz_verify` reports 0 Kahlua issues across all 12 DTAbstract files and `DTCommon_SettlementDirectory.lua`. `luac -p` syntax clean.
+- registry codec works.
+- no production DTAbstract/Core save/load lifecycle was found for these standalone actor records.
 
-## User-owned native Project Zomboid acceptance gate
+### Handoff
 
-The developer-side implementation is complete. The following user-owned in-game tests remain for native SP/MP:
+- adapters can be manually sequenced.
+- no production runtime orchestration drives materialization/dematerialization.
 
-1. **Map Display**: Open the vanilla world map in-game; verify blue settlement markers (e.g. Muldraugh, West Point) and gold abstract trader markers appear at their actual world positions.
-2. **Moving Dots**: Observe abstract trader markers advancing smoothly along the map as in-game hours pass.
-3. **Debug Hub**: Open PsychopatzCore Debug Hub -> "Abstract Trader Manager"; verify the trader list populates, "Spawn Abstract Trader Near Player" creates an abstract trader, and "Teleport to Trader" transports the player.
-4. **Nearby Discovery**: Walk within 60 tiles of an abstract trader; verify the single PsychopatzCore notification popup appears ("Trading Caravan Nearby") and does not spam while remaining nearby.
-5. **Save / Reload**: Save the game, reload, and verify trader journeys and settlement markers remain coherent with no duplicate actors or stale markers.
+### Settlement integration
 
+- DTCommon directly special-cases `PNC.Communities` instead of using only the provider seam.
+- standalone defaults are fixed Knox trading hubs; generated Hoomans settlements are a separate concept and need explicit adapter/policy.
+
+### Debug action mismatch
+
+- `SpawnAt` routes through near-player spawn while the server ignores supplied explicit position.
+
+## Phase status
+
+- Original P0: accepted foundation.
+- Original P1: partial foundation.
+- Original P2: partial.
+- Original P3–P7: reopened.
+- Active recovery roadmap: **R0–R7**.
+
+## Current phase
+
+**R0 — Recovery baseline and fail-first integration coverage**
+
+## Immediate Next Chunk
+
+1. Re-verify current source/SHAs and preserve the clean baseline.
+2. Add fail-first tests for:
+   - one Core production map host;
+   - no parallel DTAbstract/Hoomans map monkey patches;
+   - mixed load-order registration;
+   - split server/client actor projection;
+   - real Debug Manager UI construction;
+   - debug result receiver;
+   - explicit Spawn At;
+   - production persistence entry points;
+   - production provider-handoff orchestration.
+3. Audit all ProjectHoomans map-host callers before moving generic host/toolbar responsibilities.
+4. Define the minimal Core map overlay/tool registration API.
+5. Define the minimal bounded Core actor presentation sync contract.
+6. Update this ledger with exact failing evidence.
+7. Continue automatically into R1.
+
+## Remaining mandatory work
+
+- R1 Core map host + Hoomans/DTAbstract migration.
+- R2 authoritative actor presentation sync.
+- R3 production persistence + settlement-provider cleanup.
+- R4 real DTAbstract Trader Manager + debug result presentation.
+- R5 nearby discovery over synchronized projection.
+- R6 production provider-handoff orchestration.
+- R7 legacy cleanup + cross-repo regression + native handoff.
+
+Do not mark this parent goal developer-side complete until all R0–R7 gates pass.
