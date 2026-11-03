@@ -298,6 +298,16 @@ check(Caravan.ResolveTraderDisplayName({ m = { "npcMerchant" } }) == "npcMerchan
     "member list fallback works")
 
 print("== 6. shared snapshot applies the canonical name ==")
+-- Production composition registers Hoomans naming through DTCommon's
+-- optional-adopter integration seam before TraderService snapshots are built.
+DTCommon.Integrations = dofile(
+    ROOT .. "/DTCommon/42.20/media/lua/shared/DTCommon/"
+        .. "DTCommon_IntegrationRegistry.lua"
+)
+dofile(
+    ROOT .. "/DTHoomans/42.20/media/lua/server/DTHoomans/"
+        .. "DTHoomans_CommonIntegration.lua"
+)
 local requireStub = function(moduleName)
     if moduleName == "DTCommon/DTCommon_CoreActorPolicy" then
         return { PriceContext = function() return {} end }
@@ -308,7 +318,12 @@ _G.require = requireStub
 local Service = dofile(ROOT .. "/DTCommon/42.20/media/lua/shared/DTCommon/DTCommon_TraderService.lua")
 local savedGetRecord = Service.GetRecord
 local savedGet = Service.Get
-Service.GetRecord = function() return { p = "npcMerchant" } end
+Service.GetRecord = function()
+    return {
+        g = "faction_test_1",
+        p = "npcMerchant",
+    }
+end
 Service.Get = function() return { traderID = "dt_1", displayName = DTCommon.DEFAULT_TRADER_NAME } end
 local snapshot, reason = Service.Snapshot("dt_1")
 check(snapshot ~= nil, "snapshot built", reason)
