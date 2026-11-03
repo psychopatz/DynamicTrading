@@ -47,36 +47,36 @@ Do not rewrite:
 - DTHoomans physical trader/caravan behavior except for narrow provider integration required by P6;
 - existing PsychopatzCore notification UI.
 
+## Completed phases
+
+### P0 — Ground truth, fail-first coverage and contracts (ACCEPTED)
+
+- **Source re-audit**: Verified DynamicTrading HEAD `7c18b056`, PsychopatzCore `8ee7ca2`, ProjectHoomans `a68dd50e` on clean `main`.
+- **Fail-first tests added**:
+  - `tests/dt_abstract_settlement_directory_smoke.lua` captures missing `DTCommon.SettlementDirectory` and canonical projected position contract.
+  - `tests/dt_abstract_lifecycle_smoke.lua` captures missing `DTAbstract.Server` / `DTAbstract.Lifecycle`.
+  - `tests/dt_abstract_map_smoke.lua` captures missing `DTAbstract.WorldMap`.
+  - `tests/dt_abstract_nearby_discovery_smoke.lua` captures missing `DTAbstract.NearbyDiscovery`.
+  - `tests/dt_abstract_debug_hub_smoke.lua` captures missing `DTAbstract.DebugHub`.
+- **Contracts locked**:
+  - **Settlement Directory**: `DTCommon.SettlementDirectory` in `DTCommon/DTCommon_SettlementDirectory.lua`. Owned by DTCommon as commercial registry; standalone Knox County settlements registered by default; coordinates authoritative.
+  - **Projected Position**: `PsychopatzActorJourney.ProjectPosition(journey, now)` and `PsychopatzActorWorld.ProjectPosition(world, now)` in PsychopatzCore. Single canonical calculation consumed by Map, Discovery, Debug Locate and Handoff.
+  - **Map Overlay Seam**: Thin standalone `DTAbstract_WorldMap.lua` consuming Core/DT data, with generic registration hook into `ISWorldMap:render` / Core overlay registry without copying Hoomans/PNC internals.
+- **Baseline preservation**: 7/7 baseline smoke tests PASS (`dt_npc_provider_adapter_smoke`, `dt_radio_os_abstract_provider_smoke`, `dt_mapping_smoke`, `dt_settlement_visit_contract_smoke`, `dt_settlement_exchange_smoke`, `dt_two_settlement_exchange_smoke`, `dt_provider_hotswap_persistence_smoke`).
+
 ## Current phase
 
-**P0 — Ground truth, fail-first coverage and contracts**
+**P1 — Settlement directory and canonical actor/world bootstrap**
 
-## Immediate Next Chunk — P0A/P0B
+## Immediate Next Chunk — P1
 
-1. Re-audit current source at the agent's actual HEAD and dependency revisions.
-2. Add behavioral fail-first tests for the five missing product surfaces:
-   - standalone DTAbstract server trader creation;
-   - settlement name+position directory;
-   - moving map projection;
-   - nearby discovery notification;
-   - dedicated DTAbstract Debug Hub spawn.
-3. Audit DTHoomans roaming policy/config so the standalone population policy is deliberate rather than copied accidentally.
-4. Audit the actual vanilla map hook and decide whether the smallest reusable solution is:
-   - a generic Core marker-overlay host, or
-   - a thin DTAbstract map adapter consuming Core/DT data.
-5. Lock the settlement-directory contract and the single canonical projected-position contract.
-6. Run baseline existing provider/radio/settlement tests.
-7. Update this progress file with exact evidence and continue automatically into P1.
-
-## P0 immediate acceptance
-
-P0A/P0B are accepted only when:
-
-- tests capture the current missing behavior and later can become green;
-- standalone settlement coordinate ownership is explicit;
-- map/proximity/debug share one projected-position contract;
-- no PNC/Hoomans dependency is introduced for standalone mode;
-- existing provider/radio behavior remains green.
+1. Implement `Journey.ProjectPosition(journey, now)` and `World.ProjectPosition(worldState, now)` in `psychopatzCore` with tests in `psychopatzCore`.
+2. Implement `DTCommon.SettlementDirectory` in `DTCommon/DTCommon_SettlementDirectory.lua` with registration, validation, lookup, list, coordinate resolution, and default standalone settlements.
+3. Establish canonical Core actor binding for standalone traders (`actorID` ↔ `traderID` ↔ `DTAbstract` provider lease).
+4. Run `tests/dt_abstract_settlement_directory_smoke.lua` until green.
+5. Verify PsychopatzCore regressions and baseline DT regressions.
+6. Commit P1 work coherently.
+7. Update `PROGRESS.md` and continue automatically into P2.
 
 ## Remaining mandatory work
 

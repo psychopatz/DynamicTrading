@@ -18,6 +18,8 @@ local roots = {
         .. dynamicRuntime .. "/media/lua/",
     DTHoomans = repository .. "/Contents/mods/DTHoomans/"
         .. dynamicRuntime .. "/media/lua/",
+    DTAbstract = repository .. "/Contents/mods/DTAbstract/"
+        .. dynamicRuntime .. "/media/lua/",
     ProjectHoomans = hoomansRepository .. "/Contents/mods/ProjectHoomans/"
         .. hoomansRuntime .. "/media/lua/",
     PsychopatzCore = coreRepository .. "/Contents/mods/PsychopatzCore/"
@@ -34,7 +36,7 @@ end
 
 function Test.path(mod, layer, relative)
     relative = cleanRelative(relative)
-    if mod == "DTCommon" or mod == "DTHoomans" then
+    if mod == "DTCommon" or mod == "DTHoomans" or mod == "DTAbstract" then
         return roots[mod] .. tostring(layer or "shared") .. "/" .. relative
     end
     if mod == "ProjectHoomans" or mod == "PsychopatzCore" then
@@ -45,6 +47,9 @@ end
 
 function Test.addPackagePaths(specifications)
     specifications = specifications or {
+        { "DTAbstract", "client" },
+        { "DTAbstract", "server" },
+        { "DTAbstract", "shared" },
         { "DTHoomans", "client" },
         { "DTHoomans", "server" },
         { "DTHoomans", "shared" },
