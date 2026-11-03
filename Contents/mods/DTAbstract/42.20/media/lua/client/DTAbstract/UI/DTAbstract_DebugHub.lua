@@ -8,6 +8,8 @@ DTAbstract.DebugHub = DTAbstract.DebugHub or {}
 local DebugHub = DTAbstract.DebugHub
 local Presentation = DTCommon.TraderPresentation
     or require "DTCommon/DTCommon_TraderPresentation"
+local CoreClient = require
+    "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"
 
 DebugHub.LastResult = DebugHub.LastResult or nil
 DebugHub.LastSpawn = DebugHub.LastSpawn or nil
@@ -52,7 +54,8 @@ function DebugHub.ListTraders()
         local provider = row.provider
         if ca and (ca.actorID or ca.coreActorID) then
             local actorID = ca.actorID or ca.coreActorID
-            local pos, projection = Presentation.GetPosition(record)
+            local projection = CoreClient.GetActor(actorID)
+            local pos = projection and projection.position or nil
             local distance = nil
             if px and py and pos and pos.x and pos.y then
                 local dx = px - pos.x
@@ -104,7 +107,13 @@ function DebugHub.ListTraders()
 end
 
 function DebugHub.RefreshProjection()
-    return Presentation.RequestSync()
+    local actors, actorReason = CoreClient.RequestActors()
+    local discovery, discoveryReason =
+        CoreClient.RequestDiscovery()
+    if actors or discovery then
+        return true
+    end
+    return false, actorReason or discoveryReason
 end
 
 function DebugHub.SpawnNear(options)
@@ -181,6 +190,22 @@ function DebugHub.MarkDiscovery(traderID)
     return false
 end
 
+function DebugHub.DiscoverAll(scope)
+    return CoreClient.DiscoveryAction(
+        "debug_discover_all",
+        {
+            scope = tostring(scope or "all"),
+        }
+    )
+end
+
+function DebugHub.ResetAllDiscovery()
+    return CoreClient.DiscoveryAction(
+        "debug_reset",
+        {}
+    )
+end
+
 local function resultText(args)
     local action = tostring(args.action or "action")
     local reason = tostring(args.reason or "")
@@ -217,7 +242,9 @@ local function onServerCommand(module, command, args)
 
     if command == "TraderSpawned" then
         DebugHub.LastSpawn = args
-        if args.accepted ~= false then Presentation.RequestSync() end
+        if args.accepted ~= false then
+            DebugHub.RefreshProjection()
+        end
         if DTAbstract.DebugTraderWindow
             and DTAbstract.DebugTraderWindow.SetResult
         then
@@ -229,7 +256,9 @@ local function onServerCommand(module, command, args)
 
     if command == "TraderDebugActionResult" then
         DebugHub.LastResult = args
-        if args.accepted == true then Presentation.RequestSync() end
+        if args.accepted == true then
+            DebugHub.RefreshProjection()
+        end
         publishDebugFeedback(args)
     end
 end
