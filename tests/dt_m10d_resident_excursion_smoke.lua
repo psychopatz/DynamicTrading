@@ -90,6 +90,16 @@ local communityMarket = {
     home = { x = 110, y = 110, z = 0, radius = 12 },
     memberIDs = {},
 }
+local communityAltMarket = {
+    id = "community_m10d_market_alt",
+    factionID = "faction_m10d_market_alt",
+    name = "M10D Market Alt",
+    mode = "settled",
+    status = "active",
+    siteID = "site_m10d_market_alt",
+    home = { x = 200, y = 200, z = 0, radius = 12 },
+    memberIDs = {},
+}
 local residentFaction = {
     id = communityHome.factionID,
     status = "active",
@@ -290,6 +300,7 @@ PNC.Communities = {
     Get = function(id)
         if id == communityHome.id then return communityHome end
         if id == communityMarket.id then return communityMarket end
+        if id == communityAltMarket.id then return communityAltMarket end
         return nil
     end,
     GetForFaction = function(id)
@@ -646,5 +657,180 @@ T.equal(protectedStart, 0,
 T.equal(Excursions.Get(residentFaction.id).state, "AT_HOME",
     "protected work does not leave a PREPARING ghost")
 traderNPC.orderSpec = nil
+
+-- =========================================================================
+-- P20A: FAILED Excursion Semantics and Lifecycle Regressions
+-- =========================================================================
+
+local targetMarket = {
+    kind = "settlement",
+    locationID = "location_m10d_market",
+    communityID = communityMarket.id,
+    siteID = communityMarket.siteID,
+    x = communityMarket.home.x,
+    y = communityMarket.home.y,
+    z = communityMarket.home.z,
+}
+local targetAltMarket = {
+    kind = "settlement",
+    locationID = "location_m10d_market_alt",
+    communityID = communityAltMarket.id,
+    siteID = communityAltMarket.siteID,
+    x = communityAltMarket.home.x,
+    y = communityAltMarket.home.y,
+    z = communityAltMarket.home.z,
+}
+
+-- Case 1: FAILED before departure (PREPARING -> FAILED)
+local prepOK = Excursions.SetPhase(residentFaction.id, "PREPARING", {
+    destination = copy(targetMarket),
+}, currentTime)
+T.truthy(prepOK, "transition to PREPARING succeeds")
+T.equal(record.ca.currentSettlementID, communityHome.id, "preparing current is home")
+T.equal(record.ca.originSettlementID, communityHome.id, "preparing origin is home")
+T.equal(record.ca.destinationSettlementID, communityMarket.id, "preparing destination is set")
+
+local failBeforeDepartOK = Excursions.Fail(residentFaction.id, "road_blocked_early", currentTime)
+T.truthy(failBeforeDepartOK, "fail before departure succeeds")
+local excFail1 = Excursions.Get(residentFaction.id)
+T.equal(excFail1.state, "FAILED", "excursion is FAILED")
+T.equal(excFail1.departedAt, 0, "excursion did not depart")
+T.equal(excFail1.completedAt, 0, "excursion did not complete")
+T.equal(record.ca.currentSettlementID, communityHome.id, "failure before departure keeps trader home")
+T.equal(record.ca.originSettlementID, communityHome.id, "failure before departure keeps origin home")
+T.falsy(record.ca.destinationSettlementID, "failure before departure clears destination")
+T.equal(record.ca.homeSettlementID, communityHome.id, "home identity preserved")
+T.equal(record.s, DTCommon.STATUS_READY, "trader remains available at home after pre-departure failure")
+
+-- Case 2: FAILED after departure (OUTBOUND -> FAILED with departedAt > 0, completedAt = 0)
+local prep2OK = Excursions.SetPhase(residentFaction.id, "PREPARING", {
+    destination = copy(targetMarket),
+}, currentTime)
+T.truthy(prep2OK, "transition to PREPARING succeeds")
+local outOK = Excursions.StartOutbound(residentFaction.id, copy(targetMarket), currentTime + 2, currentTime + 14)
+T.truthy(outOK, "transition to OUTBOUND succeeds")
+T.falsy(record.ca.currentSettlementID, "outbound trader has no current settlement")
+T.equal(record.ca.destinationSettlementID, communityMarket.id, "outbound destination is set")
+T.equal(record.ca.originSettlementID, communityHome.id, "outbound origin is home")
+T.equal(record.s, DTCommon.STATUS_AWAY, "outbound trader is away")
+
+local failAfterDepartOK = Excursions.Fail(residentFaction.id, "ambush_on_road", currentTime + 4)
+T.truthy(failAfterDepartOK, "fail after departure succeeds")
+local excFail2 = Excursions.Get(residentFaction.id)
+T.equal(excFail2.state, "FAILED", "excursion is FAILED")
+T.truthy(excFail2.departedAt > 0, "departedAt > 0 verified")
+T.equal(excFail2.completedAt, 0, "completedAt == 0 verified")
+-- Mandatory assertion: trader is NOT fabricated as home!
+T.falsy(record.ca.currentSettlementID, "FAILED after departure must NOT fabricate current settlement as home")
+T.falsy(record.ca.destinationSettlementID, "stale destination cleared after departure failure")
+T.equal(record.ca.originSettlementID, communityHome.id, "origin remains home community")
+T.equal(record.s, DTCommon.STATUS_AWAY, "failed away trader is NOT available at home")
+
+-- Direct production-handler reproduction of fifth-audit defect:
+-- Explicit payload with departedAt = 12, completedAt = 0 must not fabricate home
+record.ca.currentSettlementID = nil
+record.ca.originSettlementID = communityHome.id
+record.ca.destinationSettlementID = communityMarket.id
+record.s = DTCommon.STATUS_AWAY
+
+local directResult, directReason = Resident.OnExcursion({
+    factionID = residentFaction.id,
+    purpose = "commercial_run",
+    state = "FAILED",
+    homeCommunityID = communityHome.id,
+    departedAt = 12,
+    completedAt = 0,
+})
+T.truthy(directResult, directReason)
+T.falsy(record.ca.currentSettlementID, "audit reproduction: departedAt=12, completedAt=0 does not set current to home")
+T.falsy(record.ca.destinationSettlementID, "audit reproduction: destination is cleared")
+T.equal(record.s, DTCommon.STATUS_AWAY, "audit reproduction: availability remains away")
+
+-- Case 3: FAILED while visiting (VISITING -> FAILED)
+local prep3OK = Excursions.SetPhase(residentFaction.id, "PREPARING", {
+    destination = copy(targetMarket),
+}, currentTime)
+T.truthy(prep3OK)
+Excursions.StartOutbound(residentFaction.id, copy(targetMarket), currentTime + 6, currentTime + 18)
+Excursions.StartVisiting(residentFaction.id, currentTime + 8, {
+    destination = copy(targetMarket),
+})
+T.equal(record.ca.currentSettlementID, communityMarket.id, "visiting sets current to market")
+T.equal(record.s, DTCommon.STATUS_AWAY, "visiting is away")
+
+local failVisitingOK = Excursions.Fail(residentFaction.id, "market_emergency", currentTime + 10)
+T.truthy(failVisitingOK)
+local excFail3 = Excursions.Get(residentFaction.id)
+T.equal(excFail3.state, "FAILED")
+T.truthy(excFail3.visitedAt > 0, "visitedAt > 0")
+T.equal(excFail3.completedAt, 0, "completedAt == 0")
+T.equal(record.ca.currentSettlementID, communityMarket.id, "FAILED while visiting reflects last authoritative location")
+T.falsy(record.ca.destinationSettlementID, "FAILED while visiting clears destination")
+T.equal(record.s, DTCommon.STATUS_AWAY, "trader failed while visiting is not available at home")
+
+-- Case 4: FAILED while returning home (RETURNING_HOME -> FAILED before exact-home completion)
+local retryForRetOK = Excursions.Retry(residentFaction.id, currentTime + 11, {
+    destination = copy(targetMarket),
+})
+T.truthy(retryForRetOK)
+Excursions.StartOutbound(residentFaction.id, copy(targetMarket), currentTime + 12, currentTime + 24)
+Excursions.StartVisiting(residentFaction.id, currentTime + 14, {
+    destination = copy(targetMarket),
+})
+local retOK = Excursions.StartReturningHome(residentFaction.id, currentTime + 16)
+T.truthy(retOK)
+T.falsy(record.ca.currentSettlementID, "returning trader is en route (not home)")
+T.equal(record.ca.originSettlementID, communityMarket.id, "returning origin is visited community")
+T.equal(record.ca.destinationSettlementID, communityHome.id, "returning destination is home")
+T.equal(record.s, DTCommon.STATUS_AWAY, "returning trader is away")
+
+local failReturningOK = Excursions.Fail(residentFaction.id, "breakdown_on_return", currentTime + 18)
+T.truthy(failReturningOK)
+local excFail4 = Excursions.Get(residentFaction.id)
+T.equal(excFail4.state, "FAILED")
+T.truthy(excFail4.returnStartedAt > 0, "returnStartedAt > 0")
+T.equal(excFail4.completedAt, 0, "completedAt == 0")
+T.falsy(record.ca.currentSettlementID, "FAILED while returning does NOT mark home")
+T.equal(record.ca.originSettlementID, communityMarket.id, "origin remains visited community")
+T.falsy(record.ca.destinationSettlementID, "stale return destination cleared on failure")
+T.equal(record.s, DTCommon.STATUS_AWAY, "failed returning trader is NOT available at home")
+
+-- Case 5: Retry after FAILED (FAILED -> new PREPARING)
+local retryOK, retryReason = Excursions.Retry(residentFaction.id, currentTime + 20, {
+    destination = copy(targetAltMarket),
+})
+T.truthy(retryOK, retryReason)
+local excRetry = Excursions.Get(residentFaction.id)
+T.equal(excRetry.state, "PREPARING", "excursion retried into PREPARING")
+T.equal(record.ca.currentSettlementID, communityHome.id, "retry PREPARING resets current to home")
+T.equal(record.ca.originSettlementID, communityHome.id, "retry PREPARING resets origin to home")
+T.equal(record.ca.destinationSettlementID, communityAltMarket.id, "new trip gets fresh destination")
+T.truthy(record.ca.destinationSettlementID ~= communityMarket.id, "previous failed destination does not leak")
+
+-- Case 6: Happy path regression after retry (PREPARING -> OUTBOUND -> VISITING -> RETURNING_HOME -> AT_HOME)
+local happyOut = Excursions.StartOutbound(residentFaction.id, copy(targetAltMarket), currentTime + 22, currentTime + 34)
+T.truthy(happyOut)
+T.falsy(record.ca.currentSettlementID, "happy path outbound current is nil")
+T.equal(record.ca.destinationSettlementID, communityAltMarket.id, "happy path outbound destination")
+
+local happyVisit = Excursions.StartVisiting(residentFaction.id, currentTime + 24, {
+    destination = copy(targetAltMarket),
+})
+T.truthy(happyVisit)
+T.equal(record.ca.currentSettlementID, communityAltMarket.id, "happy path visiting current is alt market")
+
+local happyRet = Excursions.StartReturningHome(residentFaction.id, currentTime + 26)
+T.truthy(happyRet)
+T.falsy(record.ca.currentSettlementID, "happy path returning current is nil")
+T.equal(record.ca.originSettlementID, communityAltMarket.id, "happy path returning origin is alt market")
+
+local happyHome = Excursions.SetPhase(residentFaction.id, "AT_HOME", nil, currentTime + 28)
+T.truthy(happyHome)
+local excHappy = Excursions.Get(residentFaction.id)
+T.equal(excHappy.state, "AT_HOME", "excursion is AT_HOME")
+T.truthy(excHappy.completedAt > 0, "completedAt > 0 on home arrival")
+T.equal(record.ca.currentSettlementID, communityHome.id, "home context restored after happy path return")
+T.falsy(record.ca.destinationSettlementID, "destination cleared on home arrival")
+T.equal(record.s, DTCommon.STATUS_READY, "availability restored on home arrival")
 
 return T.finish("dt_m10d_resident_excursion_smoke")

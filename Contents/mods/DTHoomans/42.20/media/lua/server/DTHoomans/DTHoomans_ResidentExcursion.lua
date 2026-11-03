@@ -192,7 +192,7 @@ local function onExcursion(payload)
                     traderID, payload.homeCommunityID)
             end
             local dest = payload.destination and payload.destination.communityID or nil
-            if dest and TraderService.SetDestinationSettlement then
+            if TraderService.SetDestinationSettlement then
                 TraderService.SetDestinationSettlement(traderID, dest)
             end
         end
@@ -207,7 +207,7 @@ local function onExcursion(payload)
                 TraderService.SetOriginSettlement(traderID, payload.homeCommunityID)
             end
             local dest = payload.destination and payload.destination.communityID or nil
-            if dest and TraderService.SetDestinationSettlement then
+            if TraderService.SetDestinationSettlement then
                 TraderService.SetDestinationSettlement(traderID, dest)
             end
         end
@@ -278,12 +278,36 @@ local function onExcursion(payload)
         return applyAvailability(traderID, true, "resident_trader_home")
     end
     if payload.state == "FAILED" then
-        if payload.departedAt ~= nil
-            and not payload.completedAt
-        then
+        local departedAt = tonumber(payload.departedAt) or 0
+        local completedAt = tonumber(payload.completedAt) or 0
+        local visitedAt = tonumber(payload.visitedAt) or 0
+        local returnStartedAt = tonumber(payload.returnStartedAt) or 0
+        local hasDeparted = departedAt > 0
+        local hasCompleted = completedAt > 0
+        local hasVisited = visitedAt > 0
+        local isReturning = returnStartedAt > 0
+
+        if hasDeparted and not hasCompleted then
             if TraderService then
-                if TraderService.SetCurrentSettlement then
-                    TraderService.SetCurrentSettlement(traderID, nil)
+                if hasVisited and not isReturning then
+                    local visited = payload.visitedCommunityID
+                        or (payload.destination and payload.destination.communityID)
+                        or (record and record.ca and record.ca.lastSettlementID)
+                    if visited and TraderService.SetCurrentSettlement then
+                        TraderService.SetCurrentSettlement(traderID, visited)
+                    end
+                else
+                    if TraderService.SetCurrentSettlement then
+                        TraderService.SetCurrentSettlement(traderID, nil)
+                    end
+                end
+                if isReturning then
+                    local visited = payload.visitedCommunityID
+                        or (payload.destination and payload.destination.communityID)
+                        or (record and record.ca and record.ca.lastSettlementID)
+                    if visited and TraderService.SetOriginSettlement then
+                        TraderService.SetOriginSettlement(traderID, visited)
+                    end
                 end
                 if TraderService.SetDestinationSettlement then
                     TraderService.SetDestinationSettlement(traderID, nil)
@@ -295,6 +319,10 @@ local function onExcursion(payload)
         if TraderService then
             if TraderService.SetCurrentSettlement then
                 TraderService.SetCurrentSettlement(
+                    traderID, payload.homeCommunityID)
+            end
+            if TraderService.SetOriginSettlement then
+                TraderService.SetOriginSettlement(
                     traderID, payload.homeCommunityID)
             end
             if TraderService.SetDestinationSettlement then
