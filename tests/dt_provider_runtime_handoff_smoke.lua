@@ -2,6 +2,7 @@ local T = require "tests/support/test"
 T.addPackagePaths()
 
 local Actors = require "PsychopatzCore/Actors/PsychopatzActors"
+local ActorInventory = Actors.Inventory
 local registry = Actors.NewRegistry()
 Actors.DefaultRegistry = registry
 PsychopatzCore = PsychopatzCore or {}
@@ -72,6 +73,30 @@ records["trader:handoff:runtime"] = {
         destinationSettlementID = "settlement:westpoint",
     }),
 }
+
+
+local function addCoreInventoryItem(payload, itemID, fullType)
+    local ledger, reason = ActorInventory.Decode(payload)
+    T.truthy(ledger, reason)
+    local existing = ledger:Get(itemID)
+    if not existing then
+        local added
+        added, reason = ledger:Add({
+            itemId = itemID,
+            fullType = fullType or "Base.Bandage",
+        })
+        T.truthy(added, reason)
+    end
+    local compact, mode = ActorInventory.ToSmallestPayload(ledger)
+    T.truthy(compact, mode)
+    return compact
+end
+
+local function hasCoreInventoryItem(payload, itemID)
+    local ledger, reason = ActorInventory.Decode(payload)
+    T.truthy(ledger, reason)
+    return ledger:Get(itemID) ~= nil
+end
 
 local body = {
     x = 200, y = 200, z = 0,
@@ -152,11 +177,24 @@ function PNC.Persistence.CoreProvider.Dematerialize(source, core, spec)
         now = spec.now,
     })
     if not nextActor then return nil, reason end
+    nextActor.personalInventory = addCoreInventoryItem(
+        source.personalInventory,
+        source.actorId .. ":physical:bandage",
+        "Base.Bandage"
+    )
     return {
         actor = nextActor,
         body = body,
         bodyID = "body:handoff:runtime",
     }
+end
+
+function PNC.Persistence.CoreProvider.CaptureInventory(source)
+    return addCoreInventoryItem(
+        source.personalInventory,
+        source.actorId .. ":recovery:water",
+        "Base.WaterBottleFull"
+    ), "BASELINE_DELTA", "fixture_capture"
 end
 
 DTHoomans = {}
@@ -204,6 +242,10 @@ T.equal(resumed.world.journey.destination.x, 300,
     "handoff lost route destination")
 T.equal(hoomansRecords[actor.actorId], nil,
     "provider-owned Hoomans record survived dematerialization")
+T.truthy(hasCoreInventoryItem(
+    registry:Get(actor.actorId).personalInventory,
+    actor.actorId .. ":physical:bandage"
+), "normal dematerialization did not commit durable Core inventory")
 
 -- Failed materialization must roll the lease back and clear temporary return
 -- metadata rather than poisoning later representation decisions.
@@ -270,5 +312,9 @@ T.equal(recovered.providerLease.state, "abstract",
     "missing-body recovery did not restore abstract lease state")
 T.equal(hoomansRecords[actor.actorId], nil,
     "missing-body recovery did not remove provider-owned Hoomans record")
+T.truthy(hasCoreInventoryItem(
+    registry:Get(actor.actorId).personalInventory,
+    actor.actorId .. ":recovery:water"
+), "missing-body recovery did not commit logical inventory capture")
 
 T.finish("dt_provider_runtime_handoff_smoke")

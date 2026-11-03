@@ -8,12 +8,22 @@ package.path = coreRepository
     .. package.path
 
 local Actors = require "PsychopatzCore/Actors/PsychopatzActors"
+local ActorInventory = Actors.Inventory
 local Knowledge = require "PsychopatzCore/Actors/PsychopatzActorKnowledge"
 local Json = require "PsychopatzCore/Serialization/PsychopatzJson"
 local ActorService = require
     "PsychopatzCore/Conversation/PsychopatzActorConversationService"
 local Router = require "PsychopatzCore/Semantics/PsychopatzSemanticDialogueRouter"
 local State = require "PsychopatzCore/Semantics/PsychopatzSemanticDialogueState"
+
+
+local function firstInventoryItemID(payload)
+    local ledger, reason = ActorInventory.Decode(payload)
+    T.truthy(ledger, reason)
+    local items = ledger:List()
+    T.truthy(items[1], "inventory item required")
+    return items[1].itemId
+end
 
 local data = { t = {} }
 local touched = 0
@@ -329,8 +339,8 @@ local traderReloaded = Json.Decode(traderPayload)
 T.equal(restored.actorId, actorID, "actor ID survives reload")
 T.equal(restored.identity.identitySeed, "c5-portable-trader-seed",
     "identity seed survives reload")
-T.equal(restored.personalInventory.items[1].itemId,
-    actor.personalInventory.items[1].itemId,
+T.equal(firstInventoryItemID(restored.personalInventory),
+    firstInventoryItemID(actor.personalInventory),
     "personal inventory survives reload")
 T.equal(restored.social.relationships["player:user:alice"].approval, 31,
     "relationship survives reload")

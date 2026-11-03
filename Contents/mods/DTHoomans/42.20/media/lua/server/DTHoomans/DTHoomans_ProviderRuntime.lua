@@ -381,6 +381,7 @@ function Runtime.DematerializeTrader(traderID, options)
     local dematerialized
     dematerialized, reason = reg:Commit(actorID, {
         providerLease = result.actor.providerLease,
+        personalInventory = result.actor.personalInventory,
     }, current.revision)
     if not dematerialized then return nil, reason end
 
@@ -471,7 +472,19 @@ function Runtime.RecoverMissingBody(traderID, options)
         return nil, "return_provider_unavailable"
     end
 
+    local provider = adapter()
+    local capturedInventory
     local now = tonumber(options.now) or worldAge()
+    if provider and type(provider.CaptureInventory) == "function" then
+        capturedInventory, _, reason =
+            provider.CaptureInventory(current, hoomansRecord)
+        if not capturedInventory then
+            return nil, reason or "core_inventory_capture_failed"
+        end
+    else
+        capturedInventory = current.personalInventory
+    end
+
     local dematerialized, reason = service.Provider.Dematerialize(current, {
         provider = "DTHoomans",
         owner = OWNER,
@@ -484,6 +497,7 @@ function Runtime.RecoverMissingBody(traderID, options)
     local committed
     committed, reason = reg:Commit(actorID, {
         providerLease = dematerialized.providerLease,
+        personalInventory = capturedInventory,
     }, current.revision)
     if not committed then return nil, reason end
 

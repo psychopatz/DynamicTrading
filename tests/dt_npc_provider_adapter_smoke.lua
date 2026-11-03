@@ -7,6 +7,16 @@ package.path = coreRepository
     .. package.path
 
 local Actors = require "PsychopatzCore/Actors/PsychopatzActors"
+local ActorInventory = Actors.Inventory
+
+local function firstInventoryItemID(payload)
+    local ledger, reason = ActorInventory.Decode(payload)
+    T.truthy(ledger, reason)
+    local items = ledger:List()
+    T.truthy(items[1], "inventory item required")
+    return items[1].itemId
+end
+
 local core = { Actors = Actors }
 local registry = Actors.NewRegistry()
 local actor, actorReason = registry:Create({
@@ -56,8 +66,9 @@ local materialized, materializeReason = hoomans.Materialize(
         applyProjection = function(body, projection)
             applied = body.projection.identity.identitySeed
                 == projection.identity.identitySeed
-                and body.projection.personalInventory.items[1].itemId
-                    == projection.personalInventory.items[1].itemId
+                and firstInventoryItemID(
+                    body.projection.personalInventory)
+                    == firstInventoryItemID(projection.personalInventory)
             return applied
         end,
     }
