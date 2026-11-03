@@ -117,6 +117,17 @@ function Service.BindPhysical(traderID, npcID)
     return true
 end
 
+function Service.ClearPhysical(traderID)
+    if not DTCommon.Storage.IsAuthority() then
+        return false, "server_authority_required"
+    end
+    local record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    record.p = nil
+    Stock.SaveAndTransmit()
+    return true
+end
+
 -- Faction binding: the trader is a member of a Project Hoomans faction, and the
 -- record keeps only compact ids beside the virtual-inventory envelope. The live
 -- NPC records and faction registry remain authoritative; these fields only let

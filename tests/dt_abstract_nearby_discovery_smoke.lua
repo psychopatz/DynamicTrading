@@ -9,7 +9,11 @@ package.path = coreRepository
 
 local Actors = require "PsychopatzCore/Actors/PsychopatzActors"
 local World = Actors.World
+local Projection = Actors.Projection
 local actorRegistry = Actors.NewRegistry()
+local clientStore = Projection.NewStore()
+Projection.ClientStore = clientStore
+PsychopatzCore.ActorProjectionClient = nil
 
 local notificationsShown = {}
 PsychopatzCore = PsychopatzCore or {}
@@ -50,6 +54,19 @@ T.truthy(actor, actorReason)
 local coreProvider = T.load("DTAbstract", "shared", "DTAbstract/DTAbstract_CoreProvider.lua")
 local acquired = coreProvider.Acquire(actor, { Actors = Actors }, { owner = "test", now = 0 })
 actorRegistry:Commit(actor.actorId, acquired, actor.revision)
+local projected = assert(Projection.ProjectActor(
+    actorRegistry:Get(actor.actorId), 0, {
+        sourceID = "DTAbstract",
+        provider = "DTAbstract",
+        providerState = "abstract",
+    }))
+assert(clientStore:ApplySnapshot({
+    schema = Projection.SCHEMA,
+    schemaVersion = Projection.SCHEMA_VERSION,
+    sourceID = "DTAbstract",
+    snapshotRevision = 1,
+    entries = { projected },
+}))
 
 traderStore.t["trader:disc:1"] = {
     n = "Nearby Merchant",

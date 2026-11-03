@@ -9,7 +9,28 @@ package.path = coreRepository
 
 local Actors = require "PsychopatzCore/Actors/PsychopatzActors"
 local World = Actors.World
+local Projection = Actors.Projection
 local actorRegistry = Actors.NewRegistry()
+local clientStore = Projection.NewStore()
+Projection.ClientStore = clientStore
+PsychopatzCore.ActorProjectionClient = nil
+
+local snapshotRevision = 0
+local function syncActor(actor, now)
+    snapshotRevision = snapshotRevision + 1
+    local entry = assert(Projection.ProjectActor(actor, now, {
+        sourceID = "DTAbstract",
+        provider = "DTAbstract",
+        providerState = "abstract",
+    }))
+    assert(clientStore:ApplySnapshot({
+        schema = Projection.SCHEMA,
+        schemaVersion = Projection.SCHEMA_VERSION,
+        sourceID = "DTAbstract",
+        snapshotRevision = snapshotRevision,
+        entries = { entry },
+    }))
+end
 
 PsychopatzCore = PsychopatzCore or {}
 PsychopatzCore.Actors = Actors
@@ -34,8 +55,10 @@ Directory.Register({
 local traderStore = { t = {} }
 local Policy = T.load("DTCommon", "shared", "DTCommon/DTCommon_CoreActorPolicy.lua")
 
+local traderScans = 0
 DTCommon.TraderService = {
     ForEach = function(callback)
+        traderScans = traderScans + 1
         for id, record in pairs(traderStore.t) do
             callback(id, record)
         end
@@ -59,6 +82,7 @@ T.truthy(actor, actorReason)
 local coreProvider = T.load("DTAbstract", "shared", "DTAbstract/DTAbstract_CoreProvider.lua")
 local acquired = coreProvider.Acquire(actor, { Actors = Actors }, { owner = "test", now = 0 })
 actorRegistry:Commit(actor.actorId, acquired, actor.revision)
+syncActor(actorRegistry:Get(actor.actorId), 0)
 
 traderStore.t["trader:map:1"] = {
     n = "Traveling Merchant",
@@ -99,6 +123,13 @@ T.equal(#traderMarkers, 1, "one trader marker")
 T.equal(traderMarkers[1].position.x, 10630, "trader marker at origin X")
 T.equal(traderMarkers[1].position.y, 9980, "trader marker at origin Y")
 
+local scansAfterFirstMarker = traderScans
+for _ = 1, 25 do
+    WorldMap.GetTraderMarkers(0, true)
+end
+T.equal(traderScans, scansAfterFirstMarker,
+    "map marker reads rescanned trader storage every render")
+
 -- ---------------------------------------------------------------------------
 -- 4. Start Journey and Check Moving Marker
 -- ---------------------------------------------------------------------------
@@ -118,6 +149,7 @@ local midTime = (totalDist / 100) * 0.5
 local advancedWorld = World.AdvanceJourney(worldWithJourney, midTime)
 currentActor = actorRegistry:Get(actor.actorId)
 actorRegistry:Commit(actor.actorId, { world = advancedWorld }, currentActor.revision)
+syncActor(actorRegistry:Get(actor.actorId), midTime)
 
 -- Canonical projected position
 local expectedProjPos = World.ProjectPosition(advancedWorld, midTime)
@@ -131,6 +163,7 @@ local arrTime = (totalDist / 100) + 1
 local arrivedWorld = World.AdvanceJourney(advancedWorld, arrTime)
 currentActor = actorRegistry:Get(actor.actorId)
 actorRegistry:Commit(actor.actorId, { world = arrivedWorld }, currentActor.revision)
+syncActor(actorRegistry:Get(actor.actorId), arrTime)
 
 local arrivalMarkers = WorldMap.GetTraderMarkers(arrTime, true)
 T.equal(arrivalMarkers[1].position.x, 11900, "arrival marker converged to West Point X")

@@ -5,4 +5,6 @@ if PsychopatzCore and PsychopatzCore.RuntimeRole
 then return end
 
 require "DTAbstract/DTAbstract_Lifecycle"
+require "DTAbstract/DTAbstract_ProjectionServer"
+require "DTAbstract/DTAbstract_Handoff"
 require "DTAbstract/DTAbstract_Server"

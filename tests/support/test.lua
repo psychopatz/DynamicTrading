@@ -24,6 +24,8 @@ local roots = {
         .. hoomansRuntime .. "/media/lua/",
     PsychopatzCore = coreRepository .. "/Contents/mods/PsychopatzCore/"
         .. coreRuntime .. "/media/lua/",
+    PsychopatzCoreCommon = coreRepository
+        .. "/Contents/mods/PsychopatzCore/common/media/lua/shared/",
 }
 
 local function cleanRelative(path)
@@ -39,8 +41,15 @@ function Test.path(mod, layer, relative)
     if mod == "DTCommon" or mod == "DTHoomans" or mod == "DTAbstract" then
         return roots[mod] .. tostring(layer or "shared") .. "/" .. relative
     end
-    if mod == "ProjectHoomans" or mod == "PsychopatzCore" then
+    if mod == "ProjectHoomans" then
         return roots[mod] .. tostring(layer or "shared") .. "/" .. relative
+    end
+    if mod == "PsychopatzCore" then
+        if layer == "common" then
+            return roots.PsychopatzCoreCommon .. relative
+        end
+        return roots.PsychopatzCore .. tostring(layer or "shared")
+            .. "/" .. relative
     end
     error("unknown test mod: " .. tostring(mod))
 end
@@ -56,6 +65,10 @@ function Test.addPackagePaths(specifications)
         { "DTCommon", "client" },
         { "DTCommon", "server" },
         { "DTCommon", "shared" },
+        { "PsychopatzCore", "common" },
+        { "PsychopatzCore", "shared" },
+        { "PsychopatzCore", "client" },
+        { "PsychopatzCore", "server" },
     }
     local paths = {
         repository .. "/?.lua",

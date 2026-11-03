@@ -1,3 +1,5 @@
+require "DTHoomans/DTHoomans_SettlementDirectoryProvider"
+require "DTHoomans/DTHoomans_ProviderRuntime"
 require "DTHoomans/DTHoomans_CaravanService"
 require "DTHoomans/DTHoomans_SettlementTrader"
 require "DTHoomans/DTHoomans_SettlementVisit"

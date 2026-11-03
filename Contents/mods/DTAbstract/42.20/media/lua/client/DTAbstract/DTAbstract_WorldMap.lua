@@ -31,22 +31,8 @@ local function canUseDebug()
     return false
 end
 
-local function getActors()
-    if PsychopatzCore and PsychopatzCore.Actors then
-        return PsychopatzCore.Actors
-    end
-    local ok, actors = pcall(require, "PsychopatzCore/Actors/PsychopatzActors")
-    if ok and actors then return actors end
-    return nil
-end
-
-local function getActorRegistry()
-    if DTAbstract.Lifecycle and type(DTAbstract.Lifecycle.GetActorRegistry) == "function" then
-        return DTAbstract.Lifecycle.GetActorRegistry()
-    end
-    local actors = getActors()
-    return actors and actors.DefaultRegistry or nil
-end
+local Presentation = DTAbstract.PresentationClient
+    or require "DTAbstract/DTAbstract_PresentationClient"
 
 function WorldMap.GetSettlementMarkers()
     local markers = {}
@@ -80,32 +66,19 @@ function WorldMap.GetTraderMarkers(now, showAll)
     local markers = {}
     if not DTCommon or not DTCommon.TraderService then return markers end
 
-    local Actors = getActors()
-    local World = Actors and Actors.World
-    local reg = getActorRegistry()
     local Directory = DTCommon.SettlementDirectory
     local debugMode = showAll == true or WorldMap.ShowAll == true or canUseDebug()
 
-    DTCommon.TraderService.ForEach(function(traderID, record)
+    for _, row in ipairs(Presentation.ListTraderRecords(false)) do
+        local traderID = row.traderID
+        local record = row.record
         local ca = record and record.ca or nil
-        if ca and (ca.provider == "DTAbstract" or ca.coreProvider == "DTAbstract") then
+        if ca and row.provider == "DTAbstract" then
             local actorID = ca.actorID or ca.coreActorID
-            local actor = reg and actorID and reg:Get(actorID)
-            local world = actor and actor.world
-            local pos = nil
-
-            if world and World and type(World.ProjectPosition) == "function" then
-                pos = World.ProjectPosition(world, now)
-            elseif world and world.location and world.location.position then
-                pos = world.location.position
-            end
-
-            if not pos and ca.currentSettlementID and Directory then
-                pos = Directory.ResolvePosition(ca.currentSettlementID)
-            end
+            local pos, projection = Presentation.GetPosition(record, now)
 
             if pos and isFiniteNumber(pos.x) and isFiniteNumber(pos.y) then
-                local journey = world and world.journey
+                local journey = projection and projection.journey or nil
                 local isTraveling = journey and (journey.state == "en_route" or journey.state == "planned")
                 local label = record.n or traderID
 
@@ -147,7 +120,7 @@ function WorldMap.GetTraderMarkers(now, showAll)
                 end
             end
         end
-    end)
+    end
 
     table.sort(markers, function(a, b) return a.id < b.id end)
     return markers
@@ -199,23 +172,13 @@ function WorldMap.Render(map)
     end
 end
 
--- Attach to map seam
-if PsychopatzCore and PsychopatzCore.MapOverlayRegistry
-    and type(PsychopatzCore.MapOverlayRegistry.Register) == "function"
-then
-    PsychopatzCore.MapOverlayRegistry.Register("DTAbstract", {
-        id = "DTAbstract",
-        order = 80,
-        render = WorldMap.Render,
-        enabled = function() return WorldMap.Enabled end,
-    })
-elseif ISWorldMap and not ISWorldMap._dtAbstractMapPatched then
-    ISWorldMap._dtAbstractMapPatched = true
-    local originalRender = ISWorldMap.render
-    function ISWorldMap:render()
-        if originalRender then originalRender(self) end
-        WorldMap.Render(self)
-    end
-end
+-- Register through the single PsychopatzCore production world-map host.
+local MapHost = require "PsychopatzCore/UI/Map/PsychopatzMapHost"
+MapHost.Overlays.Register("DynamicTrading:DTAbstract", {
+    order = 80,
+    render = WorldMap.Render,
+    enabled = function() return WorldMap.Enabled end,
+    owner = "DynamicTrading",
+})
 
 return WorldMap

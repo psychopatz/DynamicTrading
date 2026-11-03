@@ -17,22 +17,8 @@ Discovery.CHECK_INTERVAL_SECONDS = 2
 local traderStates = {}
 local lastCheckTime = 0
 
-local function getActors()
-    if PsychopatzCore and PsychopatzCore.Actors then
-        return PsychopatzCore.Actors
-    end
-    local ok, actors = pcall(require, "PsychopatzCore/Actors/PsychopatzActors")
-    if ok and actors then return actors end
-    return nil
-end
-
-local function getActorRegistry()
-    if DTAbstract.Lifecycle and type(DTAbstract.Lifecycle.GetActorRegistry) == "function" then
-        return DTAbstract.Lifecycle.GetActorRegistry()
-    end
-    local actors = getActors()
-    return actors and actors.DefaultRegistry or nil
-end
+local Presentation = DTAbstract.PresentationClient
+    or require "DTAbstract/DTAbstract_PresentationClient"
 
 local function notifyTraderNearby(traderID, record, actorID)
     local title = "Trading Caravan Nearby"
@@ -77,6 +63,14 @@ function Discovery.ResetDiscovery(traderID)
     end
 end
 
+function Discovery.MarkDiscovered(traderID)
+    traderID = tostring(traderID or "")
+    if traderID == "" then return false end
+    local state = Discovery.GetTraderState(traderID)
+    state.discovered = true
+    return true
+end
+
 function Discovery.CheckNearbyTraders(player, now)
     player = player or (getSpecificPlayer and getSpecificPlayer(0) or (getPlayer and getPlayer() or nil))
     if not player or not DTCommon or not DTCommon.TraderService then return 0 end
@@ -86,29 +80,19 @@ function Discovery.CheckNearbyTraders(player, now)
     if not px or not py then return 0 end
 
     now = tonumber(now) or (getTimeInMillis and getTimeInMillis() / 1000 or 0)
-    local Actors = getActors()
-    local World = Actors and Actors.World
-    local reg = getActorRegistry()
-    local Directory = DTCommon.SettlementDirectory
     local detectedCount = 0
+    local gameTime = getGameTime and getGameTime() or nil
+    local journeyNow = gameTime
+        and type(gameTime.getWorldAgeHours) == "function"
+        and tonumber(gameTime:getWorldAgeHours()) or nil
 
-    DTCommon.TraderService.ForEach(function(traderID, record)
+    for _, row in ipairs(Presentation.ListTraderRecords(false, now)) do
+        local traderID = row.traderID
+        local record = row.record
         local ca = record and record.ca or nil
-        if ca and (ca.provider == "DTAbstract" or ca.coreProvider == "DTAbstract") then
+        if ca and row.provider == "DTAbstract" then
             local actorID = ca.actorID or ca.coreActorID
-            local actor = reg and actorID and reg:Get(actorID)
-            local world = actor and actor.world
-            local pos = nil
-
-            if world and World and type(World.ProjectPosition) == "function" then
-                pos = World.ProjectPosition(world, now)
-            elseif world and world.location and world.location.position then
-                pos = world.location.position
-            end
-
-            if not pos and ca.currentSettlementID and Directory then
-                pos = Directory.ResolvePosition(ca.currentSettlementID)
-            end
+            local pos = Presentation.GetPosition(record, journeyNow)
 
             if pos and pos.x and pos.y then
                 local dx = px - pos.x
@@ -139,7 +123,7 @@ function Discovery.CheckNearbyTraders(player, now)
                 end
             end
         end
-    end)
+    end
 
     return detectedCount
 end

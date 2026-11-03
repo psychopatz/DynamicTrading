@@ -78,8 +78,11 @@ function Lifecycle.ListAbstractTraders()
 
     DTCommon.TraderService.ForEach(function(traderID, record)
         local ca = record and record.ca or nil
-        if ca and (ca.provider == "DTAbstract" or ca.coreProvider == "DTAbstract")
-            and (ca.providerState == "abstract" or ca.coreProviderState == "abstract" or ca.providerState == nil)
+        if ca and ca.available ~= false
+            and (ca.provider == "DTAbstract" or ca.coreProvider == "DTAbstract")
+            and (ca.providerState == "abstract"
+                or ca.coreProviderState == "abstract"
+                or ca.providerState == nil)
         then
             list[#list + 1] = {
                 traderID = traderID,
@@ -99,6 +102,50 @@ end
 function Lifecycle.CountAbstractTraders()
     local list = Lifecycle.ListAbstractTraders()
     return #list
+end
+
+function Lifecycle.ReconcileActorLinks()
+    local reg = getActorRegistry()
+    local Policy = DTCommon and DTCommon.CoreActorPolicy
+    if not reg or not Policy or not DTCommon or not DTCommon.TraderService then
+        return { checked = 0, quarantined = 0, restored = 0 }
+    end
+
+    local summary = { checked = 0, quarantined = 0, restored = 0 }
+    local changed = false
+    DTCommon.TraderService.ForEach(function(_, record)
+        local ca = record and record.ca or nil
+        if not ca or (ca.provider ~= "DTAbstract"
+            and ca.coreProvider ~= "DTAbstract")
+        then
+            return
+        end
+        summary.checked = summary.checked + 1
+        local actorID = ca.actorID or ca.coreActorID
+        local actor = actorID and reg:Get(actorID) or nil
+        if not actor then
+            if ca.available ~= false
+                or ca.availabilityReason ~= "core_actor_missing"
+            then
+                Policy.SetAvailable(record, false, "core_actor_missing")
+                summary.quarantined = summary.quarantined + 1
+                changed = true
+            end
+        elseif ca.available == false
+            and ca.availabilityReason == "core_actor_missing"
+        then
+            Policy.SetAvailable(record, true, nil)
+            summary.restored = summary.restored + 1
+            changed = true
+        end
+    end)
+
+    if changed and DTCommon.TraderStock
+        and DTCommon.TraderStock.SaveAndTransmit
+    then
+        DTCommon.TraderStock.SaveAndTransmit()
+    end
+    return summary
 end
 
 local function nextSpawnSequence()
@@ -331,6 +378,7 @@ function Lifecycle.Tick(force, now)
     end
 
     now = tonumber(now) or worldAge()
+    summary.reconciliation = Lifecycle.ReconcileActorLinks()
     local traders = Lifecycle.ListAbstractTraders()
     summary.activeCount = #traders
 
@@ -357,6 +405,11 @@ function Lifecycle.Tick(force, now)
     end
 
     lastSummary = summary
+    if DTAbstract.ProjectionServer
+        and type(DTAbstract.ProjectionServer.Publish) == "function"
+    then
+        DTAbstract.ProjectionServer.Publish()
+    end
     return summary
 end
 

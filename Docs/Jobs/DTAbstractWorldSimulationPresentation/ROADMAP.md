@@ -19,7 +19,43 @@ The previous “P0–P7 complete” status is superseded by the 2026-11-03 audit
 | P6 hybrid handoff | REOPENED | adapters interoperate synthetically; production orchestration is absent. |
 | P7 persistence/integration | REOPENED | codec smoke exists; production save/load and integration proof are missing. |
 
-The recovery phases below are mandatory and replace the old completion claim.
+The recovery phases below replaced the old completion claim.
+
+## Recovery completion status — 2026-11-03
+
+All R0–R7 **developer-side** gates are now accepted. Native SP/MP acceptance remains user-owned and pending.
+
+Cross-repository recovery commits:
+
+- PsychopatzCore `d7a892155e8e890b6af87d4b7a322f0ac3e62ec4`;
+- ProjectHoomans `564f3656f09b443dc0c2bcda8b9886905baf7152`;
+- DynamicTrading: the commit containing the completed recovery ledger.
+
+| Recovery phase | Status | Developer evidence |
+| --- | --- | --- |
+| R0 | ACCEPTED | Production gaps covered by new/updated regression contracts. |
+| R1 | ACCEPTED | One Core map host; Hoomans and DTAbstract are consumers; both load orders pass. |
+| R2 | ACCEPTED | Separate authority/client projection stores, transport/resync, stale rejection. |
+| R3 | ACCEPTED | Production GlobalModData save/load hook, orphan quarantine/recovery, settlement adapter boundary. |
+| R4 | ACCEPTED | Real manager UI, result receiver, exact Spawn At, centered Locate on Map. |
+| R5 | ACCEPTED | Nearby discovery reads synchronized/interpolated client projection. |
+| R6 | ACCEPTED | Production proximity handoff, same actor/lease, physical rebase, missing-body recovery. |
+| R7 | DEV ACCEPTED | Redundant hooks removed/reduced; cross-repo regression/static/Kahlua gates pass for affected surfaces. |
+
+Final recovery verification:
+
+- DynamicTrading: **57/57** full suite.
+- Core affected actor/map/provider/persistence tests: pass.
+- Hoomans affected map/command/community tests: pass.
+- changed production Lua: `luac -p` pass.
+- installed-PZ Kahlua compiler: Core **8/8**, Hoomans **4/4**, DynamicTrading **16/16**.
+- `git diff --check`: pass.
+- source sweep: the only active `ISWorldMap` lifecycle owner in the three-repo matrix is Core `PsychopatzMapHost`.
+
+Broad-suite unrelated drift is recorded in `PROGRESS.md`; it is not silently treated as recovery acceptance.
+
+The remaining work is the native SP/MP matrix under R7. A native failure reopens only the affected gate.
+
 
 ## R0 — Recovery baseline and fail-first integration tests
 
@@ -232,7 +268,7 @@ Mandatory:
 
 ### Native handoff
 
-Only after R0–R7 developer gates pass may the job return to user-owned native acceptance.
+R0–R7 developer gates have passed; the job is now at user-owned native acceptance.
 
 Native matrix:
 

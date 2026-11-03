@@ -168,23 +168,6 @@ function Directory.Get(settlementID)
         end
     end
 
-    -- If communities exists in PNC, try resolving from PNC.Communities
-    if PNC and PNC.Communities and type(PNC.Communities.Get) == "function" then
-        local ok, comm = pcall(PNC.Communities.Get, id)
-        if ok and type(comm) == "table" and comm.id == id and comm.status == "active" then
-            local pos = comm.center or comm.position or { x = comm.x or 0, y = comm.y or 0, z = comm.z or 0 }
-            local validated = Directory.Validate({
-                settlementID = id,
-                name = comm.name or comm.displayName or id,
-                position = pos,
-                provider = "DTHoomans",
-                profileID = comm.profileID or "default",
-                enabled = true,
-            })
-            if validated then return validated end
-        end
-    end
-
     return nil, "settlement_not_found"
 end
 

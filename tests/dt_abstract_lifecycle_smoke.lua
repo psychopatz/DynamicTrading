@@ -182,6 +182,21 @@ T.truthy(record, "trader record exists")
 T.equal(record.ca.actorID, actorID, "trader record references actorID")
 T.equal(record.ca.provider, "DTAbstract", "trader record provider is DTAbstract")
 
+-- Explicit-position debug spawn must honor the requested coordinates exactly.
+sentCommands = {}
+local explicit, explicitReason = Server.SpawnAbstractTraderAtPosition(
+    testPlayer, {
+        displayName = "Exact Position Trader",
+        position = { x = 4321, y = 8765, z = 0 },
+    })
+T.truthy(explicit, explicitReason)
+T.equal(explicit.position.x, 4321, "SpawnAt X was changed")
+T.equal(explicit.position.y, 8765, "SpawnAt Y was changed")
+T.equal(Lifecycle.CountAbstractTraders(), 2,
+    "explicit spawn did not create second abstract trader")
+T.equal(sentCommands[#sentCommands].args.action, "spawn_at",
+    "explicit spawn result action mismatch")
+
 -- ---------------------------------------------------------------------------
 -- 4. Standalone Journey Progression & Midpoint Projection
 -- ---------------------------------------------------------------------------

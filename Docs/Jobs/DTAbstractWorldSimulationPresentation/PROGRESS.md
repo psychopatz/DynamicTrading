@@ -2,131 +2,283 @@
 
 ## Parent status
 
-**REOPENED — developer-side work remains.**
+**DEVELOPER-SIDE COMPLETE — native SP/MP acceptance pending.**
 
-The previous status “DEVELOPER-SIDE COMPLETE — P0–P7” is superseded by the 2026-11-03 audit and native screenshot evidence.
+The 2026-11-03 recovery reopened the earlier P0–P7 claim because production map ownership, client projection, persistence wiring, Debug Manager UI, and provider orchestration were missing. Recovery phases R0–R7 are now implemented and developer-validated.
 
-## Current repository state at re-audit
+Do **not** promote this to full/native acceptance until the user-owned in-game matrix at the end of `ROADMAP.md` is exercised.
 
-DynamicTrading:
+## Recovery commits
 
-- branch: `main`
-- HEAD: `57140979111109ba620a690811484b17cbab34e2`
-- ahead of `origin/main` by 9
-- worktree clean before this documentation update
+Cross-repository dependency commits:
 
-PsychopatzCore:
+- PsychopatzCore: `d7a892155e8e890b6af87d4b7a322f0ac3e62ec4`
+  - shared production world-map host;
+  - bounded actor authority→client projection transport;
+  - production actor registry persistence wiring;
+  - Core debug map contexts migrated into the shared host.
+- ProjectHoomans: `564f3656f09b443dc0c2bcda8b9886905baf7152`
+  - Hoomans map layers/tools/commands migrated to Core host adapters;
+  - no active Hoomans `ISWorldMap` monkey patch remains.
 
-- branch: `main`
-- HEAD: `23be8741ad3298ed02332a1cc40df257905fc122`
-- ahead of `origin/main` by 1
-- worktree clean before this documentation update
+The DynamicTrading recovery commit is the commit containing this ledger update.
 
-ProjectHoomans:
+## Implemented recovery
 
-- branch: `main`
-- HEAD: `a68dd50e3c2ec7d127cb86de02b85c2505b410aa`
-- matched `origin/main`
-- worktree clean at audit time
+### R0 — Recovery baseline / characterization
 
-DynamicTrading full smoke suite rerun: **PASS 50/50**.
+Accepted.
 
-That green suite is retained as foundation evidence, not final integration acceptance.
+The reopened production gaps are now represented by regression coverage or explicit native-only acceptance:
 
-## What is genuinely implemented
+- combined Core map-host load orders;
+- split server/client actor projection;
+- real Debug Manager construction;
+- debug result receiver;
+- explicit Spawn At;
+- production persistence event path;
+- settlement-provider boundary;
+- orphan actor reconciliation;
+- production handoff orchestration;
+- provider missing-body recovery.
 
-- Core canonical projected journey position.
-- DTCommon bounded settlement directory.
-- DTAbstract server lifecycle.
-- exactly-once settlement visit path in focused tests.
-- DTAbstract map marker model/render helper.
-- nearby discovery/hysteresis algorithm.
-- server debug command helpers.
-- Core Debug Hub tool registration.
-- compatible abstract/physical provider adapters.
-- codec-level registry persistence proof.
-- bounded population/performance smoke.
+### R1 — One Core map host
 
-## Reopened gaps
+Accepted.
 
-### Map ownership/integration
+Current source sweep across PsychopatzCore, ProjectHoomans, and DynamicTrading finds one production `ISWorldMap` owner:
 
-- Core has no production `PsychopatzCore.MapOverlayRegistry`.
-- ProjectHoomans still owns active `PNC.MapLayers` + `PNC_MapToolbar` world-map host.
-- DTAbstract has its own fallback `ISWorldMap.render` patch.
-- this violates the earlier one-Core-registry migration contract.
-- DTAbstract fallback installation depends on `ISWorldMap` already existing at module load.
+- `PsychopatzCore/UI/Map/PsychopatzMapHost.lua`.
 
-### Client authority projection
+Hoomans retains public `PNC.MapLayers` / `PNC.MapToolbar` compatibility facades, but they register into Core and no longer patch vanilla map lifecycle methods.
 
-- server actor/journey registry is not production-synchronized to a separate client presentation store.
-- current map/discovery/debug tests share one in-process registry and therefore hide this gap.
+DTAbstract registers its overlay through Core and has no direct fallback `ISWorldMap.render` patch.
 
-### Debug Manager
+Core place/teleport debug right-click extensions also register through the same host context-provider registry.
 
-- Debug Hub registration exists.
-- `DebugHub.Open()` only returns `true`.
-- no actual manager window/list/buttons exist.
-- server debug results have no DTAbstract client receiver/presentation.
+Both combined load orders pass:
 
-### Persistence
+- Hoomans first → DTAbstract;
+- DTAbstract first → Hoomans.
 
-- registry codec works.
-- no production DTAbstract/Core save/load lifecycle was found for these standalone actor records.
+### R2 — Authoritative client actor presentation
 
-### Handoff
+Accepted.
 
-- adapters can be manually sequenced.
-- no production runtime orchestration drives materialization/dematerialization.
+Core now provides a bounded projection contract with:
 
-### Settlement integration
+- actor ID + revision;
+- provider / provider state / body ID;
+- projected position;
+- bounded journey summary;
+- source snapshot revision;
+- stale snapshot rejection;
+- client request/resync path.
 
-- DTCommon directly special-cases `PNC.Communities` instead of using only the provider seam.
-- standalone defaults are fixed Knox trading hubs; generated Hoomans settlements are a separate concept and need explicit adapter/policy.
+DTAbstract map, nearby discovery, and Debug Manager use the separate client projection store rather than a server actor registry assumption.
 
-### Debug action mismatch
+Journey parameters are projected so clients can interpolate presentation position between authority snapshots without advancing canonical simulation state.
 
-- `SpawnAt` routes through near-player spawn while the server ignores supplied explicit position.
+### R3 — Production persistence / settlement boundary
 
-## Phase status
+Accepted for developer-side validation.
 
-- Original P0: accepted foundation.
-- Original P1: partial foundation.
-- Original P2: partial.
-- Original P3–P7: reopened.
-- Active recovery roadmap: **R0–R7**.
+Core's canonical default actor registry is attached to PZ GlobalModData authority lifecycle:
+
+- `OnInitGlobalModData` → load;
+- `OnSave` → save;
+- SP/server authority guard;
+- actor/journey/provider lease restoration.
+
+The production-path persistence smoke invokes those event hooks rather than calling the registry codec directly.
+
+DTAbstract reconciliation quarantines trader records whose actor link is missing and restores them when the actor becomes available again, preventing orphaned records from consuming the active abstract population.
+
+DTCommon no longer directly references `PNC.Communities`. DTHoomans registers Hoomans community geography through `DTCommon.SettlementDirectory.RegisterProvider`.
+
+Standalone fixed Knox trading hubs and generated Hoomans communities remain distinct providers/concepts.
+
+### R4 — Real Abstract Trader Manager
+
+Accepted.
+
+The Core Debug Hub action now opens a real production manager window with:
+
+- refreshable trader rows;
+- ID/name/provider/state;
+- current projected position/distance;
+- current/destination route state and progress;
+- Spawn Near;
+- Spawn At Player / exact-position command;
+- Force Tick;
+- Force Arrival;
+- Locate on Map;
+- Teleport;
+- Mark Seen / Reset Seen;
+- Remove;
+- Materialize / Dematerialize.
+
+`Locate on Map` uses vanilla `ISWorldMap.ShowWorldMap(playerNum, x, y, zoom)` to center the real world map.
+
+DTAbstract now receives and presents:
+
+- `TraderSpawned`;
+- `TraderDebugActionResult`.
+
+Debug command transport uses the local player argument expected by the existing PZ client-command pattern.
+
+### R5 — Nearby discovery over synchronized projection
+
+Accepted.
+
+Nearby discovery consumes the R2 client projection and preserves:
+
+- enter radius;
+- exit hysteresis;
+- cooldown;
+- no repeated in-range spam;
+- discovery state.
+
+Map, Debug Manager, and nearby discovery share the same projected actor/journey semantics.
+
+### R6 — Production provider handoff
+
+Accepted for developer-side validation.
+
+Production bounded handoff now drives:
+
+`DTAbstract abstract → DTHoomans materialized → DTAbstract abstract`
+
+using the same canonical Core actor and provider lease.
+
+DTHoomans:
+
+- freezes materialization at the actor's current projected journey position;
+- adopts a DT-only actor into a provider-owned full Hoomans record before body creation;
+- uses existing Hoomans Core-provider/body lifecycle;
+- rebases the remaining journey from the physical body's actual final position on dematerialization;
+- removes the temporary provider-owned Hoomans projection after returning abstract;
+- safely recovers a conclusively bodyless/stale materialized lease back to DTAbstract after Hoomans startup reconciliation.
+
+DTAbstract's bounded proximity orchestrator triggers materialize/dematerialize rather than tests manually sequencing provider adapters.
+
+Absence of DTHoomans leaves the actor abstract.
+
+### R7 — Cleanup / regression / native handoff
+
+Developer cleanup and regression gate accepted.
+
+Removed/reduced active redundancy:
+
+- Hoomans map render/toolbar/input monkey patches removed in favor of Core host adapters;
+- DTAbstract map fallback patch removed;
+- Core place/teleport debug map monkey patches consolidated into Core map context registry;
+- DTCommon direct PNC settlement fallback removed;
+- DTAbstract module metadata updated from radio-only wording.
+
+Native SP/MP handoff remains user-owned and pending.
+
+## Verification evidence
+
+### DynamicTrading
+
+Full suite after recovery:
+
+- **PASS 57/57**.
+
+Includes new/updated coverage for:
+
+- explicit performance bounds (2 abstract traders, 256 settlements/projection entries, 256 KiB projection snapshot cap, hourly lifecycle, 2-second nearby/handoff checks);
+- map presentation cache proving repeated marker reads do not rescan trader storage every render;
+- Core host combined load order;
+- split map projection;
+- nearby projection;
+- production Debug Manager UI;
+- explicit-position spawn;
+- settlement provider adapter;
+- orphan reconciliation;
+- production provider runtime handoff;
+- proximity handoff orchestration.
+
+### PsychopatzCore
+
+Focused affected tests all pass:
+
+- `psychopatz_map_host_smoke.lua`;
+- `psychopatz_actor_projection_sync_smoke.lua`;
+- `psychopatz_actor_projection_transport_smoke.lua`;
+- `psychopatz_actor_runtime_store_smoke.lua`;
+- `psychopatz_npc_journey_task_smoke.lua`;
+- `psychopatz_npc_presentation_smoke.lua`;
+- `psychopatz_npc_provider_lease_smoke.lua`.
+
+A broad direct Lua sweep reported **126/133**. The seven failing fixtures were observed outside this recovery surface; this run did not establish a pre-change baseline for those exact failures:
+
+- command-hub callback;
+- image resolver;
+- label layout;
+- profiler client composition;
+- profiler server composition;
+- widget window;
+- world inventory.
+
+No affected actor/map/provider/persistence recovery test failed.
+
+### ProjectHoomans
+
+Focused affected map/command/community tests all pass.
+
+The broad Hoomans runner reported **982/987**. The five failures were observed in semantic or harness-expectation areas outside the touched recovery surface; this run did not establish a pre-change baseline for those exact failures:
+
+- `pnc_companion_commands_smoke.lua`;
+- `pnc_semantic_harness_worker_modules_smoke.lua`;
+- `pnc_semantic_horde_command_ack_smoke.lua`;
+- `pnc_semantic_horde_tactical_prompt_smoke.lua`;
+- `pnc_semantic_local_route_smoke.lua`.
+
+No migrated map/command/community recovery test failed.
+
+### Syntax / installed-PZ compiler
+
+For all changed production Lua:
+
+- `git diff --check`: pass;
+- `luac -p`: pass;
+- installed Project Zomboid Kahlua compiler:
+  - PsychopatzCore: **8/8 changed production files**;
+  - ProjectHoomans: **4/4**;
+  - DynamicTrading: **16/16**.
 
 ## Current phase
 
-**R0 — Recovery baseline and fail-first integration coverage**
+**Native acceptance handoff.**
+
+No further mandatory developer implementation is currently identified by the recovery roadmap.
 
 ## Immediate Next Chunk
 
-1. Re-verify current source/SHAs and preserve the clean baseline.
-2. Add fail-first tests for:
-   - one Core production map host;
-   - no parallel DTAbstract/Hoomans map monkey patches;
-   - mixed load-order registration;
-   - split server/client actor projection;
-   - real Debug Manager UI construction;
-   - debug result receiver;
-   - explicit Spawn At;
-   - production persistence entry points;
-   - production provider-handoff orchestration.
-3. Audit all ProjectHoomans map-host callers before moving generic host/toolbar responsibilities.
-4. Define the minimal Core map overlay/tool registration API.
-5. Define the minimal bounded Core actor presentation sync contract.
-6. Update this ledger with exact failing evidence.
-7. Continue automatically into R1.
+User-owned native acceptance:
 
-## Remaining mandatory work
+1. standalone DTAbstract:
+   - map marker visible;
+   - moving marker follows journey;
+   - Abstract Trader Manager opens and lists trader;
+   - Spawn Near / Spawn At / action-result feedback;
+   - nearby gameplay notification;
+   - save/reload continuity;
+2. Hoomans + DTAbstract:
+   - Hoomans map controls/layers still present;
+   - DTAbstract overlay present through same Core host;
+   - no duplicated map behavior/markers;
+3. hybrid provider:
+   - approach → one physical trader;
+   - leave → returns abstract;
+   - route resumes from physical last position;
+   - save/reload while abstract and while materialized;
+4. MP:
+   - client projection/resync;
+   - reconnect;
+   - authority sanity;
+   - no duplicate body/trader.
 
-- R1 Core map host + Hoomans/DTAbstract migration.
-- R2 authoritative actor presentation sync.
-- R3 production persistence + settlement-provider cleanup.
-- R4 real DTAbstract Trader Manager + debug result presentation.
-- R5 nearby discovery over synchronized projection.
-- R6 production provider-handoff orchestration.
-- R7 legacy cleanup + cross-repo regression + native handoff.
-
-Do not mark this parent goal developer-side complete until all R0–R7 gates pass.
+If native acceptance exposes a defect, reopen only the failing gate with concrete runtime evidence rather than restoring the entire recovery roadmap.

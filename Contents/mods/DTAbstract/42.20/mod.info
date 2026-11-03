@@ -1,6 +1,6 @@
-name=Dynamic Trading Abstract Access
+name=Dynamic Trading Abstract
 id=DTAbstract
-description=Optional remote and radio access to Dynamic Trading traders.
+description=Standalone abstract trader simulation, world-map presentation, nearby discovery, and remote/radio access.
 author=Psychopatz
 category=features
 version=0.1.0
