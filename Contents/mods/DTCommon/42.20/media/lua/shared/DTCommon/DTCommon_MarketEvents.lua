@@ -100,19 +100,16 @@ local function resolveNow(options)
     return gameTime()
 end
 
-local function communityRegion(settlementID)
-    local pnc = rawget(_G, "PNC")
-    local communities = pnc and pnc.Communities or nil
-    local community
-    if not settlementID or not communities
-        or type(communities.Get) ~= "function"
+local function settlementRegion(settlementID)
+    local directory = DTCommon and DTCommon.SettlementDirectory or nil
+    if not settlementID or not directory
+        or type(directory.Get) ~= "function"
     then
         return nil
     end
-    local ok
-    ok, community = pcall(communities.Get, settlementID)
-    if not ok or type(community) ~= "table" then return nil end
-    return community.regionID or community.regionId or community.region
+    local ok, settlement = pcall(directory.Get, settlementID)
+    if not ok or type(settlement) ~= "table" then return nil end
+    return settlement.regionID or settlement.regionId or settlement.region
 end
 
 local function contextIDs(settlementID, record, options)
@@ -122,7 +119,7 @@ local function contextIDs(settlementID, record, options)
         or record.factionID or record.factionId or record.g
     local regionID = options.regionID or options.regionId
         or record.regionID or record.regionId or record.region
-    regionID = regionID or communityRegion(settlementID)
+    regionID = regionID or settlementRegion(settlementID)
     return boundedID(settlementID), boundedID(regionID), boundedID(factionID)
 end
 

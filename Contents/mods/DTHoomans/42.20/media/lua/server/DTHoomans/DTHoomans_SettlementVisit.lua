@@ -12,6 +12,8 @@ DTHoomans.Settlement = DTHoomans.Settlement or {}
 
 local Settlement = DTHoomans.Settlement
 local Service = DTCommon and DTCommon.TraderService
+local TraderWorld = DTCommon and DTCommon.TraderWorld
+    or require "DTCommon/DTCommon_TraderWorld"
 local ARRIVAL_ACTION = "dynamic_trading_settlement"
 local MAX_ID_LENGTH = 192
 
@@ -289,14 +291,9 @@ local function arrivalTime(action, journey)
 end
 
 function Settlement.MarkTraderVisit(traderID, settlementID, options)
-    local request = {}
     local resolved
     local reason
-    local key
     local market
-    if not Service or type(Service.MarkSettlementVisit) ~= "function" then
-        return nil, "trader_service_unavailable"
-    end
     options = type(options) == "table" and options or {}
     resolved = text(settlementID or options.settlementID
         or options.communityID)
@@ -305,16 +302,26 @@ function Settlement.MarkTraderVisit(traderID, settlementID, options)
         if not resolved then return nil, reason end
     end
     if not resolved then return nil, "settlement_required" end
-    resolved, reason = activeCommunity(resolved)
-    if not resolved then return nil, reason end
-    market, reason = provisionMarket(resolved)
+
+    local community
+    community, reason = activeCommunity(resolved)
+    if not community then return nil, reason end
+    market, reason = provisionMarket(community)
     if not market then return nil, reason end
-    for key, value in pairs(options) do request[key] = value end
-    request.authority = "server"
-    request.atSettlement = true
-    request.settlementID = bounded(resolved.id)
-    request.communityID = nil
-    return Service.MarkSettlementVisit(traderID, request)
+
+    if not TraderWorld or type(TraderWorld.Arrive) ~= "function" then
+        return nil, "trader_world_unavailable"
+    end
+    return TraderWorld.Arrive(traderID, community.id, {
+        visitID = options.visitID,
+        journeyID = options.journeyID,
+        now = options.now,
+        exchange = options.exchange ~= false,
+        restock = options.restock == true,
+        earned = options.earned,
+        available = options.available,
+        cooldownHours = options.cooldownHours,
+    })
 end
 
 local function arrivalVisitID(details, traderID, settlementID)
@@ -360,7 +367,7 @@ local function handleHoomansSettlementArrival(details)
             exchange = true,
         }
     )
-    if not result and reason == "duplicate_visit" then
+    if reason == "duplicate_visit" then
         return true, reason
     end
     if not result then return false, reason end
@@ -429,7 +436,7 @@ local function arrivalHandler(record, journey, action)
             exchange = action and action.exchange == true,
         }
     )
-    if not result and reason == "duplicate_visit" then
+    if reason == "duplicate_visit" then
         return true, reason
     end
     if not result then return false, reason end

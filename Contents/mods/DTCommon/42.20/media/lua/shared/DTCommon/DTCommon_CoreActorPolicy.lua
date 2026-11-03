@@ -9,11 +9,7 @@ DTCommon.CoreActorPolicy = Policy
 Policy.SCHEMA_VERSION = 1
 Policy.MAX_PRICE_MODIFIER = 0.25
 Policy.MAX_RECENT_VISIT_IDS = 32
-Policy.PROVIDERS = {
-    PsychopatzCore = true,
-    DTAbstract = true,
-    DTHoomans = true,
-}
+Policy.PROVIDERS = Policy.PROVIDERS or {}
 Policy.STATES = {
     abstract = true,
     materialized = true,
@@ -114,6 +110,7 @@ function Policy.New(spec)
             nil),
         providerBodyID = text(spec.providerBodyID or providerLease.bodyID,
             nil),
+        returnProviderID = text(spec.returnProviderID, nil),
         providerRevision = math.max(0, math.floor(number(
             spec.providerRevision or providerLease.revision, 0))),
         available = spec.available ~= false,
@@ -149,6 +146,13 @@ function Policy.New(spec)
             or spec.nextSettlementID, nil),
         originSettlementID = text(spec.originSettlementID
             or spec.originCommunityID or spec.origin, nil),
+        worldManaged = spec.worldManaged == true,
+        worldRole = text(spec.worldRole, nil),
+        lifecycleState = text(spec.lifecycleState, "idle"),
+        journeyID = text(spec.journeyID, nil),
+        journeyState = text(spec.journeyState, nil),
+        cooldownUntil = math.max(0, number(spec.cooldownUntil, 0)),
+        worldRevision = math.max(0, math.floor(number(spec.worldRevision, 0))),
     }
 end
 
@@ -256,8 +260,15 @@ function Policy.SetProviderLease(record, lease)
     if lease.actorID ~= nil and policy.actorID ~= tostring(lease.actorID) then
         return nil, "core_actor_mismatch"
     end
-    if lease.provider ~= nil and not Policy.PROVIDERS[tostring(lease.provider)]
-    then return nil, "provider_invalid" end
+    if lease.provider ~= nil then
+        local providerID = tostring(lease.provider)
+        local registry = DTCommon and DTCommon.TraderProviders or nil
+        if registry and type(registry.IsKnown) == "function"
+            and not registry.IsKnown(providerID)
+        then
+            return nil, "provider_invalid"
+        end
+    end
     if lease.state ~= nil and not Policy.STATES[tostring(lease.state)] then
         return nil, "provider_state_invalid"
     end

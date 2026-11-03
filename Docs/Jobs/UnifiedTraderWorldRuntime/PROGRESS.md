@@ -2,85 +2,118 @@
 
 ## Parent status
 
-**ACTIVE — trader-world authority consolidation required.**
+**DEVELOPER COMPLETE — native SP/MP acceptance remains user-owned.**
 
-The previous DTAbstract production recovery is accepted regression foundation. A follow-up audit found that commercial state is shared but trader-world lifecycle authority is still split between DTAbstract and DTHoomans.
+The U0–U7 implementation is complete in the DynamicTrading worktree. DTCommon now owns one canonical trader-world/commercial lifecycle. DTAbstract and DTHoomans are provider/presentation adapters rather than parallel commercial simulations.
 
-Native acceptance is deferred until this consolidation is complete.
+Native Project Zomboid acceptance is still required before release or publish.
 
-## Verified current truth
+## Implemented truth
 
-### Shared already
+### DTCommon authority
 
-DTCommon owns trader records, stock/budget, quote/trade authority, market/pricing context, settlement market/exchange, visit/restock bookkeeping, settlement directory, Core actor policy metadata, and talk/world-knowledge services.
+DTCommon now owns:
 
-### Still split
+- bounded roaming population and lifecycle cadence;
+- canonical route and destination intent;
+- common journey and commercial location state;
+- exactly-once settlement arrival, visit, and exchange;
+- cooldown and scheduling;
+- provider registry and representation switching policy;
+- provider-independent trader actor projection and client presentation state;
+- common trader contact and action construction;
+- optional-adopter seams for display name, capacity, access, geography, and trade presentation.
 
-DTAbstract independently owns trader population/spawn, destination selection, journey start/advance, cooldown, arrival, settlement visit/exchange dispatch, and lifecycle tick.
+Primary modules are DTCommon_TraderWorld, TraderWorldRuntime, TraderProviderRegistry, TraderRepresentationRuntime, TraderProjectionServer, TraderPresentation, TraderContacts, IntegrationRegistry, and TradePresentationRegistry.
 
-DTHoomans owns overlapping behavior through CaravanLifecycle, CaravanService, CommercialMobility, SettlementVisit, and SettlementTrader.
+### DTAbstract adapter
 
-### Interaction duplication
+DTAbstract now owns abstract representation execution plus map, nearby discovery, radio, and debug presentation.
 
-DTAbstract and DTHoomans RadioOS adapters independently implement overlapping contact enumeration, paging, market-event projection, and trade/talk action construction.
+Deleted obsolete production ownership:
 
-### DTCommon adopter leaks
+- DTAbstract_Lifecycle.lua
+- DTAbstract_Handoff.lua
+- DTAbstract_ProjectionServer.lua
+- DTAbstract_PresentationClient.lua
 
-Current direct adopter knowledge includes:
+### DTHoomans adapter
 
-- PNC community reads in market code;
-- DTHoomans/PNC reads in TraderService;
-- direct PNC trade-window usage in DTCommon client;
-- hard-coded DTAbstract/DTHoomans provider assumptions.
+DTHoomans retains Hoomans-specific caravan, faction, member, body, mobile-group, resident-excursion participant travel, settlement geography, physical access, and trade presentation mechanics.
 
-These are mandatory audit targets. Remaining references must become data identifiers or explicit adapter/provider boundaries.
+Commercial destination, location, arrival, visit, exchange, and cooldown state route through DTCommon.
 
-## Preserved recovery foundation
+Deleted obsolete production ownership:
 
-Do not regress:
+- DTHoomans_CaravanLifecycle.lua
 
-- PsychopatzCore `d7a892155e8e890b6af87d4b7a322f0ac3e62ec4`;
-- ProjectHoomans `564f3656f09b443dc0c2bcda8b9886905baf7152`;
-- DynamicTrading `f9f228452ce2493bc91044569354d131905a40bb`;
-- recovery DynamicTrading suite: 57/57;
-- one Core map host;
-- synchronized actor projection;
-- production persistence;
-- real DTAbstract Debug Manager;
-- production abstract↔physical handoff.
+## Verified invariants
 
-## Current phase
+- no direct DTAbstract to DTHoomans production references;
+- no direct DTHoomans to DTAbstract production references;
+- no PNC, DTHoomans, or DTAbstract implementation references under DTCommon production Lua;
+- one commercial lifecycle tick: DTCommon_TraderWorldRuntime;
+- representation maintenance is a separate bounded DTCommon tick;
+- native physical caravans are not auto-dematerialized;
+- temporary physical projections preserve a return provider and rebase/resume the same Core journey;
+- failed materialization clears return-provider metadata and rolls the lease back;
+- physical projection uses live physical position and suppresses stale abstract interpolation;
+- resident excursions use DTCommon commercial state while Hoomans keeps participant travel;
+- exactly-once arrival is covered through common fake-provider and Hoomans visit paths.
 
-**U0 — Characterization and ownership contracts.**
+## Developer validation — 2026-11-03
 
-## Immediate Next Chunk
+DynamicTrading:
 
-### U0A — lifecycle authority/parity characterization
+- full suite: **59/59**;
+- git diff --check: pass;
+- changed production Lua luac parse: **43 files**, pass;
+- installed-PZ Kahlua verification: **43 files**, pass.
 
-Before moving production code:
+PsychopatzCore focused regressions:
 
-1. map each DTAbstract/DTHoomans lifecycle transition to the canonical DTCommon state it mutates;
-2. add fail-first tests for trader creation, route/destination intent, arrival, exactly-once settlement visit/exchange, cooldown/next route, and provider transition identity;
-3. add a test that common-domain lifecycle works without Hoomans globals;
-4. classify each adopter function as common authority to migrate, provider implementation to retain, presentation/UI to retain, or obsolete duplicate to delete.
+- actor smoke: pass;
+- provider lease: pass;
+- runtime store: pass;
+- projection sync: pass;
+- projection transport: pass;
+- map host: pass.
 
-Then continue automatically through U1–U7.
+ProjectHoomans:
+
+- focused commercial mobility, excursion, mobile-group, traversal, admission, and staffing matrix: pass;
+- real cross-adopter hot-plug matrix: all six sequences pass;
+- aggregate suite: **982/987 pass**.
+
+The five remaining ProjectHoomans failures are unrelated semantic or harness expectation mismatches:
+
+1. pnc_companion_commands_smoke.lua
+2. pnc_semantic_harness_worker_modules_smoke.lua
+3. pnc_semantic_horde_command_ack_smoke.lua
+4. pnc_semantic_horde_tactical_prompt_smoke.lua
+5. pnc_semantic_local_route_smoke.lua
+
+The trader-world-specific cross-adopter failure found during implementation was fixed and no longer appears.
 
 ## Repository safety
 
-Two unrelated/unexplained unstaged `mod.info` load-order edits must be preserved unless separately resolved:
+Two unrelated unstaged edits remain preserved and must not be included in this goal commit:
 
-- `Contents/mods/DTAbstract/42.20/mod.info`
-- `Contents/mods/DTHoomans/42.20/mod.info`
+- Contents/mods/DTAbstract/42.20/mod.info
+- Contents/mods/DTHoomans/42.20/mod.info
 
-Do not stash, reset, discard, or accidentally include them.
+## Remaining acceptance
 
-## Blockers
+User-owned native Project Zomboid validation:
 
-None currently identified.
+- standalone DTAbstract;
+- DTHoomans physical traders and caravans;
+- approach, materialize, move, leave, dematerialize;
+- resident trader excursion;
+- save and reload while abstract and materialized;
+- SP;
+- MP, reconnect, and resync;
+- no duplicate trader, body, visit, or exchange;
+- map, nearby, radio, and NPC interaction parity.
 
-## Completion reminder
-
-A provider transition is not completion if DTAbstract and DTHoomans still own separate commercial lifecycle decisions.
-
-Final architecture: one DTCommon trader-world authority and thin provider adapters.
+No developer-side blocker remains.

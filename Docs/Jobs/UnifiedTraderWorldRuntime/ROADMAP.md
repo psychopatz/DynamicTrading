@@ -2,155 +2,88 @@
 
 ## Parent completion boundary
 
-DynamicTrading has one provider-agnostic DTCommon trader-world runtime. DTAbstract and DTHoomans are representation/interaction adapters, not parallel trader simulations.
+DynamicTrading has one provider-agnostic DTCommon trader-world runtime. DTAbstract and DTHoomans are representation and interaction adapters, not parallel trader simulations.
 
-The previous DTAbstract production recovery is accepted foundation, not the current completion boundary.
-
-## Accepted foundation — 2026-11-03
-
-Preserve:
-
-- Core single map host and synchronized actor projection;
-- production actor persistence;
-- real DTAbstract Debug Manager;
-- map/nearby presentation;
-- abstract↔physical provider transition;
-- settlement provider seam;
-- recovery DynamicTrading suite: 57/57.
-
-Foundation commits:
-
-- PsychopatzCore `d7a892155e8e890b6af87d4b7a322f0ac3e62ec4`
-- ProjectHoomans `564f3656f09b443dc0c2bcda8b9886905baf7152`
-- DynamicTrading `f9f228452ce2493bc91044569354d131905a40bb`
+**Developer status: COMPLETE. Native acceptance remains.**
 
 ## U0 — Characterization and ownership contracts
 
-**Status: ACTIVE**
+**COMPLETE**
 
-Goals:
-
-- inventory every trader-world responsibility currently owned by DTCommon, DTAbstract, and DTHoomans;
-- add fail-first/parity tests around spawn, route intent, arrival, visits, provider transition, contact/action projection, and absence of Hoomans;
-- establish one canonical lifecycle contract before moving implementations;
-- identify direct optional-adopter dependencies inside DTCommon.
-
-Gate:
-
-- tests expose double/parallel commercial authority;
-- provider-specific behavior is explicitly separated from common domain behavior;
-- migration targets are source-backed.
+Lifecycle authority, provider boundaries, adopter leaks, arrival semantics, contact duplication, persistence, and representation handoff were characterized before migration.
 
 ## U1 — DTCommon Trader World domain
 
-Create/extend common domain authority for:
+**COMPLETE**
 
-- trader population intent;
-- canonical creation/registration;
-- route/destination intent;
-- cooldown/schedule;
-- common journey metadata/state;
-- arrival dispatch;
-- exactly-once visit/exchange;
-- provider-independent query state.
+DTCommon owns bounded population, route intent, commercial journey and location state, arrival, exactly-once visit and exchange, cooldown, external journey state, and provider-independent queries.
 
-Gate:
+Gate evidence: dt_trader_world_common_smoke.lua.
 
-- common lifecycle runs with a fake provider and no adopter loaded;
-- one trader completes spawn→travel→arrival→cooldown through DTCommon authority.
+## U2 — Provider and representation registry
 
-## U2 — Provider/representation registry
+**COMPLETE**
 
-Define provider capability seams and migrate:
-
-- DTAbstract abstract representation/movement;
-- DTHoomans physical body/caravan/travel.
-
-Gate:
-
-- provider transitions preserve traderID, actorID, stock, budget, journey identity, and visit history;
-- no closed hard-coded provider set is required;
-- standalone DTAbstract works without Hoomans.
+Registered provider capabilities replace the hard-coded provider set. DTAbstract and DTHoomans register representation and movement capabilities. Representation switching is owned by DTCommon.
 
 ## U3 — Remove lifecycle authority from DTAbstract
 
-Move common ownership out of `DTAbstract_Lifecycle`.
+**COMPLETE**
 
-Gate:
-
-- DTAbstract no longer independently owns destination selection, commercial arrival, cooldown, or settlement exchange;
-- map/nearby/debug remain green;
-- abstract provider consumes the common lifecycle contract.
+DTAbstract_Lifecycle, DTAbstract_Handoff, adopter-owned projection server, and adopter-owned projection client were removed. DTAbstract_TraderWorldProvider now owns only abstract representation execution.
 
 ## U4 — Remove lifecycle authority from DTHoomans
 
-Move common commercial ownership out of caravan/settlement modules while preserving Hoomans mechanics.
+**COMPLETE**
 
-Gate:
+DTHoomans_CaravanLifecycle was removed. Roaming caravan travel and resident excursions consume DTCommon route and commercial state while retaining Hoomans group and participant execution. Settlement arrivals enter DTCommon TraderWorld arrival authority.
 
-- DTHoomans travel/arrival feeds DTCommon;
-- Hoomans mobility is not a second commercial route authority;
-- exactly one visit/exchange occurs per canonical arrival.
+## U5 — Unify interaction, contact, and access seams
 
-## U5 — Unify interaction/contact/access seams
+**COMPLETE**
 
-Remove duplicated remote/physical contact/action construction.
+Common contact construction, integration adapters, and trade-presentation registration now live in DTCommon. Radio adapters contribute eligibility and presentation differences instead of duplicating canonical construction.
 
-Targets:
+## U6 — Remove parallel and legacy code
 
-- RadioOS enumeration/paging/action duplication;
-- `TraderService` direct DTHoomans/PNC calls;
-- MarketEvents/SettlementMarket direct PNC community lookups;
-- DTCommon client direct optional PNC UI dependency where an adapter can own presentation.
+**COMPLETE**
 
-Gate:
+Source audit confirms:
 
-- DTCommon runs without Hoomans globals;
-- remote/physical adapters share canonical action/contact models;
-- mode-specific eligibility remains provider-owned.
-
-## U6 — Remove parallel/legacy code
-
-After callers migrate:
-
-- delete redundant lifecycle/arrival/routing implementations;
-- remove temporary compatibility shims;
-- remove stale provider-specific branches/default ownership;
-- rename/move modules where necessary so ownership is obvious.
-
-Gate:
-
-- source audit finds one commercial trader-world lifecycle authority;
-- every remaining adopter module owns a unique provider/presentation responsibility;
-- no active legacy copy remains.
+- no DTAbstract and DTHoomans production cross-reference;
+- no adopter implementation reference under DTCommon production Lua;
+- one commercial lifecycle tick;
+- old lifecycle, handoff, and adopter-owned projection files deleted;
+- common projection source is DynamicTrading rather than adapter-owned.
 
 ## U7 — Regression, performance, and native handoff
 
-Developer gates:
+### Developer gates — COMPLETE
 
-- full DynamicTrading suite;
-- focused Core/Hoomans regressions;
-- `git diff --check`;
-- `luac -p`;
-- installed-PZ Kahlua verification;
-- performance bounds;
-- split authority/client tests;
-- save/reload/handoff recovery;
-- provider absence/load-order matrix.
+- DynamicTrading full suite: 59/59;
+- changed production Lua: 43/43 luac parse;
+- changed production Lua: 43/43 installed-PZ Kahlua verification;
+- git diff --check: pass;
+- focused Core actor, provider, projection, and map regressions: pass;
+- focused Hoomans mobility, excursion, and settlement regressions: pass;
+- real cross-adopter hot-plug matrix: pass;
+- Hoomans aggregate: 982/987, with five unrelated failures documented in PROGRESS.md;
+- bounds, save and reload, hot-swap, failed materialization, physical-position projection, and optional-adopter isolation covered.
 
-Then native acceptance:
+### Native acceptance — PENDING
+
+User-owned matrix:
 
 - standalone DTAbstract;
 - DTHoomans physical traders;
 - representation transitions;
-- save/reload abstract/materialized;
+- resident excursions;
+- abstract and materialized save/reload;
 - SP;
-- MP/reconnect;
-- no duplicate trader/body/exchange;
-- map/notification/NPC interaction parity.
+- MP, reconnect, and resync;
+- no duplicate trader, body, or exchange;
+- map, notification, radio, and NPC interaction parity.
 
 ## Stop condition
 
-Do not stop after migrating one adopter.
-
-The parent goal is complete only when both adopters consume common trader-world authority, redundant lifecycle code is removed, and U7 developer gates pass.
+Developer implementation is complete. Do not create another consolidation phase unless native acceptance reveals a concrete defect.

@@ -1,12 +1,12 @@
 -- Production physical-provider runtime for canonical DynamicTrading actors.
--- DTHoomans owns the body handoff; DTAbstract only requests transitions.
+-- DTHoomans owns physical body/provider mechanics; DTCommon requests representation transitions.
 
 DTHoomans = DTHoomans or {}
 DTHoomans.ProviderRuntime = DTHoomans.ProviderRuntime or {}
 
 local Runtime = DTHoomans.ProviderRuntime
 local OWNER = "dthoomans:runtime"
-local ABSTRACT_OWNER = "abstract:lifecycle"
+local RETURN_OWNER = "dtcommon:trader_world"
 
 local function worldAge()
     local time = getGameTime and getGameTime() or nil
@@ -138,6 +138,16 @@ local function commitProjectedLocation(reg, actor, now)
     return reg:Commit(actor.actorId, { world = nextWorld }, actor.revision)
 end
 
+local function setReturnProvider(record, providerID)
+    if not record or not record.ca then return false end
+    record.ca.returnProviderID = providerID
+        and tostring(providerID) ~= "" and tostring(providerID) or nil
+    if DTCommon.TraderStock and DTCommon.TraderStock.SaveAndTransmit then
+        DTCommon.TraderStock.SaveAndTransmit()
+    end
+    return true
+end
+
 local function syncPolicy(record, actor)
     if not record or not actor or not actor.providerLease then return false end
     local Policy = DTCommon and DTCommon.CoreActorPolicy
@@ -169,6 +179,14 @@ function Runtime.MaterializeTrader(traderID, options)
 
     local now = tonumber(options.now) or worldAge()
     local lease = current.providerLease or {}
+    local returnProviderID = tostring(
+        options.returnProviderID
+            or record.ca.returnProviderID
+            or lease.provider
+            or "")
+    if returnProviderID == "" or returnProviderID == "DTHoomans" then
+        return nil, "return_provider_unavailable"
+    end
     if lease.provider == "DTHoomans" and lease.state == "materialized" then
         return current, "already_materialized"
     end
@@ -182,15 +200,20 @@ function Runtime.MaterializeTrader(traderID, options)
     if not positioned then return nil, reason end
     current = positioned
 
+    setReturnProvider(record, returnProviderID)
+
     local switched
     switched, reason = reg:SwitchProvider(actorID, {
         provider = "DTHoomans",
         owner = OWNER,
-        handoffFrom = lease.owner or ABSTRACT_OWNER,
+        handoffFrom = lease.owner or RETURN_OWNER,
         authority = "server",
         now = now,
     })
-    if not switched then return nil, reason end
+    if not switched then
+        setReturnProvider(record, nil)
+        return nil, reason
+    end
 
     local projectedPosition = service.World.ProjectPosition(
         switched.world, now)
@@ -199,12 +222,13 @@ function Runtime.MaterializeTrader(traderID, options)
         switched, provider, projectedPosition)
     if not hoomansRecord then
         reg:SwitchProvider(actorID, {
-            provider = "DTAbstract",
-            owner = ABSTRACT_OWNER,
+            provider = returnProviderID,
+            owner = RETURN_OWNER,
             handoffFrom = OWNER,
             authority = "server",
             now = now,
         })
+        setReturnProvider(record, nil)
         return nil, reason
     end
 
@@ -224,12 +248,13 @@ function Runtime.MaterializeTrader(traderID, options)
         -- Roll provider ownership back so a failed body spawn cannot strand
         -- the trader in a DTHoomans abstract lease.
         reg:SwitchProvider(actorID, {
-            provider = "DTAbstract",
-            owner = ABSTRACT_OWNER,
+            provider = returnProviderID,
+            owner = RETURN_OWNER,
             handoffFrom = OWNER,
             authority = "server",
             now = now,
         })
+        setReturnProvider(record, nil)
         return nil, reason
     end
 
@@ -238,7 +263,25 @@ function Runtime.MaterializeTrader(traderID, options)
         providerLease = result.actor.providerLease,
     }, switched.revision)
     if not committed then
+        pcall(provider.Dematerialize, result.actor, coreContext(), {
+            owner = OWNER,
+            authority = "server",
+            now = now,
+            body = result.body,
+            bodyID = result.bodyID
+                or (result.actor.providerLease
+                    and result.actor.providerLease.bodyID),
+            reason = "dt_materialize_commit_rollback",
+        })
         if adopted then releaseProviderProjection(actorID) end
+        reg:SwitchProvider(actorID, {
+            provider = returnProviderID,
+            owner = RETURN_OWNER,
+            handoffFrom = OWNER,
+            authority = "server",
+            now = now,
+        })
+        setReturnProvider(record, nil)
         return nil, reason
     end
 
@@ -310,6 +353,14 @@ function Runtime.DematerializeTrader(traderID, options)
         return nil, "actor_not_materialized"
     end
 
+    local returnProviderID = tostring(
+        options.returnProviderID
+            or record.ca.returnProviderID
+            or "")
+    if returnProviderID == "" or returnProviderID == "DTHoomans" then
+        return nil, "return_provider_unavailable"
+    end
+
     local now = tonumber(options.now) or worldAge()
     local liveBody = PNC and PNC.Registry and PNC.Registry.GetLiveZombie
         and PNC.Registry.GetLiveZombie(actorID) or nil
@@ -350,8 +401,8 @@ function Runtime.DematerializeTrader(traderID, options)
 
     local resumed
     resumed, reason = reg:SwitchProvider(actorID, {
-        provider = "DTAbstract",
-        owner = ABSTRACT_OWNER,
+        provider = returnProviderID,
+        owner = RETURN_OWNER,
         handoffFrom = OWNER,
         authority = "server",
         now = now,
@@ -359,6 +410,7 @@ function Runtime.DematerializeTrader(traderID, options)
     if not resumed then return nil, reason end
 
     syncPolicy(record, resumed)
+    setReturnProvider(record, nil)
     if DTCommon.TraderService.ClearPhysical then
         DTCommon.TraderService.ClearPhysical(traderID)
     end
@@ -411,6 +463,14 @@ function Runtime.RecoverMissingBody(traderID, options)
         return nil, "body_state_not_reconciled"
     end
 
+    local returnProviderID = tostring(
+        options.returnProviderID
+            or record.ca.returnProviderID
+            or "")
+    if returnProviderID == "" or returnProviderID == "DTHoomans" then
+        return nil, "return_provider_unavailable"
+    end
+
     local now = tonumber(options.now) or worldAge()
     local dematerialized, reason = service.Provider.Dematerialize(current, {
         provider = "DTHoomans",
@@ -429,8 +489,8 @@ function Runtime.RecoverMissingBody(traderID, options)
 
     local resumed
     resumed, reason = reg:SwitchProvider(actorID, {
-        provider = "DTAbstract",
-        owner = ABSTRACT_OWNER,
+        provider = returnProviderID,
+        owner = RETURN_OWNER,
         handoffFrom = OWNER,
         authority = "server",
         now = now,
@@ -438,6 +498,7 @@ function Runtime.RecoverMissingBody(traderID, options)
     if not resumed then return nil, reason end
 
     syncPolicy(record, resumed)
+    setReturnProvider(record, nil)
     if DTCommon.TraderService.ClearPhysical then
         DTCommon.TraderService.ClearPhysical(traderID)
     end
@@ -463,25 +524,7 @@ function Runtime.GetPosition(traderID, now)
     return actors().World.ProjectPosition(actor.world, now)
 end
 
-function Runtime.GetPosition(traderID, now)
-    local record = trader(traderID)
-    if not record or not record.ca then return nil, "trader_not_found" end
-    local reg = registry()
-    local actorID = record.ca.actorID or record.ca.coreActorID
-    local actor = reg and actorID and reg:Get(actorID) or nil
-    if not actor then return nil, "core_actor_not_found" end
-
-    local lease = actor.providerLease or {}
-    if lease.provider == "DTHoomans" and lease.state == "materialized"
-        and PNC and PNC.Registry and PNC.Registry.GetLiveZombie
-    then
-        local body = PNC.Registry.GetLiveZombie(actorID)
-        if body then return bodyPosition(body) end
-    end
-    return actors().World.ProjectPosition(actor.world, now)
-end
-
 Runtime.OWNER = OWNER
-Runtime.ABSTRACT_OWNER = ABSTRACT_OWNER
+Runtime.RETURN_OWNER = RETURN_OWNER
 
 return Runtime

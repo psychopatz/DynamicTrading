@@ -3,9 +3,13 @@ local T = require "tests/support/test"
 local caravanSource = T.read(
     "DTHoomans", "server",
     "DTHoomans/DTHoomans_CaravanService.lua")
-local lifecycleSource = T.read(
-    "DTHoomans", "server",
-    "DTHoomans/DTHoomans_CaravanLifecycle.lua")
+local lifecyclePath = T.repository
+    .. "/Contents/mods/DTHoomans/42.20/media/lua/server/DTHoomans/"
+    .. "DTHoomans_CaravanLifecycle.lua"
+local lifecycleFile = io.open(lifecyclePath, "r")
+T.falsy(lifecycleFile,
+    "parallel DTHoomans caravan lifecycle file has been removed")
+if lifecycleFile then lifecycleFile:close() end
 local initSource = T.read(
     "DTHoomans", "server",
     "DTHoomans/00_DTHoomans_Server_Init.lua")
@@ -14,15 +18,22 @@ local scorerSource = T.read(
     "DTHoomans/DTHoomans_CommercialMobility.lua")
 
 T.contains(caravanSource,
+    'mobilityIntent = state.mobilityIntent',
+    "production caravans accept DTCommon-managed mobility ownership")
+T.contains(caravanSource,
+    '"dynamic_trading_managed"',
+    "production caravans default to the DT-managed mobility intent")
+T.falsy(string.find(caravanSource,
     "mobilityIntent = constants.MOBILE_MOBILITY_INTENT_COMMERCIAL",
-    "production caravans declare the generic commercial mobility intent")
+    1, true),
+    "production caravans must not re-enable Hoomans autonomous commercial routing")
 T.contains(caravanSource,
     "mobileControlMode = constants.MOBILE_CONTROL_STRATEGIC",
     "production caravans remain under strategic Hoomans control")
 T.falsy(string.find(caravanSource, "leader stays at the base", 1, true),
     "base-less caravan source has no hidden leader/base contract")
-T.falsy(string.find(lifecycleSource, "idle at its faction base", 1, true),
-    "roaming lifecycle has no fabricated idle-base variant")
+T.falsy(string.find(initSource, "DTHoomans_CaravanLifecycle", 1, true),
+    "server composition does not load a parallel caravan lifecycle")
 T.contains(initSource, "DTHoomans/DTHoomans_CommercialMobility",
     "production server composition loads the economic scorer")
 T.contains(scorerSource, "RegisterOpportunityScorer",
@@ -87,7 +98,8 @@ T.load(
 T.equal(DTHoomans.CommercialMobility.MigrateExistingCaravans(), 1,
     "existing DT caravans receive the intent lazily and idempotently")
 T.equal(PNC.Factions.Registry.byID.old_caravan.mobile.mobilityIntent,
-    "commercial", "lazy migration does not recreate the caravan")
+    "dynamic_trading_managed",
+    "lazy migration transfers route authority without recreating the caravan")
 
 T.equal(#registrations, 1,
     "production scorer registers exactly once")

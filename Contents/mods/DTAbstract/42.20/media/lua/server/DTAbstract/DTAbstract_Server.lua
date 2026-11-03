@@ -8,7 +8,11 @@ DTAbstract = DTAbstract or {}
 DTAbstract.Server = DTAbstract.Server or {}
 
 local Server = DTAbstract.Server
-local Lifecycle = DTAbstract.Lifecycle
+local TraderWorld = DTCommon and DTCommon.TraderWorld
+    or require "DTCommon/DTCommon_TraderWorld"
+local TraderRuntime = DTCommon and DTCommon.TraderWorldRuntime
+local Provider = DTAbstract.TraderWorldProvider
+    or require "DTAbstract/DTAbstract_TraderWorldProvider"
 
 local function log(level, message)
     print("[DTAbstract][" .. tostring(level) .. "] " .. tostring(message))
@@ -38,13 +42,6 @@ local function send(player, command, payload)
     end
 end
 
-local function publishProjection()
-    if DTAbstract.ProjectionServer
-        and type(DTAbstract.ProjectionServer.Publish) == "function"
-    then
-        DTAbstract.ProjectionServer.Publish()
-    end
-end
 
 local function resolveTeleport()
     if PsychopatzCore and PsychopatzCore.Teleport then
@@ -77,14 +74,14 @@ function Server.SpawnAbstractTraderNearPlayer(player, args)
     end
 
     -- Deterministic nearby offset: 25 tiles away
-    local seq = Lifecycle and Lifecycle.CountAbstractTraders and Lifecycle.CountAbstractTraders() or 0
+    local seq = TraderWorld.CountByProvider("DTAbstract")
     local angle = ((seq * 2.399963) % (math.pi * 2))
     local offset = 25
     local spawnX = math.floor(px + math.cos(angle) * offset)
     local spawnY = math.floor(py + math.sin(angle) * offset)
     local spawnZ = math.floor(pz)
 
-    local spawned, reason = Lifecycle.SpawnAbstractTrader({
+    local spawned, reason = TraderWorld.SpawnTrader("DTAbstract", {
         position = { x = spawnX, y = spawnY, z = spawnZ },
         displayName = args.displayName,
         budget = args.budget,
@@ -104,7 +101,6 @@ function Server.SpawnAbstractTraderNearPlayer(player, args)
     log("INFO", "spawned_abstract_near traderID=" .. tostring(spawned.traderID)
         .. " actorID=" .. tostring(spawned.actorID))
 
-    publishProjection()
 
     send(player, "TraderSpawned", {
         accepted = true,
@@ -150,7 +146,7 @@ function Server.SpawnAbstractTraderAtPosition(player, args)
         return nil, "invalid_position"
     end
 
-    local spawned, reason = Lifecycle.SpawnAbstractTrader({
+    local spawned, reason = TraderWorld.SpawnTrader("DTAbstract", {
         position = { x = x, y = y, z = z },
         displayName = args.displayName,
         budget = args.budget,
@@ -165,7 +161,6 @@ function Server.SpawnAbstractTraderAtPosition(player, args)
         return nil, reason
     end
 
-    publishProjection()
     send(player, "TraderSpawned", {
         accepted = true,
         traderID = spawned.traderID,
@@ -206,7 +201,7 @@ function Server.TeleportPlayerToTrader(player, traderID)
         return false, "trader_not_found"
     end
 
-    local reg = Lifecycle.GetActorRegistry()
+    local reg = Provider.GetActorRegistry()
     local actor = reg and reg:Get(record.ca.actorID)
     if not actor or not actor.world then
         send(player, "TraderDebugActionResult", {
@@ -267,9 +262,11 @@ local function onClientCommand(module, command, player, args)
     end
 
     if command == "ForceTick" then
-        local summary = Lifecycle.Tick(true, args.now)
-        publishProjection()
-        send(player, "TraderDebugActionResult", {
+        local summary = TraderRuntime
+            and type(TraderRuntime.Tick) == "function"
+            and TraderRuntime.Tick(true, args.now)
+            or TraderWorld.Tick(true, args.now)
+            send(player, "TraderDebugActionResult", {
             accepted = summary ~= nil,
             action = "force_tick",
             reason = "ticked",
@@ -290,7 +287,7 @@ local function onClientCommand(module, command, player, args)
             return
         end
 
-        local reg = Lifecycle.GetActorRegistry()
+        local reg = Provider.GetActorRegistry()
         local actor = reg and reg:Get(record.ca.actorID)
         local journey = actor and actor.world and actor.world.journey
         if not journey or journey.state ~= "en_route" then
@@ -304,9 +301,8 @@ local function onClientCommand(module, command, player, args)
 
         -- Advance with destination arrival time
         local destTime = (tonumber(journey.eta) or 0) + 1
-        local status = Lifecycle.AdvanceTrader(traderID, destTime)
-        publishProjection()
-        send(player, "TraderDebugActionResult", {
+        local status = TraderWorld.AdvanceTrader(traderID, destTime)
+            send(player, "TraderDebugActionResult", {
             accepted = status == "arrived",
             action = "force_arrival",
             reason = status == "arrived" and "arrived" or "arrival_failed",
@@ -321,24 +317,25 @@ local function onClientCommand(module, command, player, args)
     end
 
     if command == "MaterializeTrader" or command == "DematerializeTrader" then
-        local physical = DTHoomans and DTHoomans.ProviderRuntime or nil
+        local representation =
+            DTCommon and DTCommon.TraderRepresentationRuntime or nil
         local action = command == "MaterializeTrader"
             and "materialize" or "dematerialize"
-        if not physical then
+        if not representation then
             send(player, "TraderDebugActionResult", {
                 accepted = false,
                 action = action,
-                reason = "physical_provider_unavailable",
+                reason = "representation_runtime_unavailable",
                 traderID = args.traderID,
             })
             return
         end
         local fn = command == "MaterializeTrader"
-            and physical.MaterializeTrader or physical.DematerializeTrader
+            and representation.MaterializeTrader
+            or representation.DematerializeTrader
         local actor, reason = fn(args.traderID, {
             reason = "dt_debug_" .. action,
         })
-        publishProjection()
         send(player, "TraderDebugActionResult", {
             accepted = actor ~= nil,
             action = action,
@@ -363,11 +360,10 @@ local function onClientCommand(module, command, player, args)
 
         local actorID = record.ca and record.ca.actorID
         if actorID then
-            local reg = Lifecycle.GetActorRegistry()
+            local reg = Provider.GetActorRegistry()
             if reg then reg:Remove(actorID) end
         end
         DTCommon.TraderService.Remove(traderID)
-        publishProjection()
 
         send(player, "TraderDebugActionResult", {
             accepted = true,

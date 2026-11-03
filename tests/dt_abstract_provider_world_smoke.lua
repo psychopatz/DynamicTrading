@@ -121,11 +121,14 @@ DTAbstract = DTAbstract or {}
 T.load("DTAbstract", "shared", "DTAbstract/DTAbstract_CoreProvider.lua")
 
 -- ---------------------------------------------------------------------------
--- 1. Load DTAbstract Server and Lifecycle
+-- 1. Load common TraderWorld + DTAbstract representation provider
 -- ---------------------------------------------------------------------------
-local Lifecycle = T.load("DTAbstract", "server", "DTAbstract/DTAbstract_Lifecycle.lua")
-T.truthy(Lifecycle, "DTAbstract.Lifecycle loaded")
-Lifecycle.SetActorRegistry(actorRegistry)
+local Provider = T.load(
+    "DTAbstract", "server", "DTAbstract/DTAbstract_TraderWorldProvider.lua")
+Provider.SetActorRegistry(actorRegistry)
+local TraderWorld = T.load(
+    "DTCommon", "shared", "DTCommon/DTCommon_TraderWorld.lua")
+T.truthy(TraderWorld, "DTCommon.TraderWorld loaded")
 
 local Server = T.load("DTAbstract", "server", "DTAbstract/DTAbstract_Server.lua")
 T.truthy(Server, "DTAbstract.Server loaded")
@@ -149,7 +152,7 @@ T.truthy(spawned, reason)
 T.truthy(spawned.traderID, "spawned trader has ID")
 T.truthy(spawned.actorID, "spawned trader has actor ID")
 T.truthy(spawned.position, "spawned trader has position")
-T.equal(Lifecycle.CountAbstractTraders(), 1, "exactly one abstract trader created")
+T.equal(TraderWorld.CountByProvider("DTAbstract"), 1, "exactly one abstract trader created")
 
 -- Check server command result sent to player
 T.truthy(#sentCommands >= 2, "commands sent to client")
@@ -192,7 +195,7 @@ local explicit, explicitReason = Server.SpawnAbstractTraderAtPosition(
 T.truthy(explicit, explicitReason)
 T.equal(explicit.position.x, 4321, "SpawnAt X was changed")
 T.equal(explicit.position.y, 8765, "SpawnAt Y was changed")
-T.equal(Lifecycle.CountAbstractTraders(), 2,
+T.equal(TraderWorld.CountByProvider("DTAbstract"), 2,
     "explicit spawn did not create second abstract trader")
 T.equal(sentCommands[#sentCommands].args.action, "spawn_at",
     "explicit spawn result action mismatch")
@@ -201,18 +204,20 @@ T.equal(sentCommands[#sentCommands].args.action, "spawn_at",
 -- 4. Standalone Journey Progression & Midpoint Projection
 -- ---------------------------------------------------------------------------
 local destSettlementID = "settlement:westpoint"
-local startOK, journey = Lifecycle.StartTraderJourney(traderID, destSettlementID, worldHours)
-T.truthy(startOK, "journey started")
-T.equal(journey.state, "en_route", "journey en route")
-
--- Check actor world state mid-journey
+local started, startReason = TraderWorld.BeginJourney(
+    traderID, destSettlementID, { now = worldHours })
+T.truthy(started, startReason)
 local updatedActor = actorRegistry:Get(actorID)
-T.equal(updatedActor.world.journey.destinationAnchorID or destSettlementID, destSettlementID, "destination matches")
+local journey = updatedActor.world.journey
+T.truthy(journey, "provider created Core journey")
+T.equal(journey.state, "en_route", "journey en route")
+T.equal(updatedActor.world.journey.destinationAnchorID or destSettlementID,
+    destSettlementID, "destination matches")
 
 -- Advance half-way
-local duration = journey.distanceTotal / Lifecycle.DEFAULT_SPEED
+local duration = journey.distanceTotal / Provider.DEFAULT_SPEED
 local midTime = worldHours + (duration * 0.5)
-local midStatus = Lifecycle.AdvanceTrader(traderID, midTime)
+local midStatus = TraderWorld.AdvanceTrader(traderID, midTime)
 T.equal(midStatus, "en_route", "mid-journey status is en_route")
 
 local midActor = actorRegistry:Get(actorID)
@@ -229,7 +234,7 @@ T.truthy(math.abs(midPos.y - expectedMidY) < 2, "midpoint Y within 2 tiles")
 -- 5. Arrival and Exactly-Once Settlement Visit / Exchange
 -- ---------------------------------------------------------------------------
 local arrTime = worldHours + duration + 1
-local arrStatus = Lifecycle.AdvanceTrader(traderID, arrTime)
+local arrStatus = TraderWorld.AdvanceTrader(traderID, arrTime)
 T.equal(arrStatus, "arrived", "arrival status is arrived")
 
 local arrivedRecord = DTCommon.TraderService.GetRecord(traderID)
@@ -239,7 +244,7 @@ T.equal(#visitCalls, 1, "exactly one settlement visit recorded")
 T.equal(visitCalls[1].options.settlementID, destSettlementID, "visit destination recorded")
 
 -- 6. Repeat advance at same time: does NOT duplicate exchange
-local repeatStatus = Lifecycle.AdvanceTrader(traderID, arrTime + 0.1)
+local repeatStatus = TraderWorld.AdvanceTrader(traderID, arrTime + 0.1)
 T.equal(#visitCalls, 1, "repeat advance does NOT duplicate settlement visit")
 
 -- ---------------------------------------------------------------------------
@@ -251,4 +256,4 @@ T.truthy(#sentCommands >= 1, "ForceTick responded")
 T.equal(sentCommands[1].args.action, "force_tick", "action was force_tick")
 T.equal(sentCommands[1].args.accepted, true, "force_tick accepted")
 
-T.finish("dt_abstract_lifecycle_smoke")
+T.finish("dt_abstract_provider_world_smoke")

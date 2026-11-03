@@ -31,8 +31,8 @@ local function canUseDebug()
     return false
 end
 
-local Presentation = DTAbstract.PresentationClient
-    or require "DTAbstract/DTAbstract_PresentationClient"
+local Presentation = DTCommon.TraderPresentation
+    or require "DTCommon/DTCommon_TraderPresentation"
 
 function WorldMap.GetSettlementMarkers()
     local markers = {}

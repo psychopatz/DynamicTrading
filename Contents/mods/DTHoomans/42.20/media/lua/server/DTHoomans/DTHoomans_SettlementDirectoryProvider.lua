@@ -27,6 +27,7 @@ local function descriptor(community)
         },
         provider = "DTHoomans",
         profileID = "hoomans",
+        regionID = community.regionID or community.regionId or community.region,
         enabled = community.status == nil or community.status == "active",
     }
 end

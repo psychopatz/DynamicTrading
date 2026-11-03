@@ -624,12 +624,16 @@ local function handleDebugCommand(player, command, args)
         return true
     end
     if command == "DebugRoamingTick" then
-        local lifecycle = DTHoomans and DTHoomans.CaravanLifecycle or nil
-        local summary = lifecycle
-            and type(lifecycle.Tick) == "function"
-            and lifecycle.Tick() or nil
-        log("INFO", "debug_roaming_tick roaming="
-            .. tostring(summary and summary.roaming)
+        local runtime = DTCommon and DTCommon.TraderWorldRuntime or nil
+        local world = DTCommon and DTCommon.TraderWorld or nil
+        local summary = runtime
+            and type(runtime.Tick) == "function"
+            and runtime.Tick(true) or (
+                world and type(world.Tick) == "function"
+                and world.Tick(true) or nil
+            )
+        log("INFO", "debug_roaming_tick managed="
+            .. tostring(summary and summary.managed)
             .. " spawned=" .. tostring(summary and summary.spawned)
             .. " skipped=" .. tostring(summary and summary.skipped))
         send(player, "TraderDebugActionResult", {

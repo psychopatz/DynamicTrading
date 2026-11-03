@@ -447,8 +447,8 @@ local function nativeSpec(state)
         -- director authoritative while its no-target fallback remains inside
         -- the explicit site.
         mobileControlMode = constants.MOBILE_CONTROL_STRATEGIC or "strategic",
-        mobilityIntent = constants.MOBILE_MOBILITY_INTENT_COMMERCIAL
-            or "commercial",
+        mobilityIntent = state.mobilityIntent
+            or "dynamic_trading_managed",
         siteSpec = siteFor(
             state.faction.id,
             state.x,
@@ -609,6 +609,8 @@ end
 local function finish(state, ok, status, caravan)
     if state.finished then return end
     state.finished = true
+    state.result = caravan
+    state.resultStatus = status
     PendingSpawns[state.requestID] = nil
     if type(state.onComplete) == "function" then
         local callbackOK, callbackReason = pcall(
@@ -683,7 +685,7 @@ local function finalize(state, generated)
         end
     end
 
-    traderID = "dt_" .. tostring(faction.id)
+    traderID = state.traderID or ("dt_" .. tostring(faction.id))
     if not Service or type(Service.Create) ~= "function"
         or type(Service.BindCaravan) ~= "function"
     then
@@ -698,6 +700,13 @@ local function finalize(state, generated)
         traderID = traderID,
         caravanID = "caravan_" .. tostring(faction.id),
         abstractAccessEnabled = true,
+        actorID = merchantID,
+        coreActorID = merchantID,
+        provider = "DTHoomans",
+        providerState = "materialized",
+        worldManaged = state.worldManaged == true,
+        worldRole = state.worldManaged == true and "roaming" or nil,
+        lifecycleState = "idle",
     })
     if not traderID or not record then
         cleanupFaction(
@@ -717,10 +726,21 @@ local function finalize(state, generated)
         return false, reason or "trader_binding_failed"
     end
 
+    local actors = PsychopatzCore and PsychopatzCore.Actors or nil
+    local coreRegistry = actors and actors.DefaultRegistry or nil
+    local coreActor = coreRegistry and type(coreRegistry.Get) == "function"
+        and coreRegistry:Get(merchantID) or nil
+    if coreActor and coreActor.providerLease
+        and Service and type(Service.SetCoreProviderLease) == "function"
+    then
+        pcall(Service.SetCoreProviderLease, traderID, coreActor.providerLease)
+    end
+
     local caravan = {
         traderID = traderID,
         factionID = faction.id,
         leaderNPCID = merchantID,
+        actorID = merchantID,
         leader = merchant,
         memberIDs = npcIDs,
         mobile = generated.mobile,
@@ -875,6 +895,9 @@ function Caravan.Spawn(x, y, z, onComplete, onAccepted, options)
         memberCount = caravanMemberCount(),
         debug = options.debug == true,
         presenceMode = options.presenceMode,
+        traderID = options.traderID,
+        worldManaged = options.worldManaged == true,
+        mobilityIntent = options.mobilityIntent,
         onComplete = onComplete,
     }
     PendingSpawns[requestID] = state
@@ -898,6 +921,11 @@ function Caravan.Spawn(x, y, z, onComplete, onAccepted, options)
     processed, processReason = processState(state)
     request.status = processed and "spawned" or "failed"
     request.reason = processReason
+    if processed and state.result then
+        request.traderID = state.result.traderID
+        request.actorID = state.result.actorID
+        request.factionID = state.result.factionID or request.factionID
+    end
     return request
 end
 

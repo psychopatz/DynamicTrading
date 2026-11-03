@@ -113,13 +113,14 @@ function Mobility.MigrateExistingCaravans()
             and faction.status == "active"
             and faction.tags and faction.tags.dynamicTrading == true
             and faction.mobile and faction.mobile.active == true
-            and not faction.mobile.mobilityIntent
+            and tostring(faction.mobile.mobilityIntent or "")
+                ~= "dynamic_trading_managed"
         then
             local ok, updated = pcall(
                 factions.UpdateMobileGroup,
                 faction.id,
-                { mobilityIntent = "commercial" },
-                "dynamic_trading_commercial_mobility_migration"
+                { mobilityIntent = "dynamic_trading_managed" },
+                "dynamic_trading_managed_mobility_migration"
             )
             if ok and updated ~= false then migrated = migrated + 1 end
         end

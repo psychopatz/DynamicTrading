@@ -1,6 +1,7 @@
 local T = require "tests/support/test"
 T.addPackagePaths({
     { "DTAbstract", "client" },
+    { "DTCommon", "client" },
     { "DTCommon", "shared" },
     { "ProjectHoomans", "client" },
     { "PsychopatzCore", "common" },
@@ -39,9 +40,11 @@ DTCommon = {
     SettlementDirectory = { List = function() return {} end },
     TraderService = { ForEach = function() end },
 }
-DTAbstract = {
-    PresentationClient = { GetPosition = function() return nil end },
+DTCommon.TraderPresentation = {
+    GetPosition = function() return nil end,
+    ListTraderRecords = function() return {} end,
 }
+DTAbstract = {}
 
 -- Reverse order: Dynamic Trading initializes the Core host first.
 T.truthy(require "DTAbstract/DTAbstract_WorldMap",

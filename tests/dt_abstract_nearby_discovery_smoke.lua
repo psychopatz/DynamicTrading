@@ -39,9 +39,6 @@ DTCommon.TraderService = {
 }
 
 DTAbstract = DTAbstract or {}
-DTAbstract.Lifecycle = {
-    GetActorRegistry = function() return actorRegistry end,
-}
 
 -- Create abstract trader at (10000, 10000)
 local actor, actorReason = actorRegistry:Create({

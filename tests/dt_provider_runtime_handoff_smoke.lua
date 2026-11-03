@@ -38,7 +38,7 @@ local actor = assert(registry:Create({
 }))
 local acquired = assert(Actors.Provider.Acquire(actor, {
     provider = "DTAbstract",
-    owner = "abstract:lifecycle",
+    owner = "dtcommon:trader_world",
     authority = "server",
     now = 0,
 }))
@@ -205,6 +205,25 @@ T.equal(resumed.world.journey.destination.x, 300,
 T.equal(hoomansRecords[actor.actorId], nil,
     "provider-owned Hoomans record survived dematerialization")
 
+-- Failed materialization must roll the lease back and clear temporary return
+-- metadata rather than poisoning later representation decisions.
+local successfulMaterialize = PNC.Persistence.CoreProvider.Materialize
+PNC.Persistence.CoreProvider.Materialize = function()
+    return nil, "fixture_materialize_failed"
+end
+local failedMaterialize, failedReason = Runtime.MaterializeTrader(
+    "trader:handoff:runtime", { now = 7 })
+T.falsy(failedMaterialize, "failed physical spawn unexpectedly succeeded")
+T.equal(failedReason, "fixture_materialize_failed",
+    "failed materialization reason mismatch")
+T.equal(records["trader:handoff:runtime"].ca.returnProviderID, nil,
+    "failed materialization left stale return provider")
+T.equal(registry:Get(actor.actorId).providerLease.provider, "DTAbstract",
+    "failed materialization did not roll Core lease back")
+T.equal(hoomansRecords[actor.actorId], nil,
+    "failed materialization left provider-owned Hoomans record")
+PNC.Persistence.CoreProvider.Materialize = successfulMaterialize
+
 -- Simulate a later save/reload recovery edge: Core restored a materialized
 -- DTHoomans lease, but Hoomans startup has conclusively reconciled the
 -- provider-owned record to abstract/missing with no live body.
@@ -212,7 +231,7 @@ local recoveredActor = registry:Get(actor.actorId)
 local switched = assert(registry:SwitchProvider(actor.actorId, {
     provider = "DTHoomans",
     owner = "dthoomans:runtime",
-    handoffFrom = "abstract:lifecycle",
+    handoffFrom = "dtcommon:trader_world",
     authority = "server",
     now = 10,
 }))
@@ -230,6 +249,7 @@ records["trader:handoff:runtime"].ca =
     assert(Policy.SetProviderLease(
         records["trader:handoff:runtime"],
         registry:Get(actor.actorId).providerLease))
+records["trader:handoff:runtime"].ca.returnProviderID = "DTAbstract"
 
 body = nil
 hoomansRecords[actor.actorId] = {

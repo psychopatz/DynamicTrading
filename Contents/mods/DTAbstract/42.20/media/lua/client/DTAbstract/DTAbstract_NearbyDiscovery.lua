@@ -17,8 +17,8 @@ Discovery.CHECK_INTERVAL_SECONDS = 2
 local traderStates = {}
 local lastCheckTime = 0
 
-local Presentation = DTAbstract.PresentationClient
-    or require "DTAbstract/DTAbstract_PresentationClient"
+local Presentation = DTCommon.TraderPresentation
+    or require "DTCommon/DTCommon_TraderPresentation"
 
 local function notifyTraderNearby(traderID, record, actorID)
     local title = "Trading Caravan Nearby"

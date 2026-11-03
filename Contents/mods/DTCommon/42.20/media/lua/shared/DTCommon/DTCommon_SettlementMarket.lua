@@ -29,20 +29,16 @@ end
 
 local function resolveCanonicalID(settlementID)
     local id = boundedID(settlementID)
-    local communities = PNC and PNC.Communities or nil
-    local community
+    local directory = DTCommon and DTCommon.SettlementDirectory or nil
     if id == "" then return nil, "settlement_id_required" end
-    if not communities or type(communities.Get) ~= "function" then
+    if not directory or type(directory.Get) ~= "function" then
         return id, "settlement_identity_unverified"
     end
-    community = communities.Get(id)
-    if type(community) ~= "table"
-        or tostring(community.id or "") ~= id
-        or community.status ~= "active"
-    then
+    local settlement = directory.Get(id)
+    if not settlement or settlement.enabled == false then
         return nil, "settlement_not_found"
     end
-    return id
+    return tostring(settlement.settlementID or id)
 end
 
 local function marketData()

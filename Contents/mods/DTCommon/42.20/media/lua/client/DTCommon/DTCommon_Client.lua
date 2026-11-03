@@ -2,6 +2,8 @@ DTCommon = DTCommon or {}
 DTCommon.Client = DTCommon.Client or {}
 
 local Client = DTCommon.Client
+local Presentations = DTCommon.TradePresentations
+    or require "DTCommon/DTCommon_TradePresentationRegistry"
 Client.Snapshots = Client.Snapshots or {}
 Client.PendingOpen = Client.PendingOpen or {}
 Client.TalkSessions = Client.TalkSessions or {}
@@ -41,14 +43,10 @@ function Client.OpenTrader(traderID, options)
     } or { mode = "legacy" }
     local snapshot = Client.Snapshots[traderID]
     if snapshot then
-        -- OpenTrade() requests one fresh snapshot through its endpoint. Do
-        -- not issue a second request here when the UI is available.
+        -- A registered presentation may open immediately from the cached
+        -- snapshot. Otherwise request one fresh authority snapshot.
         local opened = Client.OpenSnapshot(traderID, snapshot)
-        if opened == true and PNC and PNC.InventoryWindow
-            and PNC.InventoryWindow.OpenTrade
-        then
-            return true
-        end
+        if opened == true then return true end
     end
     return Client.RequestSnapshot(traderID)
 end
@@ -56,35 +54,17 @@ end
 function Client.OpenSnapshot(traderID, snapshot)
     traderID = tostring(traderID or "")
     local pending = Client.PendingOpen[traderID]
-    if pending and pending.mode == "trade"
-        and PNC and PNC.InventoryWindow
-        and PNC.InventoryWindow.OpenTrade
-    then
-        local npcID = pending.npcID
-            or snapshot and snapshot.physicalNpcID
-            or snapshot and snapshot.leaderNPCID
-        local window = PNC.InventoryWindow.OpenTrade(
-            npcID,
-            traderID,
-            snapshot,
-            {
-                requestSnapshot = function()
-                    return Client.RequestSnapshot(traderID)
-                end,
-                commit = function(_, buyRows, sellRows)
-                    return Client.SubmitTradeBasket(
-                        traderID, buyRows, sellRows
-                    )
-                end,
-            }
-        )
-        if window then
-            log("INFO", "trade_window_opened trader=" .. traderID
-                .. " npc=" .. tostring(npcID)
-                .. " items=" .. tostring(#((snapshot and snapshot.items) or {})))
+    if pending and pending.mode == "trade" then
+        local handled, opened = Presentations.Open({
+            traderID = traderID,
+            snapshot = snapshot,
+            pending = pending,
+            client = Client,
+        })
+        if handled and opened then
+            log("INFO", "trade_presentation_opened trader=" .. traderID)
             return true
         end
-        log("WARN", "trade_window_unavailable trader=" .. traderID)
     end
     if DTCommon.TradeWindow then
         DTCommon.TradeWindow.Open(traderID, snapshot)
@@ -221,24 +201,13 @@ local function onServerCommand(module, command, args)
             .. " items=" .. tostring(#(args.items or {}))
             .. " reason=" .. tostring(args.reason))
         if Client.PendingOpen[traderID] then
-            local opened = false
-            if Client.PendingOpen[traderID].mode == "trade"
-                and PNC and PNC.InventoryWindow
-                and PNC.InventoryWindow.instance
-                and PNC.InventoryWindow.instance.tradeMode
-                and PNC.InventoryWindow.instance.transferEndpoint
-                and tostring(PNC.InventoryWindow.instance.transferEndpoint.id
-                    or "") == traderID
-            then
-                local window = PNC.InventoryWindow.instance
-                if window.transferEndpoint
-                    and window.transferEndpoint.setSnapshot
-                then
-                    window.transferEndpoint:setSnapshot(args)
-                    window:refreshInventory(true)
-                    opened = true
-                end
-            else
+            local opened = Presentations.UpdateSnapshot({
+                traderID = traderID,
+                snapshot = args,
+                pending = Client.PendingOpen[traderID],
+                client = Client,
+            })
+            if not opened then
                 opened = Client.OpenSnapshot(traderID, args)
             end
             if not opened then
@@ -246,32 +215,30 @@ local function onServerCommand(module, command, args)
                     .. " reason=" .. tostring(args.reason))
             end
             Client.PendingOpen[traderID] = nil
-        elseif PNC and PNC.InventoryWindow
-            and PNC.InventoryWindow.instance
-            and PNC.InventoryWindow.instance.tradeMode
-            and PNC.InventoryWindow.instance.transferEndpoint
-            and tostring(PNC.InventoryWindow.instance.transferEndpoint.id or "")
-                == traderID
-        then
-            local window = PNC.InventoryWindow.instance
-            if window.transferEndpoint.setSnapshot then
-                window.transferEndpoint:setSnapshot(args)
-                window:refreshInventory(true)
-            end
+        else
+            Presentations.UpdateSnapshot({
+                traderID = traderID,
+                snapshot = args,
+                client = Client,
+            })
         end
     elseif command == "TradeResult" then
         if args.snapshot then Client.Snapshots[traderID] = args.snapshot end
         log("INFO", "trade_result trader=" .. traderID
             .. " accepted=" .. tostring(args.accepted)
             .. " reason=" .. tostring(args.reason))
-        if PNC and PNC.InventoryWindow
-            and PNC.InventoryWindow.OnTradeResult
-            and PNC.InventoryWindow.instance
-            and PNC.InventoryWindow.instance.tradeMode
+        local handled = Presentations.HandleResult({
+            traderID = traderID,
+            result = args,
+            snapshot = args.snapshot,
+            client = Client,
+        })
+        if not handled and DTCommon.TradeWindow
+            and DTCommon.TradeWindow.Active
         then
-            PNC.InventoryWindow.OnTradeResult(args)
-        elseif DTCommon.TradeWindow and DTCommon.TradeWindow.Active then
-            if args.snapshot then DTCommon.TradeWindow.Active:SetSnapshot(args.snapshot) end
+            if args.snapshot then
+                DTCommon.TradeWindow.Active:SetSnapshot(args.snapshot)
+            end
             DTCommon.TradeWindow.Active:SetResult(args)
         end
     elseif command == "TalkResult" then

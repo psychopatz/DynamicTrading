@@ -6,8 +6,8 @@ DTAbstract = DTAbstract or {}
 DTAbstract.DebugHub = DTAbstract.DebugHub or {}
 
 local DebugHub = DTAbstract.DebugHub
-local Presentation = DTAbstract.PresentationClient
-    or require "DTAbstract/DTAbstract_PresentationClient"
+local Presentation = DTCommon.TraderPresentation
+    or require "DTCommon/DTCommon_TraderPresentation"
 
 DebugHub.LastResult = DebugHub.LastResult or nil
 DebugHub.LastSpawn = DebugHub.LastSpawn or nil
@@ -50,7 +50,7 @@ function DebugHub.ListTraders()
         local record = row.record
         local ca = record and record.ca or nil
         local provider = row.provider
-        if ca and (provider == "DTAbstract" or provider == "DTHoomans") then
+        if ca and (ca.actorID or ca.coreActorID) then
             local actorID = ca.actorID or ca.coreActorID
             local pos, projection = Presentation.GetPosition(record)
             local distance = nil
@@ -75,7 +75,7 @@ function DebugHub.ListTraders()
                 displayName = record.n or traderID,
                 actorID = actorID,
                 provider = projection and projection.provider
-                    or ca.provider or ca.coreProvider or "DTAbstract",
+                    or ca.provider or ca.coreProvider or "PsychopatzCore",
                 providerState = projection and projection.providerState
                     or ca.providerState or ca.coreProviderState or "abstract",
                 budget = record.b or 0,
@@ -89,7 +89,8 @@ function DebugHub.ListTraders()
                 currentSettlementID = ca.currentSettlementID,
                 originSettlementID = ca.originSettlementID,
                 destinationSettlementID = ca.destinationSettlementID,
-                journeyState = journey and journey.state or "idle",
+                journeyState = journey and journey.state
+                    or ca.journeyState or ca.lifecycleState or "idle",
                 journeyProgress = journey and journey.progress or 0,
                 journeyETA = journey and journey.eta or nil,
             }

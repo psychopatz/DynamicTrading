@@ -21,7 +21,7 @@ local DEFAULT_SETTLEMENTS = {
         name = "Muldraugh",
         position = { x = 10630, y = 9980, z = 0 },
         profileID = "default",
-        provider = "DTAbstract",
+        provider = "DTCommon",
         enabled = true,
     },
     {
@@ -29,7 +29,7 @@ local DEFAULT_SETTLEMENTS = {
         name = "West Point",
         position = { x = 11900, y = 6900, z = 0 },
         profileID = "default",
-        provider = "DTAbstract",
+        provider = "DTCommon",
         enabled = true,
     },
     {
@@ -37,7 +37,7 @@ local DEFAULT_SETTLEMENTS = {
         name = "Rosewood",
         position = { x = 8150, y = 11550, z = 0 },
         profileID = "default",
-        provider = "DTAbstract",
+        provider = "DTCommon",
         enabled = true,
     },
     {
@@ -45,7 +45,7 @@ local DEFAULT_SETTLEMENTS = {
         name = "Riverside",
         position = { x = 6500, y = 5350, z = 0 },
         profileID = "default",
-        provider = "DTAbstract",
+        provider = "DTCommon",
         enabled = true,
     },
     {
@@ -53,7 +53,7 @@ local DEFAULT_SETTLEMENTS = {
         name = "March Ridge",
         position = { x = 10050, y = 12750, z = 0 },
         profileID = "default",
-        provider = "DTAbstract",
+        provider = "DTCommon",
         enabled = true,
     },
     {
@@ -61,7 +61,7 @@ local DEFAULT_SETTLEMENTS = {
         name = "Fallas Lake",
         position = { x = 7250, y = 8350, z = 0 },
         profileID = "default",
-        provider = "DTAbstract",
+        provider = "DTCommon",
         enabled = true,
     },
     {
@@ -69,7 +69,7 @@ local DEFAULT_SETTLEMENTS = {
         name = "Louisville",
         position = { x = 12600, y = 1450, z = 0 },
         profileID = "default",
-        provider = "DTAbstract",
+        provider = "DTCommon",
         enabled = true,
     },
 }
@@ -118,12 +118,15 @@ function Directory.Validate(entry)
     local profileID = cleanText(entry.profileID, "default")
     local enabled = entry.enabled ~= false
 
+    local regionID = cleanText(
+        entry.regionID or entry.regionId or entry.region, nil)
     return {
         settlementID = id,
         name = name,
         position = position,
         provider = provider,
         profileID = profileID,
+        regionID = regionID,
         enabled = enabled,
     }
 end

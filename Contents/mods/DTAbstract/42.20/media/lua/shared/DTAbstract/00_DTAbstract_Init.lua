@@ -7,4 +7,13 @@ DTAbstract.RequireRadio = true
 DTAbstract.EnableRadioOSPreview = DTAbstract.EnableRadioOSPreview == true
 require "DTAbstract/DTAbstract_CoreProvider"
 
+if DTCommon and DTCommon.TraderProviders
+    and type(DTCommon.TraderProviders.Register) == "function"
+then
+    DTCommon.TraderProviders.Register("DTAbstract", {
+        kind = "abstract",
+        priority = 100,
+    })
+end
+
 return DTAbstract

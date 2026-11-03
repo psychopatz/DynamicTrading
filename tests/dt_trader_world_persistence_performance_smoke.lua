@@ -33,7 +33,7 @@ local actor1, actorReason = originRegistry:Create({
 })
 T.truthy(actor1, actorReason)
 
-local acquired1 = coreProvider.Acquire(actor1, { Actors = Actors }, { owner = "lifecycle", now = 0 })
+local acquired1 = coreProvider.Acquire(actor1, { Actors = Actors }, { owner = "dtcommon:trader_world", now = 0 })
 originRegistry:Commit(actor1.actorId, acquired1, actor1.revision)
 
 local currentActor1 = originRegistry:Get(actor1.actorId)
@@ -132,8 +132,11 @@ DTCommon.TraderService = {
     MarkSettlementVisit = function() return true end,
 }
 
-local Lifecycle = T.load("DTAbstract", "server", "DTAbstract/DTAbstract_Lifecycle.lua")
-Lifecycle.SetActorRegistry(freshRegistry)
+local Provider = T.load(
+    "DTAbstract", "server", "DTAbstract/DTAbstract_TraderWorldProvider.lua")
+Provider.SetActorRegistry(freshRegistry)
+local TraderWorld = T.load(
+    "DTCommon", "shared", "DTCommon/DTCommon_TraderWorld.lua")
 
 -- Run 50 ticks and measure work:
 -- Ensure work does not grow unboundedly with tick count
@@ -142,16 +145,17 @@ local totalArrived = 0
 local tickCount = 50
 
 for t = 1, tickCount do
-    local summary = Lifecycle.Tick(true, midTime + t)
+    local summary = TraderWorld.Tick(true, midTime + t)
     totalSpawned = totalSpawned + (summary.spawned or 0)
     totalArrived = totalArrived + (summary.arrived or 0)
-    T.truthy(summary.activeCount <= Lifecycle.MAX_ABSTRACT_TRADERS,
-        "active count never exceeds MAX_ABSTRACT_TRADERS")
+    T.truthy(summary.activeCount <= TraderWorld.MAX_ROAMING_TRADERS,
+        "active count never exceeds common roaming bound")
 end
 
 -- Active trader population is bounded
-local finalCount = Lifecycle.CountAbstractTraders()
-T.truthy(finalCount <= Lifecycle.MAX_ABSTRACT_TRADERS, "final count bounded")
+local finalCount = TraderWorld.CountManaged(TraderWorld.DEFAULT_ROLE)
+T.truthy(finalCount <= TraderWorld.MAX_ROAMING_TRADERS,
+    "final common managed count bounded")
 
 -- Settlement Directory lookup is indexed O(1)
 local benchmarkCount = 1000
@@ -160,4 +164,4 @@ for i = 1, benchmarkCount do
     if not s then error("lookup failed") end
 end
 
-T.finish("dt_abstract_persistence_performance_smoke")
+T.finish("dt_trader_world_persistence_performance_smoke")

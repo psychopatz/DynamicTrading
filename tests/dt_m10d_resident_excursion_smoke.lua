@@ -472,6 +472,40 @@ DTCommon.SettlementExchange = {
     end,
 }
 
+DTCommon.SettlementDirectory = {
+    List = function()
+        return {
+            {
+                settlementID = communityHome.id,
+                name = communityHome.name or communityHome.id,
+                position = copy(communityHome.home),
+                provider = "DTHoomans",
+                enabled = true,
+            },
+            {
+                settlementID = communityMarket.id,
+                name = communityMarket.name or communityMarket.id,
+                position = copy(communityMarket.home),
+                provider = "DTHoomans",
+                enabled = true,
+            },
+            {
+                settlementID = communityAltMarket.id,
+                name = communityAltMarket.name or communityAltMarket.id,
+                position = copy(communityAltMarket.home),
+                provider = "DTHoomans",
+                enabled = true,
+            },
+        }
+    end,
+    Get = function(id)
+        for _, item in ipairs(DTCommon.SettlementDirectory.List()) do
+            if item.settlementID == id then return item end
+        end
+        return nil, "settlement_not_found"
+    end,
+}
+
 -- A real Hoomans generic excursion service owns the policy pump and both
 -- arrival handlers. The market visit itself is the only DT economic seam.
 local Excursions = loadSource(
@@ -480,6 +514,47 @@ local Excursions = loadSource(
 DTHoomans = {}
 local Settlement = loadSource(
     "DTHoomans", "server", "DTHoomans/DTHoomans_SettlementVisit.lua")
+DTCommon.TraderProviders.Register("DTHoomans", {
+    priority = 200,
+    canTravelTo = function(_, _, settlement)
+        return settlement
+            and settlement.provider == "DTHoomans"
+            and settlement.settlementID ~= communityHome.id
+    end,
+    scoreDestination = function(_, _, settlement)
+        return settlement and settlement.settlementID == communityMarket.id
+            and 8 or 0
+    end,
+})
+DTHoomans.TraderWorldProvider = {
+    ResolveSettlementTarget = function(_, settlementID)
+        if settlementID == communityMarket.id then
+            return {
+                kind = "settlement",
+                communityID = communityMarket.id,
+                locationID = "location_m10d_market",
+                siteID = communityMarket.siteID,
+                x = communityMarket.home.x,
+                y = communityMarket.home.y,
+                z = communityMarket.home.z,
+                score = 8,
+            }
+        end
+        if settlementID == communityAltMarket.id then
+            return {
+                kind = "settlement",
+                communityID = communityAltMarket.id,
+                locationID = "location_m10d_alt",
+                siteID = communityAltMarket.siteID,
+                x = communityAltMarket.home.x,
+                y = communityAltMarket.home.y,
+                z = communityAltMarket.home.z,
+                score = 0,
+            }
+        end
+        return nil, "settlement_target_unreachable"
+    end,
+}
 loadSource(
     "DTHoomans", "server", "DTHoomans/DTHoomans_SettlementTrader.lua")
 local Resident = loadSource(

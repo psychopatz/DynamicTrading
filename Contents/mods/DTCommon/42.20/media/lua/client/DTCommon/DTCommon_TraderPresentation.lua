@@ -1,14 +1,15 @@
--- Read-only client view of authoritative DTAbstract actor projections.
+-- Read-only client view of all DynamicTrading canonical trader actors.
 
-DTAbstract = DTAbstract or {}
-DTAbstract.PresentationClient = DTAbstract.PresentationClient or {}
+DTCommon = DTCommon or {}
+DTCommon.TraderPresentation = DTCommon.TraderPresentation or {}
 
-local Presentation = DTAbstract.PresentationClient
+local Presentation = DTCommon.TraderPresentation
 local ProjectionClient =
     require "PsychopatzCore/Actors/PsychopatzActorProjectionClient"
-local Journey = require "PsychopatzCore/Actors/PsychopatzActorJourney"
+local Journey =
+    require "PsychopatzCore/Actors/PsychopatzActorJourney"
 
-Presentation.SOURCE_ID = "DTAbstract"
+Presentation.SOURCE_ID = "DynamicTrading"
 Presentation.RECORD_CACHE_SECONDS = 2
 Presentation.RecordCache = Presentation.RecordCache or {
     at = -1,
@@ -40,22 +41,22 @@ function Presentation.ListTraderRecords(force, now)
     local revision = ProjectionClient.GetSourceRevision
         and ProjectionClient.GetSourceRevision(Presentation.SOURCE_ID) or -1
     local expired = cache.at < 0
-        or (now > 0 and (now - cache.at) >= Presentation.RECORD_CACHE_SECONDS)
+        or (now > 0
+            and (now - cache.at) >= Presentation.RECORD_CACHE_SECONDS)
+
     if force == true or revision ~= cache.revision or expired then
         local rows = {}
-        if DTCommon and DTCommon.TraderService
-            and type(DTCommon.TraderService.ForEach) == "function"
-        then
-            DTCommon.TraderService.ForEach(function(traderID, record)
+        local service = DTCommon and DTCommon.TraderService or nil
+        if service and type(service.ForEach) == "function" then
+            service.ForEach(function(traderID, record)
                 local ca = record and record.ca or nil
-                local provider = ca and (ca.provider or ca.coreProvider) or nil
-                if ca and (provider == "DTAbstract"
-                    or provider == "DTHoomans")
-                then
+                local actorID = ca and (ca.actorID or ca.coreActorID) or nil
+                if actorID then
                     rows[#rows + 1] = {
                         traderID = traderID,
                         record = record,
-                        provider = provider,
+                        actorID = actorID,
+                        provider = ca.provider or ca.coreProvider,
                     }
                 end
             end)
@@ -78,8 +79,7 @@ end
 
 function Presentation.GetForRecord(record)
     local ca = record and record.ca or nil
-    if not ca then return nil end
-    local actorID = ca.actorID or ca.coreActorID
+    local actorID = ca and (ca.actorID or ca.coreActorID) or nil
     return actorID and Presentation.GetActor(actorID) or nil
 end
 
@@ -95,24 +95,22 @@ function Presentation.GetPosition(record, now)
     local projection = Presentation.GetForRecord(record)
     if projection and projection.journey then
         local projected = Journey.ProjectPosition(
-            projection.journey,
-            tonumber(now) or worldAge())
+            projection.journey, tonumber(now) or worldAge())
         if projected then return projected, projection end
     end
     if projection and projection.position then
         return projection.position, projection
     end
 
-    -- A stationary trader can still be placed at its authoritative settlement
-    -- while the initial projection request is in flight. Never infer a moving
-    -- journey position from settlement IDs.
+    -- Stationary records may resolve to their canonical settlement while the
+    -- first projection request is still in flight. Never infer a moving route.
     local ca = record and record.ca or nil
+    local directory = DTCommon and DTCommon.SettlementDirectory or nil
     if ca and not ca.destinationSettlementID
         and ca.currentSettlementID
-        and DTCommon and DTCommon.SettlementDirectory
+        and directory and type(directory.ResolvePosition) == "function"
     then
-        return DTCommon.SettlementDirectory.ResolvePosition(
-            ca.currentSettlementID), nil
+        return directory.ResolvePosition(ca.currentSettlementID), nil
     end
     return nil, projection
 end

@@ -9,6 +9,15 @@ DTHoomans.SPAWN_COMMAND = "SpawnTrader"
 require "DTHoomans/DTHoomans_Conversation"
 require "DTHoomans/DTHoomans_CoreProvider"
 
+if DTCommon and DTCommon.TraderProviders
+    and type(DTCommon.TraderProviders.Register) == "function"
+then
+    DTCommon.TraderProviders.Register("DTHoomans", {
+        kind = "physical",
+        priority = 200,
+    })
+end
+
 if DTCommon and DTCommon.PlacePresentation and type(DTCommon.PlacePresentation.RegisterResolver) == "function" then
     DTCommon.PlacePresentation.RegisterResolver("hoomans_community", function(placeID)
         if not placeID then return nil end

@@ -6,9 +6,8 @@ DTCommon.MODDATA_KEY = "DTCommon.Traders"
 DTCommon.MARKET_MODDATA_KEY = "DTCommon.SettlementMarkets"
 DTCommon.EVENT_MODDATA_KEY = "DTCommon.MarketEvents"
 DTCommon.MONEY_FULL_TYPE = "Base.Money"
--- Degraded fallback labels only. The canonical trader name and role come from
--- Project Hoomans (DTHoomans.Caravan.ResolveTraderDisplayName plus the NPC
--- affiliation role). DEFAULT_TRADER_ROLE uses Project Hoomans' own role token.
+-- Degraded fallback labels only. Optional representation adapters may
+-- provide a more specific canonical display name and role presentation.
 DTCommon.DEFAULT_TRADER_NAME = "Caravan Trader"
 DTCommon.DEFAULT_TRADER_ROLE = "trader"
 DTCommon.DEFAULT_CARAVAN_ID = "debug_caravan"

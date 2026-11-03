@@ -17,6 +17,8 @@ DTHoomans.Settlement = DTHoomans.Settlement or {}
 
 local Settlement = DTHoomans.Settlement
 local Service = DTCommon and DTCommon.TraderService
+local TraderWorld = DTCommon and DTCommon.TraderWorld
+    or require "DTCommon/DTCommon_TraderWorld"
 
 local TRADER_ROLE = "trader"
 local TRADER_ID_PREFIX = "dt_"
@@ -156,6 +158,23 @@ local function ensureResidentMarket(factionID)
     return true, "market_provisioned", community
 end
 
+local function adoptResidentWorld(traderID, community)
+    if not community or not TraderWorld
+        or type(TraderWorld.AdoptTrader) ~= "function"
+    then
+        return true, "world_service_unavailable"
+    end
+    local adopted, reason = TraderWorld.AdoptTrader(traderID, {
+        worldRole = "resident",
+        provider = "DTHoomans",
+        lifecycleState = "idle",
+        homeSettlementID = community.id,
+        currentSettlementID = community.id,
+    })
+    if not adopted then return false, reason or "world_adoption_failed" end
+    return true, "world_adopted"
+end
+
 local function bindResidentContext(traderID, community)
     if not community or type(Service.SetHomeSettlement) ~= "function" then
         return true, "context_service_unavailable"
@@ -224,6 +243,9 @@ function Settlement.EnsureTraderForFaction(factionID)
         local boundContext, boundReason = bindResidentContext(
             traderID, residentCommunity)
         if not boundContext then return false, boundReason end
+        local adopted, adoptReason = adoptResidentWorld(
+            traderID, residentCommunity)
+        if not adopted then return false, adoptReason end
         return true, "already_bound", existing
     end
     record, reason = Service.Create({
@@ -241,7 +263,11 @@ function Settlement.EnsureTraderForFaction(factionID)
     local boundContext, boundReason = bindResidentContext(
         traderID, residentCommunity)
     if not boundContext then return false, boundReason end
-    return true, existing and "rebound" or "bound", record
+    local adopted, adoptReason = adoptResidentWorld(
+        traderID, residentCommunity)
+    if not adopted then return false, adoptReason end
+    return true, existing and "rebound" or "bound",
+        Service.GetRecord and Service.GetRecord(traderID) or record
 end
 
 -- Bounded sweep over the persistent faction registry. Skips mobile groups,

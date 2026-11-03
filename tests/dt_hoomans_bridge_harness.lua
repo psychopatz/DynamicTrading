@@ -504,37 +504,29 @@ check(fallbackSpec.groupSize == 3,
     "without the sandbox table the documented default is used",
     fallbackSpec.groupSize)
 
-print("== 12. roaming caravan lifecycle ==")
-local Lifecycle = dofile(
-    ROOT .. "/DTHoomans/42.20/media/lua/server/DTHoomans/DTHoomans_CaravanLifecycle.lua")
-local roamingFactions = {
-    { id = "faction_roam_1", archetypeID = "trader", status = "active",
-      tags = { dynamicTrading = true, mobileGroup = true },
-      mobile = { active = true }, memberIDs = {} },
-    { id = "faction_settle_1", archetypeID = "settler", status = "active",
-      tags = {}, memberIDs = {} },
-}
-PNC.Factions.List = function() return roamingFactions end
-check(Lifecycle.CountRoaming() == 1, "one roaming caravan counted",
-    Lifecycle.CountRoaming())
-local filling = Lifecycle.Tick()
-check(filling.roaming == 1, "one roaming caravan detected", filling.roaming)
-check(filling.spawned == 1, "the lifecycle fills toward the cap", filling.skipped)
-
-roamingFactions[2] = { id = "faction_roam_2", archetypeID = "trader",
-    status = "active", tags = { dynamicTrading = true, mobileGroup = true },
-    mobile = { active = true }, memberIDs = {} }
-local atCapacity = Lifecycle.Tick()
-check(atCapacity.spawned == 0, "a full world is not over-spawned", atCapacity.spawned)
-check(atCapacity.skipped == "at_capacity", "cap reason reported", atCapacity.skipped)
-
-roamingFactions[1] = nil
-roamingFactions[2] = nil
-local replaced = Lifecycle.Tick()
-check(replaced.roaming == 0, "a lost caravan is detected", replaced.roaming)
-check(replaced.spawned == 1, "a replacement caravan is raised", replaced.skipped)
-check(Lifecycle.MAX_ROAMING_CARAVANS == 2, "the roaming cap is bounded")
-check(type(Lifecycle.LastSummary()) == "table", "last summary is exposed")
+print("== 12. one common trader-world lifecycle ==")
+local oldLifecyclePath = ROOT
+    .. "/DTHoomans/42.20/media/lua/server/DTHoomans/"
+    .. "DTHoomans_CaravanLifecycle.lua"
+local oldLifecycle = io.open(oldLifecyclePath, "r")
+check(oldLifecycle == nil,
+    "parallel DTHoomans caravan lifecycle has been removed")
+if oldLifecycle then oldLifecycle:close() end
+local commonWorldSource = assert(io.open(
+    ROOT .. "/DTCommon/42.20/media/lua/shared/DTCommon/"
+        .. "DTCommon_TraderWorld.lua", "r")):read("*a")
+check(string.find(commonWorldSource, "MAX_ROAMING_TRADERS = 2", 1, true)
+        ~= nil,
+    "common trader-world owns the bounded roaming population")
+check(string.find(commonWorldSource, "function World.EnsurePopulation", 1, true)
+        ~= nil,
+    "common trader-world owns roaming population fill")
+local commonRuntimeSource = assert(io.open(
+    ROOT .. "/DTCommon/42.20/media/lua/server/DTCommon/"
+        .. "DTCommon_TraderWorldRuntime.lua", "r")):read("*a")
+check(string.find(commonRuntimeSource, "Events.OnTick.Add(onTick)", 1, true)
+        ~= nil,
+    "common trader-world runtime owns the commercial lifecycle tick")
 
 print(string.format("\n%d checks, %d failures", checks, failures))
 os.exit(failures == 0 and 0 or 1)

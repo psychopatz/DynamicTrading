@@ -4,7 +4,5 @@ if PsychopatzCore and PsychopatzCore.RuntimeRole
     and not PsychopatzCore.RuntimeRole.AllowsServerCode()
 then return end
 
-require "DTAbstract/DTAbstract_Lifecycle"
-require "DTAbstract/DTAbstract_ProjectionServer"
-require "DTAbstract/DTAbstract_Handoff"
+require "DTAbstract/DTAbstract_TraderWorldProvider"
 require "DTAbstract/DTAbstract_Server"

@@ -64,6 +64,15 @@ DTHoomans = { MOD_ID = "DTHoomans", SPAWN_COMMAND = "SpawnTrader" }
 Events = { OnClientCommand = { Add = function() end } }
 
 T.load("DTHoomans", "server", "DTHoomans/DTHoomans_Server.lua")
+DTCommon.Integrations = {
+    ApplyCapacity = function() return nil, nil, "unhandled" end,
+    ResolveDisplayName = function() return nil, "unhandled" end,
+    ValidateTraderAccess = function(current, currentRecord)
+        local allowed, reason =
+            DTHoomans.ValidateTraderAccess(current, currentRecord)
+        return true, allowed, reason
+    end,
+}
 local Service = T.load(
     "DTCommon", "shared", "DTCommon/DTCommon_TraderService.lua")
 DTCommon.TraderService.GetRecord = function() return record end

@@ -2,262 +2,210 @@
 
 ## 1. Stable ownership
 
-### PsychopatzCore owns generic mechanisms
+### PsychopatzCore
 
-Core owns generic actor identity/state, world/location/journey primitives, provider leases/transitions, persistence, synchronized actor projection, map host, and generic notification/debug infrastructure.
+Owns generic mechanisms:
 
-Core does not own trader economics, route policy, Hoomans communities, or caravan behavior.
+- actor identity and state;
+- location and journey primitives;
+- provider leases and transitions;
+- actor persistence;
+- synchronized actor projection transport;
+- generic map host and notification/debug infrastructure.
 
-### DTCommon owns the DynamicTrading domain
+Core does not own trader economics or route policy.
 
-DTCommon owns one canonical trader-world model:
+### DTCommon
 
-- trader commercial record;
-- stock/budget;
-- quote/trade authority;
-- market and settlement exchange;
-- trader lifecycle policy;
+Owns the DynamicTrading domain:
+
+- trader records;
+- stock and budget;
+- quote and trade authority;
+- settlement market and exchange;
 - population intent;
-- route/destination intent;
-- journey/commercial location state;
-- cooldown/schedule;
-- arrival and exactly-once settlement visit/exchange;
-- trader availability;
-- common interaction/contact/action query model;
-- provider-independent debug/query model.
+- route and destination intent;
+- commercial journey and settlement state;
+- arrival, visit history, and cooldown;
+- provider registry;
+- representation transition policy;
+- common trader projection and client presentation model;
+- common contact and action model;
+- optional-adopter integration registries.
 
-DTCommon may use generic PsychopatzCore APIs. Optional adopter implementation details enter through registered ports.
+### DTAbstract
 
-### DTAbstract is an abstract representation adapter
+Owns the abstract representation implementation and abstract-facing presentation only.
 
-DTAbstract owns:
+### DTHoomans
 
-- abstract provider implementation;
-- abstract/Core journey execution where the provider contract requires it;
-- client projection consumption;
-- map presentation;
-- nearby discovery presentation;
-- notification/radio UI;
-- Abstract Trader Manager UI.
-
-It does not own a second trader population/routing/arrival lifecycle.
-
-### DTHoomans is a physical representation adapter
-
-DTHoomans owns:
-
-- Hoomans bodies;
-- faction/caravan/member generation;
-- guard roles/equipment;
-- PNC travel integration;
-- physical position/body reconciliation;
-- Hoomans settlement geography provider;
-- NPC role/conversation integration;
-- portrait/physical presentation.
-
-It does not own a parallel commercial trader lifecycle.
+Owns Hoomans physical bodies, caravans, mobile groups, resident participant travel, Hoomans geography, and Hoomans-specific presentation and access logic.
 
 ## 2. Canonical trader model
 
-```text
-TraderWorld trader
-  traderID
-  actorID
-  commercial state
-  stock/budget
-  home/current/origin/destination settlement
-  lifecycle state
-  journey intent/state
-  cooldown/schedule
-  provider lease / representation
-  visit history
-```
+One trader keeps one canonical commercial identity:
 
-Exactly one trader record and one Core actor exist per trader. Provider state changes representation, not identity.
+- traderID;
+- actorID;
+- stock and budget;
+- home, current, origin, and destination settlement;
+- lifecycle state;
+- journey identity and state;
+- cooldown;
+- provider lease and representation;
+- visit history.
 
-## 3. Trader World Runtime
+Provider transitions do not create a second trader or second commercial state machine.
 
-Target common domain surface, names illustrative:
+## 3. Common runtime modules
 
-```text
-DTCommon/TraderWorld/
-  TraderWorldService
-  TraderPopulation
-  TraderRouting
-  TraderJourney
-  TraderArrival
-  TraderInteraction
-  TraderProviderRegistry
-```
+DTCommon_TraderWorld.lua
 
-Existing modules may be extended instead if ownership stays coherent.
+- common lifecycle state;
+- population;
+- destination selection;
+- journey intent;
+- external journey state;
+- arrival;
+- exactly-once visit and exchange;
+- cooldown;
+- provider reconciliation.
 
-Runtime flow:
+DTCommon_TraderWorldRuntime.lua
 
-```text
-ensure trader
-    |
-select/maintain world intent
-    |
-choose destination
-    |
-request provider movement
-    |
-observe canonical journey/provider state
-    |
-arrival
-    |
-exactly-once settlement visit/exchange
-    |
-cooldown / next intent
-```
+- single commercial cadence.
 
-There is one authority flow for commercial/world decisions.
+DTCommon_TraderProviderRegistry.lua
+
+- open provider registry;
+- capability-specific provider selection.
+
+DTCommon_TraderRepresentationRuntime.lua
+
+- bounded proximity-driven representation switching;
+- native-physical protection;
+- missing-body recovery coordination.
+
+DTCommon_TraderProjectionServer.lua and DTCommon_TraderPresentation.lua
+
+- one provider-agnostic DynamicTrading projection source and client read model.
+
+DTCommon_TraderContacts.lua
+
+- canonical bounded contact, paging, market-event, and common action construction.
+
+DTCommon_IntegrationRegistry.lua and DTCommon_TradePresentationRegistry.lua
+
+- optional adopter capabilities without implementation coupling.
 
 ## 4. Provider contract
 
-A provider registry should expose bounded capabilities such as:
+Providers may expose capabilities such as:
 
-```lua
-{
-  id,
-  isAvailable,
-  canRepresent,
-  ensureRepresentation,
-  releaseRepresentation,
-  startMovement,
-  getPosition,
-  getState,
-  recover,
-}
-```
+- isAvailable;
+- ownsRecord;
+- spawnTrader;
+- canTravelTo;
+- scoreDestination;
+- startMovement;
+- pollMovement;
+- getPosition;
+- reconcileRecord;
+- materializeTrader;
+- dematerializeTrader;
+- recoverMissingBody;
+- getActorRegistry.
 
-Capabilities may be optional but must be explicit. Provider IDs should be registered data, not a permanently hard-coded closed set.
+Capabilities are optional and registered. Provider IDs are not a permanently closed hard-coded set.
 
-## 5. Movement ownership
+## 5. Movement contract
 
-DTCommon owns **where/why/when** a trader travels.
+DTCommon owns where, why, and when commercial travel occurs.
 
-Provider owns **how that representation executes movement**.
+The provider owns how its representation executes movement.
 
-- DTAbstract may execute via Core abstract journey.
-- DTHoomans may execute via PNC physical/mobile travel.
+DTAbstract executes a Core abstract journey.
 
-Both map to the same destination, journey intent/identity, arrival semantics, and trader record.
+DTHoomans executes Hoomans mobile-group travel for caravans. Temporary individual physical projections may pause movement and later rebase the same Core journey when returning to the origin provider.
 
-Never run two route authorities for one trader.
+Never run two commercial route authorities for one trader.
 
-## 6. Population ownership
+## 6. Population contract
 
-DTCommon owns desired trader population/commercial roles.
+DTCommon owns desired roaming population.
 
-Provider owns representation construction.
+A selected spawn provider constructs the representation.
 
-Example:
+Abstract representation is preferred when available; physical caravan spawn remains a fallback provider capability. Hoomans guard and member composition remains DTHoomans-owned.
 
-- DTCommon requests a roaming trader.
-- DTAbstract creates an abstract representation.
-- DTHoomans creates a caravan representation with trader + guards.
-
-Guard/member composition remains DTHoomans policy.
-
-## 7. Arrival ownership
+## 7. Arrival contract
 
 Exactly one common arrival path owns:
 
-- current/destination settlement update;
+- current and destination settlement update;
 - visit identity;
-- market exchange;
-- visit/restock bookkeeping;
+- settlement exchange;
+- visit and restock bookkeeping;
 - cooldown scheduling.
 
-Provider-specific arrival events translate into this path. They cannot independently apply another exchange.
+Hoomans arrival events translate into that common API and do not independently apply another commercial exchange.
 
-## 8. Interaction model
+## 8. Resident traders
 
-Common contact/action query model:
+Resident is a DTCommon world role.
 
-```lua
-{
-  traderID,
-  displayName,
-  status,
-  marketEvents,
-  actions,
-  capabilities,
-}
-```
+DTCommon owns commercial destination and location transitions.
 
-Common actions include trade/talk availability and shared server authorization.
+DTHoomans owns the Hoomans excursion executor, participant lifecycle, visit timing, and exact-home return.
 
-Adapters augment/filter:
+Externally validated Hoomans community IDs may enter the common external-journey API without requiring a duplicate DT settlement lookup.
 
-- DTAbstract: remote/radio availability and presentation.
-- DTHoomans: live body, distance, role/faction, portrait, NPC conversation surface.
+## 9. Representation handoff
 
-Paging, canonical lookup, market-event summary, and common action descriptors should not be implemented twice.
+Temporary representation flow:
 
-## 9. Optional-adopter boundaries
+DTCommon trader
+  -> origin provider
+  -> DTCommon representation policy
+  -> physical provider materialization
+  -> same trader and actor
+  -> physical body position
+  -> dematerialize or recover
+  -> recorded origin provider
+  -> same canonical journey rebased from final body position
 
-Replace direct optional-adopter reads with registered seams where appropriate.
+Native physical traders have no returnProviderID and are not auto-dematerialized.
 
-Targets include:
+## 10. Projection
 
-- community/region resolution;
-- trader display-name augmentation;
-- physical access validation;
-- physical trade UI integration;
-- provider registration;
-- settlement geography.
+The synchronized projection source is DynamicTrading and is owned by DTCommon.
 
-DTCommon must remain functional when Hoomans is absent.
+Provider getPosition can override the Core projected position.
 
-## 10. Map/presentation
+For physical providers, client projection suppresses the old abstract journey interpolation so map/debug consumers see live physical position rather than stale route interpolation.
 
-PsychopatzCore remains the single generic map host.
+## 11. Interaction model
 
-DTAbstract and DTHoomans own visual representation but consume the same canonical trader/actor state.
+Common contact data contains trader ID, display name, status, market events, actions, and capabilities.
 
-Do not move map rendering or Hoomans portrait/body details into the common domain.
+DTAbstract adds remote and radio eligibility.
 
-## 11. Handoff
+DTHoomans adds body, distance, role, faction, portrait, and physical-window behavior.
 
-```text
-DTCommon TraderWorld
-       |
-same trader / actor / journey / stock / visit identity
-       |
-representation = DTAbstract
-       |
-provider transition
-       |
-representation = DTHoomans
-       |
-provider transition
-       |
-representation = DTAbstract
-```
+## 12. Performance rules
 
-Handoff is representation change, not transfer between two commercial simulations.
+- roaming population is bounded;
+- provider and integration registries are bounded;
+- contacts and page size are bounded;
+- commercial lifecycle is interval-driven;
+- representation proximity checks are throttled;
+- no duplicate commercial lifecycle tick;
+- no duplicate arrival effect;
+- no per-frame commercial-domain scan;
+- projection payload remains Core-bounded.
 
-## 12. Migration rules
+## 13. Native acceptance boundary
 
-- characterize behavior before moving code;
-- add fail-first/parity tests;
-- introduce common contract;
-- migrate callers;
-- remove obsolete active code;
-- do not keep permanent legacy/compat mirrored lifecycle code;
-- preserve working pricing/stock/market systems unless evidence requires changes.
+Developer architecture and automated regression gates are complete.
 
-## 13. Performance
-
-Required:
-
-- bounded population;
-- interval/event-driven lifecycle;
-- no duplicate commercial lifecycle ticks;
-- no per-frame domain scans;
-- bounded provider/contact queries;
-- exactly-once arrival effects;
-- no duplicate trader/body during handoff.
+Native SP/MP acceptance remains user-owned and must verify save/reload, reconnect, representation transitions, body uniqueness, and interaction parity.

@@ -20,6 +20,11 @@ local Storage = setmetatable({}, {
 local Stock = DTCommon.TraderStock
 local Support = DTCommon.TraderSupport
 local Policy = require "DTCommon/DTCommon_CoreActorPolicy"
+local Integrations = DTCommon.Integrations or {
+    ApplyCapacity = function() return nil, nil, "unhandled" end,
+    ResolveDisplayName = function() return nil, "unhandled" end,
+    ValidateTraderAccess = function() return false, false, "unhandled" end,
+}
 
 local MAX_ROWS = 32
 local MAX_ITEMS_PER_ROW = 100
@@ -191,30 +196,18 @@ local function rollbackHandles(handles)
 end
 
 local function applyCaravanCapacity(record, store)
-    local usedWeight
-    local maxWeight
-    local caravan = rawget(_G, "DTHoomans")
-        and DTHoomans.Caravan or nil
-    if caravan and type(caravan.GetCapacity) == "function" then
-        usedWeight, maxWeight = caravan.GetCapacity(record)
-        if tonumber(maxWeight) and tonumber(maxWeight) > 0 then
-            store.maxWeight = tonumber(maxWeight)
-        end
+    local usedWeight, maxWeight =
+        Integrations.ApplyCapacity(record, store)
+    if tonumber(maxWeight) and tonumber(maxWeight) > 0 then
+        store.maxWeight = tonumber(maxWeight)
     end
     return number(usedWeight, store.getWeight and store:getWeight() or 0),
         number(maxWeight, number(store.maxWeight, 0))
 end
 
 local function applyCanonicalDisplayName(record, snapshot)
-    local caravan = rawget(_G, "DTHoomans")
-        and DTHoomans.Caravan or nil
-    local name
-    if not snapshot or not caravan
-        or type(caravan.ResolveTraderDisplayName) ~= "function"
-    then
-        return
-    end
-    name = caravan.ResolveTraderDisplayName(record)
+    if not snapshot then return end
+    local name = Integrations.ResolveDisplayName(record)
     if type(name) == "string" and name ~= "" then
         snapshot.displayName = name
     end
@@ -304,38 +297,6 @@ local function itemProtectionReason(player, item)
     return nil
 end
 
-local function liveNPC(npcID)
-    if PsychopatzCore and PsychopatzCore.Actors and PsychopatzCore.Actors.Registry
-        and type(PsychopatzCore.Actors.Registry.Get) == "function"
-    then
-        local actor = PsychopatzCore.Actors.Registry:Get(npcID)
-        if actor and actor.x and actor.y then
-            return actor
-        end
-    end
-    local registry = PNC and PNC.Registry or nil
-    local body
-    if not registry or type(registry.Get) ~= "function" then return nil end
-    body = type(registry.GetLiveZombie) == "function"
-        and registry.GetLiveZombie(npcID) or nil
-    return body or registry.Get(npcID)
-end
-
-local function coordinate(object, method)
-    local value = safeCall(object, method, nil)
-    return value ~= nil and tonumber(value) or nil
-end
-
-local function nearby(player, npcID)
-    local body = liveNPC(npcID)
-    local px = coordinate(player, "getX")
-    local py = coordinate(player, "getY")
-    local nx = coordinate(body, "getX") or number(body and body.x, nil)
-    local ny = coordinate(body, "getY") or number(body and body.y, nil)
-    if not px or not py or not nx or not ny then return false end
-    return (px - nx) * (px - nx) + (py - ny) * (py - ny) <= 36
-end
-
 local function hasActiveRadio(player)
     local state = PsychopatzCore and PsychopatzCore.RadioDeviceState
     if not state or type(state.FindActivePlayerDevice) ~= "function" then
@@ -348,7 +309,7 @@ end
 -- `a` is a server-created capability for an abstract/radio trader. It still
 -- requires a real active player radio on the authoritative side. A physical
 -- trader must prove a live nearby body; a guessed trader ID cannot open that
--- path remotely. DTHoomans may add stricter role/presence checks.
+-- path remotely. Optional physical adapters may add stricter access checks.
 local function validateAccess(player, record)
     local policyOK, policyReason = Policy.IsAvailable(record)
     if not policyOK then return false, policyReason end
@@ -356,14 +317,22 @@ local function validateAccess(player, record)
     if status ~= tostring(DTCommon.STATUS_READY) then
         return false, "trader_unavailable"
     end
-    local npcID = record and (record.p or record.l)
-    if npcID and nearby(player, npcID) then
-        local dthoomans = rawget(_G, "DTHoomans")
-        if dthoomans and type(dthoomans.ValidateTraderAccess) == "function" then
-            return dthoomans.ValidateTraderAccess(player, record)
-        end
-        return true
+
+    local handled, allowed, reason =
+        Integrations.ValidateTraderAccess(player, record)
+    if handled and allowed == true then
+        return true, reason
     end
+    if handled and tonumber(record and record.a) ~= 1 then
+        return false, reason
+    end
+    if handled and reason ~= "merchant_not_present"
+        and reason ~= "access_denied"
+        and reason ~= "merchant_position_unavailable"
+    then
+        return false, reason
+    end
+
     if tonumber(record and record.a) == 1 then
         if not hasActiveRadio(player) then return false, "radio_required" end
         return true
@@ -696,7 +665,7 @@ function Service.BindCoreActor(traderID, actorID, definition)
     end
     if existing.actorID and tostring(existing.actorID) == tostring(actorID) then
         if not existing.provider then
-            existing.provider = "DTAbstract"
+            existing.provider = "PsychopatzCore"
             existing.providerState = existing.providerState or "abstract"
             record.ca = existing
             Storage.Touch()
@@ -705,7 +674,7 @@ function Service.BindCoreActor(traderID, actorID, definition)
         return true
     end
     definition = type(definition) == "table" and definition or {}
-    definition.provider = definition.provider or "DTAbstract"
+    definition.provider = definition.provider or "PsychopatzCore"
     Policy.Bind(record, actorID, definition)
     Storage.Touch()
     Storage.Transmit()

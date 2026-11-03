@@ -22,6 +22,22 @@ DTCommon = {
     MarketSchema = T.load(
         "DTCommon", "shared", "DTCommon/DTCommon_MarketSchema.lua"),
 }
+DTCommon.SettlementDirectory = {
+    Get = function(id)
+        if id == "community_alpha" or id == "community_beta"
+            or id == "community_seed"
+        then
+            return { settlementID = id, enabled = true }
+        end
+        if id == "community_closed" then
+            return nil, "settlement_not_found"
+        end
+        if id and id ~= "" then
+            return { settlementID = id, enabled = true }
+        end
+        return nil, "settlement_not_found"
+    end,
+}
 PsychopatzCore = {
     RuntimeRole = { AllowsServerCode = function() return authority end },
 }
