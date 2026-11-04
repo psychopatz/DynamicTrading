@@ -363,7 +363,21 @@ function Policy.RecordTradeEvent(record, player, tradeDetails)
     end
 
     tradeDetails = type(tradeDetails) == "table" and tradeDetails or {}
-    local requestID = tostring(tradeDetails.requestID or ("trade:" .. tostring(os.time())))
+    local requestID = tradeDetails.requestID
+    if requestID == nil then
+        Policy.TradeEventSerial =
+            (tonumber(Policy.TradeEventSerial) or 0) + 1
+        local gameTime = getGameTime and getGameTime() or nil
+        local worldAge = gameTime
+            and gameTime.getWorldAgeHours
+            and tonumber(gameTime:getWorldAgeHours())
+            or 0
+        requestID = "trade:"
+            .. tostring(worldAge)
+            .. ":"
+            .. tostring(Policy.TradeEventSerial)
+    end
+    requestID = tostring(requestID)
     local eventID = "dt:trade:" .. requestID
 
     local approvalDelta = tonumber(tradeDetails.approvalDelta) or 1

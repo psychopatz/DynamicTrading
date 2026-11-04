@@ -82,6 +82,22 @@ T.truthy(ext, "DT commercial extension present")
 T.equal(ext.totalTrades, 1, "first trade recorded in extension")
 T.equal(ext.lastTradeValue, 150, "last trade value recorded")
 
+local fallbackSocial, fallbackErr = Policy.RecordTradeEvent(
+    traderRecord,
+    player,
+    { totalValue = 25 }
+)
+T.truthy(fallbackSocial, fallbackErr)
+local fallbackRel = Social.Get(
+    registry:Get("actor:dt:merchant:one").social,
+    "player:online:12"
+)
+T.equal(
+    fallbackRel.memories[#fallbackRel.memories].id,
+    "dt:trade:trade:0:1",
+    "request-less trade uses Kahlua-safe game-time serial"
+)
+
 -- New price context reflects the improved relationship!
 local discountedPrice = Policy.PriceContext(traderRecord, player)
 T.truthy(discountedPrice.relationshipModifier > 0, "relationship discount applied after trade")
