@@ -100,8 +100,8 @@ Fail-first regressions were added before migration and initially failed for the 
 - Dynamic Trading focused parity/bridge/MarketSense/exclusivity/performance set: all required tests pass, including the 4k+ stock/performance and both native MarketSense/stock checks.
 - DTHoomans bridge harness: pass. Provider exclusivity and hotswap/persistence checks: pass.
 - PsychopatzCore changed-path presentation/persistence tests: **8/8**; all-file private-helper binding scan: **406/406 files, pass**.
-- ProjectHoomans provider/materialization focus: **3/3**; full sweep: **999 pass, 5 fail**, with the same five unrelated pre-existing semantic/harness expectation failures documented before this work.
-- PsychopatzCore standalone full sweep: **147 pass, 7 fail**. The seven failures are unchanged environment/UI or unrelated baseline fixtures (missing ScrollPanel/TimedActions fixtures, image fallback, profiler role/composition, widget sizing, and world-inventory teleport); all changed Core paths pass.
+- ProjectHoomans provider/materialization focus: **3/3**; full sweep: **1000 pass, 5 fail**, with the same five unrelated pre-existing semantic/harness expectation failures documented before this work.
+- PsychopatzCore standalone full sweep: **148 pass, 7 fail**. The seven failures are unchanged environment/UI or unrelated baseline fixtures (missing ScrollPanel/TimedActions fixtures, image fallback, profiler role/composition, widget sizing, and world-inventory teleport); all changed Core paths pass.
 - Installed PZ Kahlua verification: **18/18 changed production Lua files pass**, with zero errors at ERROR severity.
 - Source-removal audit: pass; one Core actor-marker renderer, one DTCommon trader decorator/manager/conversation path, one Core notification widget/queue, and no forbidden DTAbstract runtime dependency.
 - `git diff --check`: passed in DynamicTrading, PsychopatzCore, and ProjectHoomans.
