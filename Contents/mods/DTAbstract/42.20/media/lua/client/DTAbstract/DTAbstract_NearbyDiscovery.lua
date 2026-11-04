@@ -31,6 +31,7 @@ local function nearbyNotification(traderID, record, actorID)
     return Notification.Build(traderID, message, {
         id = "dt_nearby:" .. tostring(traderID),
         actorID = actorID,
+        includeNext = true,
         mode = "nearby",
         persistent = true,
     })

@@ -109,15 +109,20 @@ T.truthy(type(spec.extensionParts) == "table"
     and spec.extensionParts[1]
     and spec.extensionParts[1].partID == "llmInput",
     "shared trader conversation does not mount the Core semantic input")
-T.equal(#spec.nodes.root.choices, 5,
+T.equal(#spec.nodes.root.choices, 6,
     "Core trader conversation exposes expected root choices")
+T.equal(spec.nodes.root.choices[2].id, "identity",
+    "Core trader conversation exposes a knowledge-backed identity choice")
 T.equal(spec.nodes.root.choices[2].response(),
+    "I'm Core Mara.",
+    "identity response uses the canonical actor name")
+T.equal(spec.nodes.root.choices[3].response(),
     "I'm heading toward Rosewood Outpost.",
     "destination response uses human-facing place presentation")
-T.equal(spec.nodes.root.choices[3].response(),
+T.equal(spec.nodes.root.choices[4].response(),
     "I came from March Ridge Depot.",
     "origin response uses human-facing place presentation")
-T.contains(spec.nodes.root.choices[4].response(), "BANDIT RAID",
+T.contains(spec.nodes.root.choices[5].response(), "BANDIT RAID",
     "road news uses shared WorldKnowledge")
 
 spec.nodes.root.choices[1].action()

@@ -52,6 +52,36 @@ local function viewFor(traderID, actorID)
     return nil
 end
 
+local function rosterFor(traderID)
+    if type(Presentation.ListTraderViews) ~= "function" then
+        return {}
+    end
+    local rows = Presentation.ListTraderViews(false) or {}
+    local roster = {}
+    for _, row in ipairs(rows) do
+        if row and tostring(row.traderID or "") == tostring(traderID) then
+            roster[#roster + 1] = row
+        end
+    end
+    return roster
+end
+
+local function nextRosterView(traderID, actorID)
+    local roster = rosterFor(traderID)
+    if #roster < 2 then return nil end
+    local currentIndex
+    for index, row in ipairs(roster) do
+        if tostring(row.actorID or "") == tostring(actorID or "") then
+            currentIndex = index
+            break
+        end
+    end
+    if not currentIndex then return roster[1] end
+    local nextIndex = currentIndex + 1
+    if nextIndex > #roster then nextIndex = 1 end
+    return roster[nextIndex]
+end
+
 local function badgeFor(view)
     local faction = view and view.factionPresentation or nil
     if type(faction) ~= "table" then return nil end
@@ -107,6 +137,11 @@ function Notification.Build(traderID, message, options)
         end
     end
 
+    local id = tostring(options.id or options.notificationID or "")
+    if id == "" then
+        id = "dt_trader:" .. traderID .. ":" .. tostring(actorID or "leader")
+    end
+
     local actions = {}
     if type(options.actions) == "table" then
         for index = 1, math.min(#options.actions, 2) do
@@ -123,12 +158,52 @@ function Notification.Build(traderID, message, options)
             actions[#actions + 1] = actionFor(
                 "trade", "Trade", traderID, actorID, options)
         end
+        if options.includeNext == true and #actions < 2 then
+            local nextView = nextRosterView(traderID, actorID)
+            if nextView then
+                actions[#actions + 1] = {
+                    id = "next",
+                    label = tostring(options.nextLabel or "Next"),
+                    callback = function()
+                        local nextActorID = tostring(nextView.actorID or "")
+                        if nextActorID == "" then
+                            return false, "trader_roster_actor_missing"
+                        end
+                        local nextName = tostring(
+                            nextView.name or nextActorID
+                        )
+                        local nextMessage = options.nextMessage
+                        if type(nextMessage) ~= "string"
+                            or nextMessage == ""
+                        then
+                            if options.mode == "nearby" then
+                                nextMessage = nextName
+                                    .. " is operating nearby."
+                            else
+                                nextMessage = "You are speaking with "
+                                    .. nextName .. "."
+                            end
+                        end
+                        local nextOptions = {}
+                        for key, value in pairs(options) do
+                            nextOptions[key] = value
+                        end
+                        nextOptions.id = id
+                        nextOptions.actorID = nextActorID
+                        nextOptions.message = nextMessage
+                        nextOptions.includeNext = true
+                        local shown, reason = Notification.Show(
+                            traderID,
+                            nextMessage,
+                            nextOptions
+                        )
+                        return shown, reason
+                    end,
+                }
+            end
+        end
     end
 
-    local id = tostring(options.id or options.notificationID or "")
-    if id == "" then
-        id = "dt_trader:" .. traderID .. ":" .. tostring(actorID or "leader")
-    end
     return {
         id = id,
         actorID = actorID,

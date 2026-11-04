@@ -164,6 +164,16 @@ local function newsResponse(traderID)
     return "I haven't heard any news lately."
 end
 
+local function identityResponse(knowledge, fallbackName)
+    knowledge = type(knowledge) == "table" and knowledge or {}
+    if knowledge.nameKnown == false then
+        return "I haven't told you my name yet."
+    end
+    return "I'm " .. tostring(
+        knowledge.knownName or fallbackName or "the caravan trader"
+    ) .. "."
+end
+
 local function factionContext(projection, record)
     local ca = record and record.ca or {}
     return {
@@ -297,10 +307,13 @@ local function responseFor(traderID, ir, context)
         end
         if hasPattern(ir, "who")
             or hasPattern(ir, "trader_location")
+            or tostring(ir and ir.topic or "") == "identity"
         then
             return {
-                text = "I'm " .. tostring(context and context.npcName
-                    or "the caravan trader") .. ".",
+                text = identityResponse(
+                    context and context.knowledge,
+                    context and context.npcName
+                ),
                 branch = "IDENTITY_RECEIVED",
             }
         end
@@ -370,7 +383,8 @@ local function contextFor(
     name,
     projection,
     record,
-    options
+    options,
+    knowledge
 )
     local faction = factionContext(projection, record)
     local ca = record and record.ca or {}
@@ -399,6 +413,7 @@ local function contextFor(
         factionPresentation = faction.factionPresentation,
         communityID = faction.communityID,
         conversationMode = options.mode or "radio",
+        knowledge = knowledge,
     }
 end
 
@@ -409,7 +424,8 @@ local function createService(
     name,
     projection,
     record,
-    options
+    options,
+    knowledge
 )
     local Service = actorService()
     if not Service then return nil, "core_actor_service_unavailable" end
@@ -419,7 +435,8 @@ local function createService(
         name,
         projection,
         record,
-        options
+        options,
+        knowledge
     )
     local session = view and view.session
     local service, reason = Service.New({
@@ -631,7 +648,8 @@ function Conversation.BuildSpec(traderID, actorID, options)
                     name,
                     projection,
                     recordFor(traderID) or record,
-                    semanticOptions
+                    semanticOptions,
+                    knowledge
                 )
             end,
             buildContext = function()
@@ -641,7 +659,8 @@ function Conversation.BuildSpec(traderID, actorID, options)
                     name,
                     projection,
                     recordFor(traderID) or record,
-                    semanticOptions
+                    semanticOptions,
+                    knowledge
                 )
             end,
             onResult = function(view, value, result)
@@ -691,6 +710,14 @@ function Conversation.BuildSpec(traderID, actorID, options)
                                 })
                             end
                             return false, "trade_unavailable"
+                        end,
+                        next = "root",
+                    },
+                    {
+                        id = "identity",
+                        text = "What's your name?",
+                        response = function()
+                            return identityResponse(knowledge, name)
                         end,
                         next = "root",
                     },
@@ -781,9 +808,9 @@ function Conversation.BuildSpec(traderID, actorID, options)
     end
     if #roster <= 1 then
         -- Keep the single-actor contract compact and preserve the existing
-        -- root choice order.  The same authored choice is materialized only
-        -- when there is another faction member to rotate to.
-        table.remove(spec.nodes.root.choices, 2)
+        -- root choice order.  The roster switch is materialized only when
+        -- there is another faction member to rotate to.
+        table.remove(spec.nodes.root.choices, 3)
     end
     return spec
 end

@@ -32,11 +32,15 @@ local guardEntry = {
     journey = { state = "idle" },
 }
 
+local listActorCalls = 0
 package.preload[
     "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"
 ] = function()
     return {
-        ListActors = function() return { actorEntry, guardEntry } end,
+        ListActors = function()
+            listActorCalls = listActorCalls + 1
+            return { actorEntry, guardEntry }
+        end,
         GetActor = function(id)
             if id == actorEntry.actorID then return actorEntry end
             if id == guardEntry.actorID then return guardEntry end
@@ -112,5 +116,7 @@ T.equal(guardStyle.hoverMetadata.factionRole, "guard",
     "shared actor decorator lost the guard faction role")
 T.equal(guardStyle.badge.glyph, "N",
     "guard decorator did not provide the shared faction badge")
+T.equal(listActorCalls, 1,
+    "actor-map decoration rebuilt the complete trader view for every marker")
 
 print("dt_shared_trader_presentation_parity_smoke: PASS")

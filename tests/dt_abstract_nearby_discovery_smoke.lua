@@ -102,6 +102,20 @@ DTCommon = {
                 },
             }
         end,
+        ListTraderViews = function()
+            return {
+                {
+                    traderID = "trader:disc:1",
+                    actorID = actor.actorID,
+                    name = "Nearby Merchant",
+                },
+                {
+                    traderID = "trader:disc:1",
+                    actorID = "actor:disc:guard",
+                    name = "Nearby Guard",
+                },
+            }
+        end,
     },
 }
 DTAbstract = {}
@@ -145,6 +159,11 @@ T.equal(
 T.truthy(
     notificationsShown[1].persistent == true,
     "nearby trader notification must remain visible while in proximity"
+)
+T.equal(
+    notificationsShown[1].actions[2].id,
+    "next",
+    "nearby trader notification must expose the dynamic roster switch"
 )
 T.truthy(
     Discovery.IsTraderDiscovered("trader:disc:1"),

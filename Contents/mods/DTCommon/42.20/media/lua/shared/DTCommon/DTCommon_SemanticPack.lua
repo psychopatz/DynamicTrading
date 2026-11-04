@@ -74,7 +74,7 @@ local function registerPack()
             },
             {
                 id = "concept.trade.who",
-                aliases = { "who are you", "who is in charge", "who runs this caravan", "who handles trading", "leader", "merchant", "guard" },
+                aliases = { "who are you", "who is in charge", "who runs this caravan", "who handles trading", "what is your name", "what's your name", "tell me your name", "your name", "leader", "merchant", "guard" },
                 kind = "intent",
                 priority = 60,
             },

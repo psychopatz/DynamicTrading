@@ -15,6 +15,15 @@ Presentation.RecordCache = Presentation.RecordCache or {
     revision = -1,
     rows = {},
 }
+Presentation.VIEW_CACHE_SECONDS = 0.5
+Presentation.ViewCache = Presentation.ViewCache or {
+    at = -1,
+    revision = -1,
+    rows = {},
+    byActor = {},
+}
+Presentation.ViewCache.rows = Presentation.ViewCache.rows or {}
+Presentation.ViewCache.byActor = Presentation.ViewCache.byActor or {}
 
 local function wallSeconds()
     if getTimeInMillis then
@@ -38,6 +47,10 @@ function Presentation.InvalidateRecordCache()
     Presentation.RecordCache.at = -1
     Presentation.RecordCache.revision = -1
     Presentation.RecordCache.rows = {}
+    Presentation.ViewCache.at = -1
+    Presentation.ViewCache.revision = -1
+    Presentation.ViewCache.rows = {}
+    Presentation.ViewCache.byActor = {}
 end
 
 local function listTraderRecords(force, now)
@@ -200,9 +213,24 @@ local function commercialLabel(traderID, record, ca, journey)
 end
 
 function Presentation.ListTraderViews(force, now)
+    now = tonumber(now) or wallSeconds()
+    local records = Presentation.ListTraderRecords(force, now)
+    local cache = Presentation.ViewCache
+    local revision = Presentation.RecordCache.revision
+    local expired = cache.at < 0
+        or (now > 0
+            and (now - cache.at)
+                >= Presentation.VIEW_CACHE_SECONDS)
+    if force ~= true
+        and cache.revision == revision
+        and not expired
+    then
+        return cache.rows
+    end
+
     local actors = actorIndex()
     local output = {}
-    for _, row in ipairs(Presentation.ListTraderRecords(force, now)) do
+    for _, row in ipairs(records) do
         local record = row.record or {}
         local ca = record.ca or {}
         local client = coreClient()
@@ -280,6 +308,16 @@ function Presentation.ListTraderViews(force, now)
         end
         return left.traderID < right.traderID
     end)
+    local byActor = {}
+    for _, row in ipairs(output) do
+        if not byActor[row.actorID] then
+            byActor[row.actorID] = row
+        end
+    end
+    cache.at = now
+    cache.revision = revision
+    cache.rows = output
+    cache.byActor = byActor
     return output
 end
 
@@ -302,13 +340,8 @@ end
 
 local function decorateTrader(entry, style)
     local actorID = tostring(entry and entry.actorID or "")
-    local view
-    for _, row in ipairs(Presentation.ListTraderViews(false)) do
-        if row.actorID == actorID then
-            view = row
-            break
-        end
-    end
+    Presentation.ListTraderViews(false)
+    local view = Presentation.ViewCache.byActor[actorID]
     if not view then return style end
     style.label = view.label
     style.color = TRADER_COLOR

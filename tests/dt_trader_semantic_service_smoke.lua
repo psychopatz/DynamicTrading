@@ -76,6 +76,16 @@ T.equal(#result.responses, 1,
 T.equal(result.responses[1].text, "I'm heading toward Rosewood Outpost.",
     "semantic trader response lost DTCommon content")
 
+local identityResult = service:Submit(
+    "what is your name",
+    spec.context,
+    {}
+)
+T.truthy(identityResult and identityResult.accepted,
+    "knowledge identity question was rejected by the semantic trader")
+T.equal(identityResult.responses[1].text, "I'm Semantic Mara.",
+    "knowledge identity question did not use the canonical actor name")
+
 local tradeResult = service:Submit("trade", spec.context, {})
 T.truthy(tradeResult and tradeResult.accepted,
     "semantic trader trade turn was rejected")

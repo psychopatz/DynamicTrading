@@ -284,3 +284,47 @@ remain intact. Developer-implementable P0–P7 work is complete. Remaining
 acceptance is user-owned fresh-save native verification of clothing/equipment,
 proximity persistence/dismissal, manager Talk/Next/Trade behavior, save/reload
 persistence, DTAbstract bodylessness, and DTHoomans physical materialization.
+
+## Native-acceptance remediation — 2026-11-05
+
+- Audited the latest native symptoms against source and the current sandbox
+  save. The map slowdown was an `O(markers * full trader-view build)` path:
+  each Core actor-marker decoration rebuilt the full DTCommon roster. A
+  bounded 0.5-second DTCommon view cache plus actor index now makes the Core
+  ActorMap renderer/decorator path reuse one roster snapshot per revision.
+- Nearby trader notifications now keep one persistent proximity card, with
+  shared Talk plus a bounded Next action that cycles the current trader's
+  canonical member roster. The callback keeps the same notification ID and
+  updates the shared Core toast, so it does not create a second notification
+  or a provider-specific widget.
+- The shared trader conversation now exposes a knowledge-backed `What's your
+  name?` choice and semantic aliases for typed name questions. The actor
+  knowledge snapshot is carried into the semantic service context, while the
+  existing destination/origin/news choices remain shared.
+- Core now owns the four human survivor portrait animation nodes used by the
+  conversation portrait (`idle`, `speech`, `wavehi`, and `thumbsdown`) in the
+  existing PNC-compatible zombie anim-set family. The duplicate
+  ProjectHoomans XML nodes were removed; DTAbstract therefore receives the
+  same human portrait clips without loading ProjectHoomans. This is the
+  bodyless portrait UI path, separate from DTHoomans live materialization.
+- Persistence audit found serialized `DTCommon.Traders`, Core
+  `ActorRegistry`, and Core `SurvivorWorld` data in the current sandbox save.
+  Source also has authoritative runtime-store save hooks, immediate trader
+  group saves, and client projection re-request on game start/player create.
+  No second persistence system was added; fresh-save restart verification
+  remains the final native gate, including retesting after installing the
+  Core-owned animation assets.
+- Validation for this remediation: DynamicTrading focused/scoped tests pass;
+  DynamicTrading full suite **81/81**; DTHoomans bridge **78/78**;
+  PsychopatzCore standalone sweep **150/157** with the same seven documented
+  fixture/environment baseline failures; ProjectHoomans full suite
+  **1001/1006** with the same five documented baseline failures; Core portrait
+  smoke passes; installed-PZ Kahlua verification is clean for all six changed
+  production Lua files; `git diff --check` is clean. Re-indexed coverage
+  reports metadata matches/no recorded issues for all changed Lua/XML paths.
+- Final ownership audit: one Core actor-marker renderer, one DTCommon trader
+  decorator, one DTCommon Trader Manager, one Core notification widget, and
+  one DTCommon trader conversation path. The remaining DTHoomans conversation
+  definition is a separate Hoomans-only caravan-referral category, not trader
+  opening/content. DTAbstract still has no ProjectHoomans/PNC runtime
+  dependency, and provider exclusivity remains intact.
