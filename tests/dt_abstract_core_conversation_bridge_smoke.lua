@@ -51,7 +51,15 @@ DTCommon = {
     },
 }
 
-DTAbstract = {}
+local debugResult
+DTAbstract = {
+    DebugHub = {
+        OnConversationResult = function(result)
+            debugResult = result
+            return result.accepted == true
+        end,
+    },
+}
 
 local Bridge = T.load(
     "DTAbstract",
@@ -95,6 +103,10 @@ T.equal(opened.options.displayName, "Remote Mara",
     "Core bridge lost display-name hint")
 T.equal(opened.options.mode, "debug",
     "Core bridge lost authorization mode")
+T.truthy(debugResult and debugResult.accepted == true,
+    "debug bridge did not report final conversation-open success")
+T.equal(debugResult.reason, "conversation_opened",
+    "debug bridge reported authorization instead of final open result")
 
 opened = nil
 sent = {}

@@ -77,7 +77,9 @@ local discoverySnapshot = {
         },
     },
 }
-local CoreClient = {
+local CoreClient
+CoreClient = {
+    Selection = { selectedActorID = nil },
     RequestActorsIfDue = function(interval)
         actorRefreshes = actorRefreshes + 1
         T.equal(interval, 500,
@@ -106,6 +108,7 @@ local CoreClient = {
     end,
     SetSelected = function(actorID)
         selectedActor = actorID
+        CoreClient.Selection.selectedActorID = actorID
         return { selectedActorID = actorID }
     end,
     SetHighlighted = function(actorID)
@@ -293,12 +296,13 @@ T.contains(trader.label, "Destination Camp",
 T.equal(trader.positionSource, "group",
     "Core position source missing")
 
+UIFont = { Small = {} }
 local lines = {}
 local rects = {}
 local texts = {}
 local mockMap = {
     width = 1280,
-    height = 720,
+    height = 1200,
     mouseX = 1063.3,
     mouseY = 998,
     getMouseX = function(self) return self.mouseX end,
@@ -315,43 +319,71 @@ local mockMap = {
     drawRect = function(_, x, y, w, h)
         rects[#rects + 1] = { x = x, y = y, w = w, h = h }
     end,
+    drawRectBorder = function() end,
     drawTextCentre = function(_, text, x, y)
         texts[#texts + 1] = { text = text, x = x, y = y }
     end,
 }
 
-WorldMap.Render(mockMap)
-T.truthy(#rects >= 4,
-    "map did not render discovery entities plus trader")
+local discoveryOverlay = registered.overlays[
+    "DynamicTrading:DTAbstractDiscovery"
+]
+T.truthy(discoveryOverlay,
+    "DTAbstract discovery overlay was not registered")
+local actorOverlay = registered.overlays[
+    "PsychopatzCore:SurvivorWorldActors"
+]
+T.truthy(actorOverlay,
+    "Core SurvivorWorld actor overlay was not registered")
+T.falsy(registered.events["DynamicTrading:DTAbstractActors"],
+    "DTAbstract retained a duplicate actor event system")
+T.falsy(registered.contexts["DynamicTrading:DTAbstractActors"],
+    "DTAbstract retained a duplicate actor context system")
+
+discoveryOverlay.render(mockMap)
+T.truthy(#rects >= 3,
+    "DTAbstract discovery overlay did not render discovery entities")
+local beforeActors = #rects
+actorOverlay.render(mockMap)
+T.truthy(#rects > beforeActors,
+    "Core actor overlay did not render canonical NPC dot")
 T.equal(highlightedActor, actorEntry.actorID,
-    "hover did not mirror Core highlighted actor")
+    "Core actor hover did not mirror highlighted actor")
 T.equal(hoverUpdates, 1,
-    "Core portrait hover was not used")
+    "Core actor overlay did not use Core portrait hover")
 
 local event = registered.events[
-    "DynamicTrading:DTAbstractActors"
+    "PsychopatzCore:SurvivorWorldActors"
 ]
-T.truthy(event, "DTAbstract Core map event adapter missing")
-local selected = event.onMouseDown(
-    mockMap,
-    1063.3,
-    998
-)
-T.truthy(selected,
-    "click on trader marker was not handled")
+T.truthy(event, "Core actor map event adapter missing")
+T.truthy(event.onMouseDown(mockMap, 1063.3, 998),
+    "Core actor marker click was not handled")
 T.equal(selectedActor, actorEntry.actorID,
-    "map selection did not mirror Core selection")
+    "Core actor selection did not preserve canonical actor ID")
 
-WorldMap.Render(mockMap)
+mockMap.mouseX = 0
+mockMap.mouseY = 0
+actorOverlay.render(mockMap)
 T.truthy(#lines >= 1,
-    "selected trader did not render Core group route")
+    "selected Core actor did not render canonical group route")
+local foundCommercialLabel = false
+for _, text in ipairs(texts) do
+    if tostring(text.text):find("Destination Camp", 1, true) then
+        foundCommercialLabel = true
+        break
+    end
+end
+T.truthy(foundCommercialLabel,
+    "DTAbstract trader decorator did not enrich Core actor label")
 
 local contextDef = registered.contexts[
-    "DynamicTrading:DTAbstractActors"
+    "PsychopatzCore:SurvivorWorldActors"
 ]
+T.truthy(contextDef,
+    "Core actor tracking context was not registered")
 T.truthy(
     contextDef.available(mockMap, 1063.3, 998),
-    "trader context provider did not hit canonical marker"
+    "Core actor tracking context did not hit canonical marker"
 )
 local options = {}
 local context = {
@@ -369,30 +401,23 @@ T.truthy(
         1063.3,
         998
     ),
-    "trader context provider did not add actions"
+    "Core actor tracking context did not add action"
 )
-T.equal(#options, 2,
-    "select/track context actions missing")
-options[2].callback()
+T.equal(#options, 1,
+    "Core actor tracking should expose one shared tracking action")
+options[1].callback()
 T.equal(trackedActor, actorEntry.actorID,
-    "track action did not mirror Core tracking")
+    "Core tracking action lost canonical actor identity")
 
-local trackedMarkers = WorldMap.GetTraderMarkers(10, false)
-T.truthy(trackedMarkers[1].tracked,
-    "tracked actor state did not return through Core")
-T.equal(trackedMarkers[1].size, 13,
-    "tracked actor did not receive tracked presentation state")
-
--- Closing clears transient selection/highlight but not persistent tracking.
 event.onClose(mockMap)
 T.equal(selectedActor, nil,
-    "map close did not clear Core selection")
+    "Core map close did not clear selection")
 T.equal(highlightedActor, nil,
-    "map close did not clear Core highlight")
+    "Core map close did not clear highlight")
 T.equal(trackedActor, actorEntry.actorID,
-    "map close unexpectedly cleared tracking")
+    "Core map close unexpectedly cleared tracking")
 T.truthy(hoverHides >= 1,
-    "map close did not hide Core hover portrait")
+    "Core map close did not hide portrait hover")
 
 T.truthy(actorRefreshes >= 1,
     "map never refreshed Core actor projection")

@@ -70,8 +70,10 @@ end
 
 T.truthy(ids["ProjectHoomans:fixture"],
     "Hoomans did not register through Core host")
-T.truthy(ids["DynamicTrading:DTAbstract"],
-    "DTAbstract did not register through Core host")
+T.truthy(ids["PsychopatzCore:SurvivorWorldActors"],
+    "Core SurvivorWorld actor-dot overlay was not registered")
+T.truthy(ids["DynamicTrading:DTAbstractDiscovery"],
+    "DTAbstract discovery overlay did not register through Core host")
 T.truthy(ISWorldMap._psychopatzCoreMapHostPatched,
     "Core did not own vanilla map patch")
 T.falsy(ISWorldMap._pncMapLayersPatched,

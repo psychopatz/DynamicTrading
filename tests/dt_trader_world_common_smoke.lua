@@ -14,6 +14,16 @@ DTCommon = {
     STATUS_READY = "READY",
 }
 
+local projectionPublishes = 0
+PsychopatzCore = {
+    SurvivorWorldProjectionServer = {
+        Publish = function()
+            projectionPublishes = projectionPublishes + 1
+            return 1
+        end,
+    },
+}
+
 local data = { t = {} }
 local touches = 0
 local transmissions = 0
@@ -137,6 +147,19 @@ Providers.Register("FixtureProvider", {
 
 local World = T.load(
     "DTCommon", "shared", "DTCommon/DTCommon_TraderWorld.lua")
+
+local forced = World.Tick(true, now)
+T.equal(forced.spawned, 2,
+    "forced/bootstrap tick did not fill bounded trader target")
+T.equal(World.CountManaged("roaming"), 2,
+    "forced/bootstrap tick population target mismatch")
+T.equal(projectionPublishes, 2,
+    "shared trader creation did not publish one Core projection per spawn")
+
+-- Normal cadence remains bounded to one spawn per population check.
+data.t = {}
+movement = {}
+spawnSequence = 0
 
 local first = World.EnsurePopulation(now)
 T.equal(first.spawned, 1, "common runtime did not create first trader")

@@ -253,23 +253,11 @@ local function onConversationOutcome(module, command, args)
     end
 end
 
-local function onFillWorldObjectContextMenu(playerNum, context, worldObjects, test)
-    if test or not context then return end
-    if DTHoomans.DebugSpawnMenu then
-        DTHoomans.DebugSpawnMenu.Add(context, playerNum, worldObjects)
-    end
-end
-
 if Events and Events.OnServerCommand
     and type(Events.OnServerCommand.Add) == "function"
 then
     Events.OnServerCommand.Add(onServerCommand)
     Events.OnServerCommand.Add(onConversationOutcome)
-end
-if Events and Events.OnFillWorldObjectContextMenu
-    and type(Events.OnFillWorldObjectContextMenu.Add) == "function"
-then
-    Events.OnFillWorldObjectContextMenu.Add(onFillWorldObjectContextMenu)
 end
 if Events and Events.OnGameStart
     and type(Events.OnGameStart.Add) == "function"

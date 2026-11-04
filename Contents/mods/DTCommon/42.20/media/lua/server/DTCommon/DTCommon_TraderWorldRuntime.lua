@@ -48,8 +48,13 @@ if Events and Events.OnGameStart
 then
     Runtime.StartHookRegistered = true
     Events.OnGameStart.Add(function()
-        Runtime.NextTickAt = worldAge() + math.max(
-            0.1, tonumber(World.INTERVAL_HOURS) or 1)
+        local now = worldAge()
+        Runtime.Tick(true, now)
+        local projection = PsychopatzCore
+            and PsychopatzCore.SurvivorWorldProjectionServer or nil
+        if projection and type(projection.Publish) == "function" then
+            projection.Publish()
+        end
     end)
 end
 

@@ -189,15 +189,27 @@ local testPlayer = {
     getUsername = function() return "tester" end,
 }
 
-local spawned, reason = Server.SpawnAbstractTraderNearPlayer(
-    testPlayer,
-    { displayName = "Debug Trader One" }
+local spawned, reason = TraderWorld.SpawnTrader(
+    "DTAbstract",
+    {
+        debug = true,
+        position = {
+            x = testPlayer:getX() + 25,
+            y = testPlayer:getY(),
+            z = testPlayer:getZ(),
+        },
+        displayName = "Debug Trader One",
+    }
 )
 T.truthy(spawned, reason)
 T.truthy(spawned.traderID, "spawned trader has ID")
 T.truthy(spawned.actorID, "spawned trader has actor ID")
 T.truthy(spawned.groupID, "spawned trader binds canonical group")
 T.truthy(spawned.position, "spawned trader has canonical position")
+T.equal(spawned.position.x, 10625,
+    "shared debug spawn did not place canonical group at requested X")
+T.equal(spawned.position.y, 9950,
+    "shared debug spawn did not place canonical group at requested Y")
 T.equal(
     actorRegistry:Count(),
     actorCountBeforeBinding,
@@ -212,28 +224,6 @@ T.equal(
     TraderWorld.CountByProvider("DTAbstract"),
     1,
     "exactly one commercial role bound"
-)
-
-T.truthy(#sentCommands >= 2, "commands sent to client")
-local resultCmd = sentCommands[#sentCommands]
-T.equal(
-    resultCmd.command,
-    "TraderDebugActionResult",
-    "debug result command sent"
-)
-T.equal(resultCmd.args.action, "spawn_near", "action was spawn_near")
-T.equal(resultCmd.args.accepted, true, "debug action accepted")
-T.equal(resultCmd.args.provider, "DTAbstract", "provider is DTAbstract")
-
-sentCommands = {}
-local normalPlayer = { debugAllowed = false }
-local rejected, rejReason =
-    Server.SpawnAbstractTraderNearPlayer(normalPlayer, {})
-T.falsy(rejected, "unauthorized player spawn rejected")
-T.equal(
-    rejReason,
-    "not_authorized",
-    "rejection reason is not_authorized"
 )
 
 local traderID = spawned.traderID
@@ -293,22 +283,24 @@ T.equal(
     "trader record provider is DTAbstract"
 )
 
--- A second debug bind selects another unused canonical trader-group leader.
--- The requested point is a selection anchor, not authority to create a
--- standalone actor at arbitrary coordinates.
-sentCommands = {}
-local explicit, explicitReason =
-    Server.SpawnAbstractTraderAtPosition(
-        testPlayer,
-        {
-            displayName = "Second Canonical Trader",
-            position = { x = 4321, y = 8765, z = 0 },
-        }
-    )
+-- A second debug bind selects another unused canonical trader-group leader and
+-- repositions that canonical group to the requested debug tile.
+local explicit, explicitReason = TraderWorld.SpawnTrader(
+    "DTAbstract",
+    {
+        debug = true,
+        displayName = "Second Canonical Trader",
+        position = { x = 4321, y = 8765, z = 0 },
+    }
+)
 T.truthy(explicit, explicitReason)
 T.truthy(explicit.groupID, "second bind has canonical group")
 T.truthy(explicit.actorID ~= actorID,
     "second trader uses a distinct canonical actor")
+T.equal(explicit.position.x, 4321,
+    "second shared debug spawn X mismatch")
+T.equal(explicit.position.y, 8765,
+    "second shared debug spawn Y mismatch")
 T.equal(
     actorRegistry:Count(),
     actorCountBeforeBinding,
@@ -324,10 +316,40 @@ T.equal(
     2,
     "second canonical trader role bound"
 )
+
+-- Once all bootstrap trader candidates are already bound, the shared debug
+-- path asks Core to generate one additional canonical group instead of
+-- inventing a DT-owned actor ID or failing the debug spawn.
+local actorsBeforeGeneratedDebug = actorRegistry:Count()
+local groupsBeforeGeneratedDebug =
+    SurvivorRuntime.GetRegistry():Counts().groups
+local generated, generatedReason = TraderWorld.SpawnTrader(
+    "DTAbstract",
+    {
+        debug = true,
+        position = { x = 2222, y = 3333, z = 0 },
+    }
+)
+T.truthy(generated, generatedReason)
+T.equal(generated.position.x, 2222,
+    "generated debug trader X mismatch")
+T.equal(generated.position.y, 3333,
+    "generated debug trader Y mismatch")
+T.equal(actorRegistry:Count(), actorsBeforeGeneratedDebug + 3,
+    "Core debug group did not create its bounded three canonical actors")
 T.equal(
-    sentCommands[#sentCommands].args.action,
-    "spawn_at",
-    "explicit bind result action mismatch"
+    SurvivorRuntime.GetRegistry():Counts().groups,
+    groupsBeforeGeneratedDebug + 1,
+    "Core debug group was not committed to SurvivorWorld"
+)
+T.equal(
+    TraderWorld.CountByProvider("DTAbstract"),
+    3,
+    "generated canonical debug trader was not commercially bound"
+)
+T.truthy(
+    SurvivorRuntime.GetRegistry():GetGroup(generated.groupID),
+    "generated debug trader group is missing from Core"
 )
 
 -- Select any other canonical community as the commercial destination.

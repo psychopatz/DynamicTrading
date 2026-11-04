@@ -21,6 +21,8 @@ local Runtime = DTAbstract.SurvivorWorldRuntime
     or require "DTAbstract/DTAbstract_SurvivorWorldRuntime"
 local PreSurvivorWorldImport = require
     "DTAbstract/DTAbstract_PreSurvivorWorldImport"
+local CoreTraderCandidateFactory = require
+    "DTCommon/DTCommon_CoreTraderCandidateFactory"
 
 Provider.ID = "DTAbstract"
 Provider.DEFAULT_SPEED = 60
@@ -138,6 +140,44 @@ function Provider.isAvailable()
     return resolved ~= nil
 end
 
+local function placeDebugCandidate(candidate, position)
+    if type(candidate) ~= "table"
+        or type(position) ~= "table"
+        or tonumber(position.x) == nil
+        or tonumber(position.y) == nil
+    then
+        return candidate
+    end
+    local world = Runtime.GetRegistry()
+    local group = world
+        and type(world.GetGroup) == "function"
+        and world:GetGroup(candidate.groupID) or nil
+    if not group then return candidate end
+
+    group.location = {
+        id = group.location and group.location.id,
+        kind = group.location and group.location.kind or "world",
+        x = tonumber(position.x),
+        y = tonumber(position.y),
+        z = tonumber(position.z) or 0,
+    }
+    group.journey = nil
+    group.targetLocation = nil
+    group.state = "IDLE"
+    group.stateEndsAt = 0
+
+    local updated = world:UpsertGroup(group)
+    if updated then
+        Runtime.MarkDirty("dtabstract_debug_spawn_reposition")
+        candidate.position = {
+            x = group.location.x,
+            y = group.location.y,
+            z = group.location.z,
+        }
+    end
+    return candidate
+end
+
 function Provider.spawnTrader(spec)
     if not authority() then return nil, "server_authority_required" end
     spec = type(spec) == "table" and spec or {}
@@ -149,8 +189,20 @@ function Provider.spawnTrader(spec)
         now = spec.now,
         actorRegistry = registry(),
     })
+    if not candidate and spec.debug == true then
+        candidate, reason = CoreTraderCandidateFactory.Create({
+            registry = Runtime.GetRegistry(),
+            actorRegistry = registry(),
+            position = spec.position,
+            memberCount = spec.memberCount,
+            createdAt = spec.now,
+        })
+    end
     if not candidate then
         return nil, reason or "canonical_trader_candidate_unavailable"
+    end
+    if spec.debug == true then
+        candidate = placeDebugCandidate(candidate, spec.position)
     end
 
     local settlementID = candidate.communityID

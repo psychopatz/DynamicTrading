@@ -143,6 +143,13 @@ local function onServerCommand(module, command, args)
             or reason,
         view = view,
     }
+    local debugHub = DTAbstract and DTAbstract.DebugHub or nil
+    if tostring(Bridge.LastResult.mode or "") == "debug"
+        and debugHub
+        and type(debugHub.OnConversationResult) == "function"
+    then
+        debugHub.OnConversationResult(Bridge.LastResult)
+    end
 end
 
 if Events and Events.OnServerCommand

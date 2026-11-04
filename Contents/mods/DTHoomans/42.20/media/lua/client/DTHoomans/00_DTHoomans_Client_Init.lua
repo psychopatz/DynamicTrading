@@ -2,7 +2,6 @@ if DTHoomans and DTHoomans.Enabled == false then return end
 
 require "DTHoomans/DTHoomans_Context"
 require "DTHoomans/DTHoomans_DebugTraderWindow"
-require "DTHoomans/DTHoomans_DebugSpawnMenu"
 require "DTHoomans/DTHoomans_Client"
 require "DTHoomans/DTHoomans_TradePresentation"
 require "DTHoomans/DTHoomans_RadioOS"

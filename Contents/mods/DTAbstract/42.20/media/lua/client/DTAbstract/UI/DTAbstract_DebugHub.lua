@@ -117,17 +117,36 @@ function DebugHub.RefreshProjection()
     return false, actorReason or discoveryReason
 end
 
-function DebugHub.SpawnNear(options)
-    return sendCommand("SpawnAbstractTraderNearPlayer", options)
+local function requestCommonSpawn(x, y, z)
+    local current = player()
+    if not current or type(sendClientCommand) ~= "function" then
+        return false, "send_command_unavailable"
+    end
+    sendClientCommand(
+        current,
+        DTCommon.MOD_ID or "DTCommon",
+        "DebugSpawnTrader",
+        {
+            x = tonumber(x),
+            y = tonumber(y),
+            z = tonumber(z) or 0,
+        }
+    )
+    return true
 end
 
-function DebugHub.SpawnAt(x, y, z, settlementID)
-    return sendCommand("SpawnAbstractTraderAtPosition", {
-        position = {
-            x = tonumber(x), y = tonumber(y), z = tonumber(z) or 0,
-        },
-        settlementID = settlementID,
-    })
+function DebugHub.SpawnNear()
+    local current = player()
+    if not current then return false, "player_unavailable" end
+    local x = current.getX and tonumber(current:getX()) or nil
+    local y = current.getY and tonumber(current:getY()) or nil
+    local z = current.getZ and tonumber(current:getZ()) or 0
+    if not x or not y then return false, "player_position_unavailable" end
+    return requestCommonSpawn(x + 25, y, z)
+end
+
+function DebugHub.SpawnAt(x, y, z)
+    return requestCommonSpawn(x, y, z)
 end
 
 function DebugHub.ForceTick(now)
@@ -255,9 +274,41 @@ local function publishDebugFeedback(args)
     end
 end
 
+function DebugHub.OnConversationResult(result)
+    result = type(result) == "table" and result or {}
+    local feedback = {
+        accepted = result.accepted == true,
+        action = "debug_talk",
+        reason = result.reason,
+        traderID = result.traderID,
+        actorID = result.actorID,
+    }
+    DebugHub.LastResult = feedback
+    publishDebugFeedback(feedback)
+    return feedback.accepted
+end
+
 local function onServerCommand(module, command, args)
-    if module ~= "DTAbstract" then return end
     args = type(args) == "table" and args or {}
+
+    if module == (DTCommon.MOD_ID or "DTCommon")
+        and command == "TraderDebugSpawnResult"
+    then
+        local feedback = {
+            accepted = args.accepted == true,
+            action = "spawn",
+            reason = args.reason,
+            traderID = args.traderID,
+            actorID = args.actorID,
+        }
+        DebugHub.LastSpawn = args
+        DebugHub.LastResult = feedback
+        if args.accepted == true then DebugHub.RefreshProjection() end
+        publishDebugFeedback(feedback)
+        return
+    end
+
+    if module ~= "DTAbstract" then return end
 
     if command == "TraderSpawned" then
         DebugHub.LastSpawn = args
@@ -270,21 +321,6 @@ local function onServerCommand(module, command, args)
             DTAbstract.DebugTraderWindow.SetResult(
                 "Spawned " .. tostring(args.traderID or "trader"), args)
         end
-        return
-    end
-
-    if command == "ConversationAccessResult"
-        and tostring(args.mode or "") == "debug"
-    then
-        local feedback = {
-            accepted = args.accepted == true,
-            action = "debug_talk",
-            reason = args.reason,
-            traderID = args.traderID,
-            actorID = args.actorID,
-        }
-        DebugHub.LastResult = feedback
-        publishDebugFeedback(feedback)
         return
     end
 

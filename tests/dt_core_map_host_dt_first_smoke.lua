@@ -59,8 +59,10 @@ T.truthy(Layers.Register("reverse_fixture", {
 local Host = require "PsychopatzCore/UI/Map/PsychopatzMapHost"
 local ids = {}
 for _, entry in ipairs(Host.Overlays.List()) do ids[entry.id] = true end
-T.truthy(ids["DynamicTrading:DTAbstract"],
-    "DTAbstract registration disappeared")
+T.truthy(ids["PsychopatzCore:SurvivorWorldActors"],
+    "Core SurvivorWorld actor-dot overlay disappeared")
+T.truthy(ids["DynamicTrading:DTAbstractDiscovery"],
+    "DTAbstract discovery registration disappeared")
 T.truthy(ids["ProjectHoomans:reverse_fixture"],
     "Hoomans failed to register after DTAbstract")
 T.truthy(ISWorldMap._psychopatzCoreMapHostPatched,

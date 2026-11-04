@@ -188,6 +188,16 @@ function World.CountByProvider(providerID)
     return #World.ListByProvider(providerID)
 end
 
+local function publishCoreActors()
+    local server = PsychopatzCore
+        and PsychopatzCore.SurvivorWorldProjectionServer or nil
+    if server and type(server.Publish) == "function" then
+        server.Publish()
+        return true
+    end
+    return false
+end
+
 function World.SpawnTrader(providerID, spec)
     if not authority() then return nil, "server_authority_required" end
     spec = type(spec) == "table" and spec or {}
@@ -220,6 +230,7 @@ function World.SpawnTrader(providerID, spec)
     if not adopted then return nil, adoptReason end
     if type(result) ~= "table" then result = { traderID = traderID } end
     result.record = adopted
+    publishCoreActors()
     return result
 end
 
@@ -660,7 +671,7 @@ function World.ReconcileProviders()
     return summary
 end
 
-function World.EnsurePopulation(now)
+function World.EnsurePopulation(now, spawnBudget)
     if not authority() then
         return { managed = 0, spawned = 0, skipped = "not_authority" }
     end
@@ -686,7 +697,10 @@ function World.EnsurePopulation(now)
     end
 
     local needed = World.MAX_ROAMING_TRADERS - #managed
-    local budget = math.min(1, needed)
+    local budget = math.min(
+        math.max(1, math.floor(tonumber(spawnBudget) or 1)),
+        needed
+    )
     for index = 1, budget do
         local result, reason = World.SpawnTrader(provider.id, {
             worldRole = World.DEFAULT_ROLE,
@@ -715,7 +729,10 @@ function World.Tick(force, now)
     now = worldAge(now)
 
     summary.reconciliation = World.ReconcileProviders()
-    local population = World.EnsurePopulation(now)
+    local population = World.EnsurePopulation(
+        now,
+        force == true and World.MAX_ROAMING_TRADERS or 1
+    )
     summary.spawned = population.spawned or 0
 
     local traders = World.ListManaged(World.DEFAULT_ROLE)

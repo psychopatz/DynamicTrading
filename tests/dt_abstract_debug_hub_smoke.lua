@@ -217,16 +217,19 @@ T.equal(shownMap.y, 200, "Locate on Map did not center Y")
 commands = {}
 T.truthy(DebugHub.SpawnNear({ displayName = "Near" }))
 T.equal(commands[1].player, player, "debug command omitted local player")
-T.equal(commands[1].module, "DTAbstract", "wrong module")
-T.equal(commands[1].command, "SpawnAbstractTraderNearPlayer",
-    "wrong spawn-near command")
+T.equal(commands[1].module, "DTCommon", "wrong module")
+T.equal(commands[1].command, "DebugSpawnTrader",
+    "spawn-near did not use shared DTCommon debug command")
+T.equal(commands[1].args.x, 125, "spawn-near X mismatch")
+T.equal(commands[1].args.y, 200, "spawn-near Y mismatch")
 
 commands = {}
 T.truthy(DebugHub.SpawnAt(321, 654, 0))
-T.equal(commands[1].command, "SpawnAbstractTraderAtPosition",
-    "SpawnAt still routed through near-player command")
-T.equal(commands[1].args.position.x, 321, "SpawnAt X lost")
-T.equal(commands[1].args.position.y, 654, "SpawnAt Y lost")
+T.equal(commands[1].module, "DTCommon", "SpawnAt wrong module")
+T.equal(commands[1].command, "DebugSpawnTrader",
+    "SpawnAt did not use shared DTCommon debug command")
+T.equal(commands[1].args.x, 321, "SpawnAt X lost")
+T.equal(commands[1].args.y, 654, "SpawnAt Y lost")
 
 commands = {}
 T.truthy(DebugHub.OpenDebugTalk("trader:debug:1"),
@@ -262,17 +265,17 @@ T.equal(debugTalkOpened.options.mode, "debug",
 
 -- Server result must be received and presented distinctly from gameplay notice.
 for _, callback in ipairs(serverHandlers) do
-    callback("DTAbstract", "TraderDebugActionResult", {
+    callback("DTCommon", "TraderDebugSpawnResult", {
         accepted = true,
-        action = "spawn_at",
         reason = "spawned",
         traderID = "trader:debug:2",
+        actorID = "actor:debug:2",
     })
 end
 T.truthy(DebugHub.LastResult
-    and DebugHub.LastResult.action == "spawn_at",
-    "debug result receiver did not run")
-T.contains(window.notice, "spawn_at", "manager did not show action result")
+    and DebugHub.LastResult.action == "spawn",
+    "shared debug result receiver did not run")
+T.contains(window.notice, "spawn", "manager did not show shared spawn result")
 T.truthy(#notices >= 1
     and notices[#notices].title == "DTAbstract Debug",
     "debug result was not presented through debug feedback")

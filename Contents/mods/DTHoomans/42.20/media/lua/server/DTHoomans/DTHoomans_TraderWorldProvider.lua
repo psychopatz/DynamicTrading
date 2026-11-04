@@ -100,11 +100,22 @@ function Provider.spawnTrader(spec)
     local sequence = tonumber(spec.sequence) or 1
     local traderID = spec.traderID
         or ("trader:world:" .. tostring(sequence))
+    local position = type(spec.position) == "table"
+        and spec.position or nil
     local x, y, z = placementFor(player, sequence)
+    if position
+        and tonumber(position.x) ~= nil
+        and tonumber(position.y) ~= nil
+    then
+        x = tonumber(position.x)
+        y = tonumber(position.y)
+        z = tonumber(position.z) or 0
+    end
+    local debugSpawn = spec.debug == true
     local request, reason = caravan.Spawn(
         x, y, z, nil, nil, {
-            debug = false,
-            presenceMode = "auto",
+            debug = debugSpawn,
+            presenceMode = debugSpawn and "live" or "auto",
             traderID = traderID,
             worldManaged = true,
             mobilityIntent = Provider.MOBILITY_INTENT,
