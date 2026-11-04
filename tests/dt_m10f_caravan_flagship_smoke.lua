@@ -322,7 +322,7 @@ PNC.AbstractTraversal = {
         return true, "travel_started"
     end,
 }
-PNC.AbstractWorldStore = {
+PNC.HoomansWorldView = {
     Registry = { encounters = {} },
     Emit = function() end,
 }
@@ -597,7 +597,7 @@ T.equal(Commercial.Pump(currentTime, 1), 1,
 local delayedTravel = copy(caravanFaction.mobile.travel)
 local delayedTarget = copy(delayedTravel.destination)
 local encounterID = "encounter_m10f_delayed"
-PNC.AbstractWorldStore.Registry.encounters = {
+PNC.HoomansWorldView.Registry.encounters = {
     { id = encounterID, outcome = "QUEUED" },
 }
 local delayed, delayedReason = MobileVisit.OnSettlementArrival(
@@ -613,7 +613,7 @@ T.equal(delayedReason, "encounter_pending",
     "encounter delay keeps the public pending-arrival reason")
 T.truthy(caravanFaction.mobile.pendingSettlementArrival,
     "pending arrival is persisted by Hoomans")
-PNC.AbstractWorldStore.Registry.encounters[1].outcome = "RESOLVED"
+PNC.HoomansWorldView.Registry.encounters[1].outcome = "RESOLVED"
 local resumed = MobileVisit.PumpPendingArrivals(currentTime + 2, 1)
 T.equal(resumed, 1, "resolved encounter resumes the pending arrival")
 T.equal(exchangeCalls, 4,

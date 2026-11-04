@@ -19,8 +19,8 @@ local Service = DTCommon and DTCommon.TraderService
 local Directory = DTCommon and DTCommon.SettlementDirectory
 local Runtime = DTAbstract.SurvivorWorldRuntime
     or require "DTAbstract/DTAbstract_SurvivorWorldRuntime"
-local WorldMigration = require
-    "DTAbstract/DTAbstract_TraderWorldMigration"
+local PreSurvivorWorldImport = require
+    "DTAbstract/DTAbstract_PreSurvivorWorldImport"
 
 Provider.ID = "DTAbstract"
 Provider.DEFAULT_SPEED = 60
@@ -455,13 +455,13 @@ function Provider.reconcileRecord(traderID, record)
 
     local group = actor and Runtime.FindGroupForActor(actorID) or nil
 
-    -- Retired standalone actors are handled by a bounded one-way migration
+    -- Pre-SurvivorWorld standalone actors are handled by one bounded import
     -- module; active provider code never interprets their old world model.
     if (not actor or not group)
-        and WorldMigration.IsRetiredActorID(actorID)
+        and PreSurvivorWorldImport.IsRetiredActorID(actorID)
     then
-        local rebound, reboundReason, migration =
-            WorldMigration.Rebind(
+        local rebound, reboundReason, importDetails =
+            PreSurvivorWorldImport.Rebind(
                 traderID,
                 record,
                 worldAge(),
@@ -476,7 +476,7 @@ function Provider.reconcileRecord(traderID, record)
                 }
             )
         if rebound then
-            Provider.LastWorldMigration = migration
+            Provider.LastPreSurvivorWorldImport = importDetails
             ca = record.ca
             actorID = ca and ca.actorID or nil
             actor = actorRegistry and actorID
@@ -485,11 +485,11 @@ function Provider.reconcileRecord(traderID, record)
                 and Runtime.FindGroupForActor(actorID)
                 or nil
             Policy.SetAvailable(record, true, nil)
-            Provider.LastWorldMigrationError = nil
+            Provider.LastPreSurvivorWorldImportError = nil
             return true, "changed"
         end
-        Provider.LastWorldMigrationError = tostring(
-            reboundReason or "world_migration_failed"
+        Provider.LastPreSurvivorWorldImportError = tostring(
+            reboundReason or "world_import_failed"
         )
     end
 

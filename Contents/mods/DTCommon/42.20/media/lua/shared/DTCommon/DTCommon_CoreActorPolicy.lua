@@ -5,6 +5,20 @@
 DTCommon = DTCommon or {}
 local Policy = DTCommon.CoreActorPolicy or {}
 DTCommon.CoreActorPolicy = Policy
+local PreSurvivorWorldImport =
+    DTCommon.PreSurvivorWorldImport
+if not PreSurvivorWorldImport then
+    local ok, imported = pcall(
+        require,
+        "DTCommon/DTCommon_PreSurvivorWorldImport"
+    )
+    if ok then PreSurvivorWorldImport = imported end
+end
+PreSurvivorWorldImport = PreSurvivorWorldImport or {
+    NormalizePolicySpec = function(spec)
+        return type(spec) == "table" and spec or {}, false
+    end,
+}
 
 Policy.SCHEMA_VERSION = 1
 Policy.MAX_PRICE_MODIFIER = 0.25
@@ -72,7 +86,7 @@ local function playerKeys(player)
 end
 
 function Policy.New(spec)
-    spec = type(spec) == "table" and spec or {}
+    spec = PreSurvivorWorldImport.NormalizePolicySpec(spec)
     local restockItems = {}
     local recentVisitIDs = {}
     local configuredItems = spec.restockItems
@@ -101,9 +115,8 @@ function Policy.New(spec)
         and spec.providerLease or {}
     return {
         schemaVersion = Policy.SCHEMA_VERSION,
-        actorID = text(spec.actorID or spec.actorId
-            or spec.coreActorID or spec.coreActorId, nil),
-        provider = text(spec.provider or spec.coreProvider
+        actorID = text(spec.actorID or spec.actorId, nil),
+        provider = text(spec.provider
             or providerLease.provider, nil),
         providerState = text(spec.providerState or providerLease.state, nil),
         providerLeaseID = text(spec.providerLeaseID or providerLease.leaseID,

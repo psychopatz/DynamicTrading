@@ -3,6 +3,15 @@
 -- consumes Project Hoomans naming/role authority instead of its own.
 
 local ROOT = os.getenv("DT_MODS_ROOT") or "."
+local CORE_REPOSITORY = os.getenv("PZ_TEST_CORE_REPOSITORY")
+    or "../psychopatzCore"
+package.path = table.concat({
+    CORE_REPOSITORY
+        .. "/Contents/mods/PsychopatzCore/common/media/lua/shared/?.lua",
+    CORE_REPOSITORY
+        .. "/Contents/mods/PsychopatzCore/common/media/lua/shared/?/init.lua",
+    package.path,
+}, ";")
 local calls = {}
 
 local function record(name, ...)
@@ -108,11 +117,7 @@ PNC = {
         SetEquipmentSlot = function(...) record("SetEquipmentSlot", ...) return true end,
         Despawn = function(npcID) record("Despawn", npcID) return true end,
     },
-    PopulationIdentity = {
-        FactionName = function(archetypeID, seed)
-            record("FactionName", archetypeID, seed)
-            return "Northstar Trading Caravan"
-        end,
+    PopulationHoomansPolicy = {
         FactionTags = function(archetypeID, kind)
             record("FactionTags", archetypeID, kind)
             return { populationGenerated = true, mobileGroup = true, mobilePathMode = "random" }
@@ -171,6 +176,14 @@ PNC = {
     API_Conversations = {},
 }
 
+local CoreGeneration = require
+    "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldGeneration"
+local originalCoreFactionName = CoreGeneration.Profiles.FactionName
+CoreGeneration.Profiles.FactionName = function(archetypeID, seed)
+    record("CoreFactionName", archetypeID, seed)
+    return "Northstar Trading Caravan"
+end
+
 getGameTime = function() return { getWorldAgeHours = function() return 100 end } end
 -- The roaming lifecycle places a caravan near a player and refuses to spawn
 -- without one.
@@ -227,7 +240,7 @@ check(request and request.status == "spawned", "caravan spawns", request and req
 local create = lastCall("Factions.Create")
 check(create ~= nil, "Factions.Create called")
 check(create and create.args[1].name == "Northstar Trading Caravan",
-    "faction name comes from PNC.PopulationIdentity.FactionName",
+    "faction name comes from Core generation profiles",
     create and create.args[1].name)
 check(create and create.args[1].archetypeID == "trader", "archetype stays trader")
 local tags = create and create.args[1].tags or {}
@@ -240,8 +253,8 @@ check(tags.debugCaravan == nil,
     "a lifecycle caravan is not marked as a debug caravan")
 check(create and create.args[1].name ~= "Dynamic Trading Caravan", "hardcoded name removed")
 
-local nameCall = lastCall("FactionName")
-check(nameCall ~= nil, "PopulationIdentity.FactionName used (not the raw generator)")
+local nameCall = lastCall("CoreFactionName")
+check(nameCall ~= nil, "Core generation faction naming used")
 check(nameCall and nameCall.args[1] == "trader", "generator asked for the trader pool",
     nameCall and nameCall.args[1])
 check(nameCall and tostring(nameCall.args[2] or "") ~= "", "stable seed supplied",
@@ -359,22 +372,21 @@ check(Conversation.RoleForNPC("npcGuardTwo") == "guard",
     "client fallback still resolves a guard", Conversation.RoleForNPC("npcGuardTwo"))
 PNC.Factions = savedFactions
 
-print("== 8. graceful degradation when Project Hoomans naming is unavailable ==")
-local savedIdentity = PNC.PopulationIdentity
-local savedGenerator = PNC.FactionNameGenerator
-PNC.PopulationIdentity = nil
-PNC.FactionNameGenerator = nil
+print("== 8. graceful degradation when Hoomans population policy is unavailable ==")
+local savedPolicy = PNC.PopulationHoomansPolicy
+PNC.PopulationHoomansPolicy = nil
 local degradedRequest = Caravan.Spawn(300, 400, 0)
 local degradedCreate = lastCall("Factions.Create")
 check(degradedRequest and degradedRequest.status == "spawned",
-    "caravan still spawns without the generator", degradedRequest and degradedRequest.reason)
-check(degradedCreate and degradedCreate.args[1].name == "Trading Caravan",
-    "literal fallback used only as last resort", degradedCreate and degradedCreate.args[1].name)
+    "caravan still spawns without Hoomans population policy",
+    degradedRequest and degradedRequest.reason)
+check(degradedCreate and degradedCreate.args[1].name == "Northstar Trading Caravan",
+    "Core naming remains available without Hoomans population policy",
+    degradedCreate and degradedCreate.args[1].name)
 check(degradedCreate and degradedCreate.args[1].tags.mobileGroup == true
     and degradedCreate.args[1].tags.abstractDeathImmune == true,
-    "DT ownership and resilience tags survive an absent PopulationIdentity")
-PNC.PopulationIdentity = savedIdentity
-PNC.FactionNameGenerator = savedGenerator
+    "DT ownership and resilience tags survive an absent Hoomans policy")
+PNC.PopulationHoomansPolicy = savedPolicy
 
 local savedFactionService = PNC.Factions
 PNC.Factions = nil
@@ -543,5 +555,6 @@ check(string.find(commonRuntimeSource, "Events.OnTick.Add(onTick)", 1, true)
         ~= nil,
     "common trader-world runtime owns the commercial lifecycle tick")
 
+CoreGeneration.Profiles.FactionName = originalCoreFactionName
 print(string.format("\n%d checks, %d failures", checks, failures))
 os.exit(failures == 0 and 0 or 1)

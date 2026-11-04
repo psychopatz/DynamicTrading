@@ -254,7 +254,7 @@ PNC = {
             return true, "updated", copy(faction.mobile)
         end,
     },
-    AbstractWorldStore = { Registry = { encounters = {} } },
+    HoomansWorldView = { Registry = { encounters = {} } },
     API = {
         Travel = {
             RegisterArrivalHandler = function() return true end,

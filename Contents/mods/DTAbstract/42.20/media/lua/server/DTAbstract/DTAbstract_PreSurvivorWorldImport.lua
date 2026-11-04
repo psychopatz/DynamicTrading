@@ -1,16 +1,16 @@
--- One-way migration for pre-S7 standalone DTAbstract trader actors.
+-- One-way import for pre-SurvivorWorld standalone DTAbstract trader actors.
 --
 -- This module is not a runtime world authority. It recognizes only retired
 -- actor IDs, rebinds the existing commercial record to an already-canonical
 -- SurvivorWorld trader actor/group, then removes the retired actor when safe.
 
 DTAbstract = DTAbstract or {}
-DTAbstract.TraderWorldMigration =
-    DTAbstract.TraderWorldMigration or {}
+DTAbstract.PreSurvivorWorldImport =
+    DTAbstract.PreSurvivorWorldImport or {}
 
-local Migration = DTAbstract.TraderWorldMigration
+local Import = DTAbstract.PreSurvivorWorldImport
 
-function Migration.IsRetiredActorID(actorID)
+function Import.IsRetiredActorID(actorID)
     actorID = tostring(actorID or "")
     return string.sub(actorID, 1, 15) == "actor:dt:world:"
         or string.sub(actorID, 1, 15) == "actor:abstract:"
@@ -44,11 +44,11 @@ local function directoryHas(directory, settlementID)
         and directory.Get(settlementID) ~= nil
 end
 
-function Migration.Rebind(traderID, record, now, deps)
+function Import.Rebind(traderID, record, now, deps)
     deps = type(deps) == "table" and deps or {}
     local ca = record and record.ca or nil
     local oldActorID = ca and ca.actorID or nil
-    if not Migration.IsRetiredActorID(oldActorID) then
+    if not Import.IsRetiredActorID(oldActorID) then
         return nil, "retired_actor_not_recognized"
     end
 
@@ -96,7 +96,7 @@ function Migration.Rebind(traderID, record, now, deps)
     if type(deps.acquire) ~= "function"
         or type(deps.releaseAcquired) ~= "function"
     then
-        return nil, "provider_migration_contract_unavailable"
+        return nil, "provider_import_contract_unavailable"
     end
 
     local committed
@@ -170,7 +170,7 @@ function Migration.Rebind(traderID, record, now, deps)
         registry:Remove(oldActorID)
     end
 
-    return candidate, "legacy_rebound", {
+    return candidate, "import_rebound", {
         traderID = tostring(traderID),
         oldActorID = tostring(oldActorID),
         actorID = candidate.actorID,
@@ -179,4 +179,4 @@ function Migration.Rebind(traderID, record, now, deps)
     }
 end
 
-return Migration
+return Import

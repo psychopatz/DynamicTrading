@@ -9,6 +9,8 @@ DTHoomans.CaravanRuntime = DTHoomans.CaravanRuntime or {}
 local Caravan = DTHoomans.Caravan
 local Service = DTCommon and DTCommon.TraderService
 local Runtime = DTHoomans.CaravanRuntime
+local Generation = require
+    "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldGeneration"
 local pendingTable = type(Runtime.PendingSpawns) == "table"
     and Runtime.PendingSpawns
     or type(Caravan.PendingSpawns) == "table"
@@ -335,18 +337,17 @@ function Caravan.GetCapacity(record)
     return usedWeight, maxWeight
 end
 
--- Project Hoomans owns faction naming. Ask its archetype-aware generator first
--- so a DynamicTrading caravan is named exactly like every other population
--- faction of the same archetype; the literal above is only a degraded fallback.
+-- Core owns the generic faction-name contract. DTHoomans supplies only
+-- adopter-specific tags/presence below.
 local function factionName(seed)
-    local identity = PNC and PNC.PopulationIdentity or nil
-    local generator = PNC and PNC.FactionNameGenerator or nil
-    local name
-    if identity and type(identity.FactionName) == "function" then
-        name = identity.FactionName(FACTION_ARCHETYPE, seed)
-    elseif generator and type(generator.GenerateFactionName) == "function" then
-        name = generator.GenerateFactionName(FACTION_ARCHETYPE, seed)
+    local profiles = Generation and Generation.Profiles or nil
+    if not profiles or type(profiles.FactionName) ~= "function" then
+        return FACTION_NAME_FALLBACK
     end
+    local name = profiles.FactionName(
+        FACTION_ARCHETYPE,
+        Generation.SeedText(seed)
+    )
     name = type(name) == "string" and name or ""
     if name == "" then return FACTION_NAME_FALLBACK end
     return name
@@ -357,9 +358,9 @@ end
 -- mobile-group director reads back from the faction record.
 local function factionTags(debug)
     local constants = PNC and PNC.FactionConstants or {}
-    local identity = PNC and PNC.PopulationIdentity or nil
-    local tags = identity and type(identity.FactionTags) == "function"
-        and identity.FactionTags(FACTION_ARCHETYPE, "MOBILE_GROUP") or {}
+    local policy = PNC and PNC.PopulationHoomansPolicy or nil
+    local tags = policy and type(policy.FactionTags) == "function"
+        and policy.FactionTags(FACTION_ARCHETYPE, "MOBILE_GROUP") or {}
     -- Guarantee the tags DT itself depends on when the canonical helper is
     -- unavailable, without overriding a value Project Hoomans supplied.
     if tags.mobileGroup == nil then tags.mobileGroup = true end
@@ -434,8 +435,9 @@ local function nativeSpec(state)
         assignLeader = false,
         -- A caravan that spawns because the player asked for it must be present
         -- at the requested tile, so DT asks for "live" instead of Project
-        -- Hoomans' population default (PNC.PopulationIdentity.PresenceSpec()
-        -- -> "auto"). The roaming lifecycle uses "auto" and lets Project
+        -- Hoomans' population default
+        -- (PNC.PopulationHoomansPolicy.PresenceSpec() -> "auto").
+        -- The roaming lifecycle uses "auto" and lets Project
         -- Hoomans decide, so an offscreen caravan stays abstract and cheap.
         presenceMode = state.presenceMode or "live",
         allowLive = true,

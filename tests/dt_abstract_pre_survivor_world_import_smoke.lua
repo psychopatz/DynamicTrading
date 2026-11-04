@@ -59,7 +59,7 @@ DTCommon.TraderStock = {
 
 local old = assert(registry:Create({
     actorId = "actor:dt:world:1",
-    identitySeed = "legacy-standalone",
+    identitySeed = "pre-survivor-world-standalone",
     world = { position = { x = 100, y = 200, z = 0 } },
 }))
 local oldAcquired = assert(Actors.Provider.Acquire(old, {
@@ -117,7 +117,7 @@ local Provider = T.load(
 )
 Provider.SetActorRegistry(registry)
 
-local traderID = "trader:world:legacy"
+local traderID = "trader:world:pre-survivor-world"
 records[traderID] = {
     n = "Legacy Merchant",
     b = 4321,
@@ -133,7 +133,7 @@ records[traderID] = {
         worldManaged = true,
         worldRole = "roaming",
         lifecycleState = "traveling",
-        journeyID = "legacy-actor-journey",
+        journeyID = "pre-survivor-world-actor-journey",
         journeyState = "en_route",
     }),
 }
@@ -143,25 +143,25 @@ local accepted, reason = Provider.reconcileRecord(
     records[traderID]
 )
 T.truthy(accepted, reason)
-T.equal(reason, "changed", "legacy migration result")
+T.equal(reason, "changed", "pre-SurvivorWorld import result")
 T.equal(records[traderID].ca.actorID, canonical.actorId,
     "commercial record did not rebind canonical actor")
 T.equal(records[traderID].ca.homeSettlementID, canonicalCommunity,
-    "legacy home settlement was not migrated to canonical home")
+    "old home settlement was not imported to canonical home")
 T.equal(records[traderID].ca.currentSettlementID, canonicalCommunity,
-    "legacy current settlement was not reset to canonical home")
+    "old current settlement was not reset to canonical home")
 T.equal(records[traderID].ca.destinationSettlementID, nil,
-    "obsolete static destination survived migration")
+    "obsolete static destination survived import")
 T.equal(records[traderID].ca.lifecycleState, "idle",
-    "obsolete actor-owned travel state survived migration")
+    "obsolete actor-owned travel state survived import")
 T.equal(records[traderID].ca.journeyID, nil,
-    "obsolete actor journey survived migration")
+    "obsolete actor journey survived import")
 T.equal(records[traderID].b, 4321,
-    "merchant budget changed during world migration")
+    "merchant budget changed during world import")
 T.equal(records[traderID].v, 17,
-    "merchant stock version changed during world migration")
+    "merchant stock version changed during world import")
 T.equal(records[traderID].i.rows[1].quantity, 4,
-    "merchant stock changed during world migration")
+    "merchant stock changed during world import")
 T.equal(registry:Get(old.actorId), nil,
     "retired standalone actor was not removed")
 local migratedActor = assert(registry:Get(canonical.actorId))
@@ -176,7 +176,7 @@ local second, secondReason = Provider.reconcileRecord(
 )
 T.truthy(second, secondReason)
 T.equal(secondReason, "unchanged",
-    "legacy migration repeated after canonical rebind")
+    "pre-SurvivorWorld import repeated after canonical rebind")
 
 -- A failed new commercial bind must roll its temporary provider lease back.
 local rollbackActor = assert(registry:Create({
@@ -206,4 +206,4 @@ T.equal(rolledBack.providerLease.state, "released",
 T.equal(Provider.LastRollbackError, nil,
     "failed bind rollback itself failed")
 
-T.finish("dt_abstract_retired_world_migration_smoke")
+T.finish("dt_abstract_pre_survivor_world_import_smoke")
