@@ -158,27 +158,24 @@ local Registry = loadSource(
     "DTCommon", "shared", "DTCommon/DTCommon_SettlementMarket.lua")
 DTCommon.SettlementMarket = Registry
 
-MarketSense = {
-    GetAllKnownItems = function()
-        return {
-            ["Base.CannedBeans"] = {
-                fullType = "Base.CannedBeans",
-                category = "Food",
-                availability = { status = "obtainable" },
-            },
-        }
-    end,
-    GetTags = function(fullType)
-        if fullType == "Base.CannedBeans" then
-            return { category = "Food", tags = { "food" } }
-        end
+local MarketSenseStub = require "tests/support/market_sense_stub"
+MarketSense = MarketSenseStub.New({
+    ["Base.CannedBeans"] = {
+        fullType = "Base.CannedBeans",
+        category = "Food",
+        primary = "Food",
+        availability = { status = "obtainable", obtainable = true },
+        price = 100,
+    },
+}, {
+    getPriceDetails = function(fullType)
+        if fullType == "Base.CannedBeans" then return { price = 100 } end
         return nil
     end,
-}
+})
 local Catalog = loadSource(
-    "DTCommon", "shared", "DTCommon/DTCommon_MarketCatalog.lua")
-Catalog.Reset()
-DTCommon.MarketCatalog = Catalog
+    "DTCommon", "shared", "DTCommon/DTCommon_MarketSenseGateway.lua")
+DTCommon.MarketSenseGateway = Catalog
 DTCommon.TraderSupport = {}
 DTCommon.CoreActorPolicy = {
     PriceContext = function() return { relationshipModifier = 0 } end,
@@ -225,14 +222,14 @@ require = savedExchangeRequire
 
 local farm, farmCreated = Registry.GetOrCreate("settlement_a", "farm")
 local military, militaryCreated = Registry.GetOrCreate("settlement_b", "military")
-local catalogReady, catalogReason = Catalog.Ensure()
-T.truthy(catalogReady, catalogReason)
 T.truthy(farm, "farm market is created")
 T.truthy(military, "military market is created")
 T.equal(farmCreated, true, "farm market creation is persisted")
 T.equal(militaryCreated, true, "military market creation is persisted")
-T.equal(Catalog.Diagnostics().indexedCount, 1,
-    "exchange catalog contains only the bounded MarketSense item")
+T.truthy(Catalog.IsReady(),
+    "exchange uses the canonical MarketSense gateway")
+T.falsy(Catalog.Diagnostics().persistentUniverseState,
+    "exchange gateway owns no shadow catalog")
 
 local arrivedFarm, farmReason = Exchange.Execute(
     "trader:two-settlement", "settlement_a", { now = 10 })

@@ -126,3 +126,32 @@ Fresh-save native PZ:
 - DTHoomans trader flow remains commercially equivalent.
 
 Native acceptance must not be used to excuse missing developer-side performance evidence.
+
+## J. Developer acceptance result — 2026-11-04
+
+**PASSED.**
+
+MarketSense:
+
+- full suite: 15/15;
+- canonical 4,412-item bounded query: pass;
+- registry revision index invalidation: pass;
+- canonical modded query reaches item 4,300: pass.
+
+DynamicTrading:
+
+- full suite: 69/69;
+- stateless MarketSense gateway: pass;
+- 4,412-item stock-seed performance regression: pass;
+- no DynamicTrading production GetAllKnownItems() call: verified;
+- no shadow MarketCatalog production state/file: verified;
+- modded item 4,300 can seed initial trader stock: pass;
+- MarketSense catalog/pricing revisions invalidate old quote contexts: pass.
+
+Cross-repository static gates:
+
+- changed production Lua installed-PZ Kahlua: 9/9;
+- git diff --check: pass in both repositories;
+- source-removal audit: pass.
+
+Developer acceptance is complete. Section I native acceptance remains user-owned.

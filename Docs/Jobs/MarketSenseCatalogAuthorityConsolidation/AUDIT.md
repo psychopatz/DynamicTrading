@@ -6,9 +6,12 @@
 
 ## Verdict
 
-**MarketSense remains the intrinsic pricing/availability/taxonomy authority, but DTCommon currently owns a shadow catalog/index that can diverge from MarketSense.**
+**RESOLVED. MarketSense is now the single canonical item-universe/query
+authority and DTCommon no longer owns a shadow catalog/index.**
 
-This is not yet a second pricing engine, but it is a split catalog-state system.
+MarketSense owns bounded canonical indexes keyed to its existing registry
+revision. DynamicTrading consumes them through a stateless gateway and retains
+only commercial/trader policy.
 
 ## MarketSense already owns
 
@@ -35,9 +38,9 @@ MarketSense already provides and/or maintains:
 
 MarketSense's normal definition-level price path already finalizes from its persisted intrinsic registry when possible instead of recomputing all evidence.
 
-## DTCommon shadow catalog
+## Pre-fix DTCommon shadow catalog
 
-DTCommon_MarketCatalog.lua currently derives and retains:
+At the audit snapshot, DTCommon_MarketCatalog.lua derived and retained:
 
 - byType;
 - byCategory;
@@ -54,7 +57,7 @@ Its consumers include:
 
 ## Correctness defect: item-universe truncation
 
-DTCommon_MarketCatalog.MAX_ITEMS is currently 4096.
+At the audit snapshot, DTCommon_MarketCatalog.MAX_ITEMS was 4096.
 
 Observed MarketSense known-item count during native testing was 4412.
 
@@ -71,11 +74,11 @@ MarketSense updates registry/pricing revisions and invalidates its own snapshots
 - runtime rules change;
 - pricing policy/modifiers change.
 
-DTCommon's derived catalog has its own built flag and manual Invalidate() path. It does not currently track MarketSense registry revision as its source-of-truth invalidation key.
+The pre-fix DTCommon derived catalog had its own built flag and manual Invalidate() path and did not track MarketSense registry revision as its source-of-truth invalidation key.
 
-A DTCommon fact/category candidate can therefore outlive the MarketSense state from which it was derived.
+A DTCommon fact/category candidate could therefore outlive the MarketSense state from which it was derived.
 
-## Memory duplication
+## Pre-fix memory duplication
 
 MarketSense keeps:
 
@@ -96,9 +99,9 @@ The intent is performance, but the result is duplicated thousands-item state.
 
 Before the bounded-stock fix, TraderStock.New() iterated the whole MarketSense known-item registry for each trader and performed availability/price evaluation across the universe before selecting eight items.
 
-The immediate remediation now bounds per-trader seed work, but it still depends on DTCommon's duplicate catalog.
+The immediate remediation bounded per-trader seed work but still depended on DTCommon's duplicate catalog.
 
-The final design should remove the need for that shadow catalog instead of preserving it as a permanent optimization layer.
+The completed consolidation removes that shadow catalog rather than preserving it as a permanent optimization layer.
 
 ## Legitimate DTCommon ownership
 
@@ -131,36 +134,29 @@ MarketSense should own:
 - bounded canonical item queries;
 - queued/batched definition pricing.
 
-## Missing upstream API
+## Upstream API gap identified by the audit
 
-The main reason DTCommon grew its own index is that MarketSense exposes GetAllKnownItems() but not yet a sufficiently expressive bounded query surface.
+The main reason DTCommon grew its own index was that MarketSense exposed GetAllKnownItems() but did not yet provide a sufficiently expressive bounded query surface.
 
-Required upstream API should support at least:
+The implemented upstream API now supports the required concepts:
 
 - catalog readiness;
 - registry revision;
 - pricing revision;
 - lookup by fullType;
 - bounded query by category;
-- obtainable/tradeable filtering;
+- obtainable/category/modded filtering, with DT-specific tradeability exclusions remaining downstream;
 - deterministic ordering or cursor/offset semantics where needed;
 - bounded candidate query suitable for initial trader stock;
 - no caller requirement to scan/copy the whole registry.
 
-## Source audit summary
+## Pre-fix source audit summary
 
-Current DTCommon production MarketSense usage is concentrated in:
+At the audit snapshot, DTCommon production MarketSense usage was concentrated in DTCommon_MarketCatalog, TraderStock, MarketPricing, and SettlementExchangeCandidates.
 
-- DTCommon_MarketCatalog.lua;
-- DTCommon_TraderStock.lua;
-- DTCommon_MarketPricing.lua;
-- DTCommon_SettlementExchangeCandidates.lua.
+## Required deletion/removal result
 
-Direct raw MarketSense calls outside MarketCatalog and TraderStock were not found in DTCommon production Lua during this audit.
-
-## Desired deletion/removal result
-
-By the end of this goal, DTCommon should not retain:
+The completed goal removes:
 
 - MAX_ITEMS as an alternate item-universe boundary;
 - MAX_DYNAMIC_FACTS as a shadow fact cache bound;
@@ -171,21 +167,23 @@ By the end of this goal, DTCommon should not retain:
 - dynamicByType;
 - GetAllKnownItems()-driven catalog rebuild.
 
-DTCommon_MarketCatalog.lua should either be deleted or reduced to a thin stateless gateway with no thousands-item resident state. Prefer deletion if callsites can use a small DTCommon_MarketSenseGateway with no data ownership.
+DTCommon_MarketCatalog.lua was deleted. Callers now use DTCommon_MarketSenseGateway, which owns no thousands-item resident state.
 
 ## Native risk
 
 The goal must preserve the recent non-blocking trader-spawn work. Do not regress into synchronous whole-catalog scans or large client-command callback work.
 
-## Evidence status
+## Post-implementation evidence
 
-Verified from current source:
+Verified from current source and tests:
 
-- MarketSense runtime registry and price cache exist;
-- MarketSense RequestPriceDetails() is cooperative/batched;
-- DTCommon shadow indexes exist;
-- MAX_ITEMS = 4096;
-- native catalog count observed at 4412;
-- DTCommon catalog has independent built/invalidation lifetime.
+- MarketSense runtime registry and price cache remain canonical;
+- MarketSense owns the bounded revision-keyed query indexes;
+- MarketSense exposes catalog/pricing revisions and bounded exact/query APIs;
+- DTCommon_MarketCatalog.lua is removed;
+- DynamicTrading production contains no GetAllKnownItems() call;
+- DynamicTrading contains no shadow byType/byCategory/stock-seed/dynamic-fact universe state;
+- 4,412-item tests cover the full catalog and an eligible modded item beyond the former 4,096 boundary;
+- quote contexts invalidate on MarketSense catalog/pricing revision changes.
 
-Implementation has not started.
+Implementation is complete and developer-validated. See PROGRESS.md and HARNESS_ACCEPTANCE.md for current evidence and native handoff.

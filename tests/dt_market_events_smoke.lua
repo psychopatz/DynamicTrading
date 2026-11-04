@@ -157,7 +157,7 @@ DTCommon.SettlementMarket = {
         }
     end,
 }
-DTCommon.MarketCatalog = {
+DTCommon.MarketSenseGateway = {
     Get = function(fullType)
         return fullType == "Base.CannedBeans"
             and { fullType = fullType, category = "Food" } or nil

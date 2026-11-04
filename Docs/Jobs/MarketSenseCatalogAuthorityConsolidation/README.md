@@ -18,7 +18,7 @@ DTCommon remains the DynamicTrading commercial-domain authority for trader stock
 
 Native DTAbstract trader-spawn testing exposed severe stalls while a new trader seeded initial stock. The immediate bounded-stock fix removed the worst per-trader 4k-item price loop, but audit found a deeper architecture issue: DTCommon still maintains a derived shadow catalog over MarketSense.
 
-Current DTCommon catalog state includes:
+At the audit snapshot, DTCommon catalog state included:
 
 - byType;
 - byCategory;
@@ -27,7 +27,7 @@ Current DTCommon catalog state includes:
 - a 4,096-item scan cap;
 - independent runtime lifetime/invalidation.
 
-The installed MarketSense registry currently contains more than 4,096 known items, so DTCommon can observe a different item universe from MarketSense. DTCommon also does not follow MarketSense registry/pricing revisions automatically.
+At the audit snapshot, the installed MarketSense registry contained more than 4,096 known items, so the old DTCommon shadow catalog could observe a different item universe and did not follow MarketSense registry/pricing revisions automatically. The completed implementation removes those split-state behaviors.
 
 ## Parent completion boundary
 
@@ -56,13 +56,15 @@ Do not move trader economics into MarketSense. Do not move MarketSense intrinsic
 
 ## Status
 
-**PLANNED — audit complete, implementation not started.**
+**DEVELOPER COMPLETE — native fresh-save acceptance remains.**
 
-Start with M0 in ROADMAP.md and PROGRESS.md.
+M0–M6 are implemented and validated. MarketSense now owns the canonical
+bounded item-query indexes and revisions; DynamicTrading consumes them through
+a stateless gateway and the former DTCommon shadow catalog is removed.
 
 ## Document map
 
-- AUDIT.md — current duplication, correctness/performance findings, affected modules.
+- AUDIT.md — pre-fix findings and post-implementation authority audit.
 - ARCHITECTURE.md — final ownership and API contracts.
 - ROADMAP.md — ordered M0–M6 implementation phases.
 - HARNESS_ACCEPTANCE.md — regression/performance/native acceptance matrix.

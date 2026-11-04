@@ -9,7 +9,7 @@ local Exchange = DTCommon.SettlementExchange
 local Inventory = require "PsychopatzCore/Inventory/PsychopatzInventory"
 local C = require "PsychopatzCore/Inventory/PsychopatzInventoryConstants"
 local Stock = DTCommon.TraderStock
-local Catalog = DTCommon.MarketCatalog
+local MarketGateway = DTCommon.MarketSenseGateway
 local Pricing = DTCommon.MarketPricing
 
 local function integer(value, fallback)
@@ -101,9 +101,10 @@ function Candidates.PlanDisposals(plan, store, context)
     while record do
         local fullType = recordFullType(record)
         if fullType ~= "" and not seen[fullType]
-            and Catalog and type(Catalog.Get) == "function"
+            and MarketGateway
+            and type(MarketGateway.Get) == "function"
         then
-            local fact = Catalog.Get(fullType)
+            local fact = MarketGateway.Get(fullType)
             local pressure = fact and categoryPressure(plan.market, fact.category)
             if fact and fact.category
                 and pressure.demand > pressure.supply
@@ -157,9 +158,10 @@ function Candidates.PlanAcquisitions(plan, context)
         local category = categories[index]
         local pressure = categoryPressure(plan.market, category)
         if pressure.supply > pressure.demand
-            and Catalog and type(Catalog.GetCandidates) == "function"
+            and MarketGateway
+            and type(MarketGateway.GetCandidates) == "function"
         then
-            local candidates = Catalog.GetCandidates(category, {
+            local candidates = MarketGateway.GetCandidates(category, {
                 limit = 8,
                 availableOnly = true,
             })

@@ -14,6 +14,8 @@ local markets = {
     },
 }
 local catalogCalls = 0
+local marketSenseCatalogRevision = 11
+local marketSensePricingRevision = 3
 
 local function copyMarket(value)
     local categories = {}
@@ -37,11 +39,17 @@ DTCommon = {
                 or nil, "market_not_found"
         end,
     },
-    MarketCatalog = {
+    MarketSenseGateway = {
         Get = function(fullType)
             catalogCalls = catalogCalls + 1
             return fullType == "Base.CannedBeans"
                 and { fullType = fullType, category = "Food" } or nil
+        end,
+        GetCatalogRevision = function()
+            return marketSenseCatalogRevision
+        end,
+        GetPricingRevision = function()
+            return marketSensePricingRevision
         end,
     },
     TraderSupport = {},
@@ -167,9 +175,31 @@ T.equal(eventQuote.intrinsicPrice, 100,
 T.equal(eventQuote.explanation.eventCount, 1,
     "quote explanation identifies applied event modifiers")
 T.truthy(Pricing.IsCurrent(eventContext), "current market and event context")
+T.equal(eventContext.marketSenseCatalogRevision, 11,
+    "quote context captures canonical MarketSense catalog revision")
+T.equal(eventContext.marketSensePricingRevision, 3,
+    "quote context captures MarketSense pricing revision")
+T.equal(eventContext.quoteContextRevision, "4:7:11:3",
+    "quote context revision includes MarketSense revisions")
+
+marketSenseCatalogRevision = 12
+local current, currentReason = Pricing.IsCurrent(eventContext)
+T.falsy(current,
+    "MarketSense catalog revision invalidates cached taxonomy context")
+T.equal(currentReason, "stale_marketsense_catalog",
+    "stale MarketSense catalog reason is explicit")
+marketSenseCatalogRevision = 11
+
+marketSensePricingRevision = 4
+current, currentReason = Pricing.IsCurrent(eventContext)
+T.falsy(current,
+    "MarketSense pricing revision invalidates an old quote context")
+T.equal(currentReason, "stale_marketsense_pricing",
+    "stale MarketSense pricing reason is explicit")
+marketSensePricingRevision = 3
 
 markets.farm.revision = 5
-local current, currentReason = Pricing.IsCurrent(eventContext)
+current, currentReason = Pricing.IsCurrent(eventContext)
 T.falsy(current, "market revision invalidates an old quote context")
 T.equal(currentReason, "stale_market", "stale market reason is explicit")
 

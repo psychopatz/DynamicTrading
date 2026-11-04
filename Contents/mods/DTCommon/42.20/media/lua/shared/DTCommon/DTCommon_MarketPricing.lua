@@ -7,7 +7,7 @@ DTCommon = DTCommon or {}
 local Pricing = DTCommon.MarketPricing or {}
 DTCommon.MarketPricing = Pricing
 
-local Catalog = DTCommon.MarketCatalog
+local MarketGateway = DTCommon.MarketSenseGateway
 local Market = DTCommon.SettlementMarket
 local Policy = DTCommon.CoreActorPolicy
 local Schema = DTCommon.MarketSchema
@@ -196,6 +196,12 @@ function Pricing.BuildContext(record, player, options)
     context.marketAvailable = false
     context.marketRevision = nil
     context.eventRevision = nil
+    context.marketSenseCatalogRevision = MarketGateway
+        and type(MarketGateway.GetCatalogRevision) == "function"
+        and MarketGateway.GetCatalogRevision() or 0
+    context.marketSensePricingRevision = MarketGateway
+        and type(MarketGateway.GetPricingRevision) == "function"
+        and MarketGateway.GetPricingRevision() or 0
     context.eventModifiers = {}
     if settlementID and Market and type(Market.Get) == "function" then
         market, marketReason = Market.Get(settlementID)
@@ -233,12 +239,29 @@ end
 function Pricing.ContextRevision(context)
     context = type(context) == "table" and context or {}
     return tostring(context.marketRevision or "none") .. ":"
-        .. tostring(context.eventRevision or "none")
+        .. tostring(context.eventRevision or "none") .. ":"
+        .. tostring(context.marketSenseCatalogRevision or 0) .. ":"
+        .. tostring(context.marketSensePricingRevision or 0)
 end
 
 function Pricing.IsCurrent(context)
     local current
     if type(context) ~= "table" then return true end
+
+    if MarketGateway
+        and type(MarketGateway.GetCatalogRevision) == "function"
+        and integer(MarketGateway.GetCatalogRevision(), 0)
+            ~= integer(context.marketSenseCatalogRevision, 0)
+    then
+        return false, "stale_marketsense_catalog"
+    end
+    if MarketGateway
+        and type(MarketGateway.GetPricingRevision) == "function"
+        and integer(MarketGateway.GetPricingRevision(), 0)
+            ~= integer(context.marketSensePricingRevision, 0)
+    then
+        return false, "stale_marketsense_pricing"
+    end
     if context.settlementID and context.marketRevision ~= nil
         and Market and type(Market.Get) == "function"
     then
@@ -288,8 +311,10 @@ function Pricing.GetItemContext(fullType, context)
     if not key then return neutralItemContext(fullType, context, "item_required") end
     if type(context.itemFacts) ~= "table" then context.itemFacts = {} end
     fact = context.itemFacts[key]
-    if not fact and Catalog and type(Catalog.Get) == "function" then
-        fact = Catalog.Get(key)
+    if not fact and MarketGateway
+        and type(MarketGateway.Get) == "function"
+    then
+        fact = MarketGateway.Get(key)
         if type(fact) == "table"
             and (context.itemFactCount or 0) < Pricing.MAX_ITEM_CACHE
         then

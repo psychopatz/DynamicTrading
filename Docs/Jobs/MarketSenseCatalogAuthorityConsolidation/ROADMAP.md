@@ -2,199 +2,128 @@
 
 ## Parent goal
 
-MarketSense is the single canonical item-universe, availability, taxonomy, intrinsic-pricing, query-index, and revision authority. DynamicTrading consumes bounded MarketSense APIs and owns only commercial/trader economics.
+MarketSense is the single canonical item-universe, availability, taxonomy,
+intrinsic-pricing, query-index, and revision authority. DynamicTrading consumes
+bounded MarketSense APIs and owns only commercial/trader economics.
 
-Status: **PLANNED**
+**Developer status: COMPLETE. Native fresh-save acceptance remains.**
 
 ## M0 — Characterize and freeze contracts
 
-### Objective
+**COMPLETE**
 
-Establish current behavior and fail-first evidence before structural migration.
-
-### Work
-
-- inventory every DynamicTrading MarketSense touchpoint;
-- characterize MarketCatalog consumers and exact returned shapes;
-- characterize MarketSense registry/query/cache/revision behavior;
-- add/extend tests for:
-  - >4096 item universe;
-  - registry revision change;
-  - pricing revision change;
-  - category candidate query;
-  - obtainable filtering;
-  - bounded stock seed;
-  - bounded settlement acquisition;
-  - no full-catalog scan on second trader;
-- capture baseline MarketSense cache/evaluation counters.
-
-### Gate
-
-Tests demonstrate current truncation/staleness risk without requiring native PZ.
+Characterized all DynamicTrading MarketSense touchpoints and established
+regressions for the former 4,096-item boundary, repeated trader creation,
+category queries, and revision behavior.
 
 ## M1 — Add canonical bounded query API to MarketSense
 
-### Objective
+**COMPLETE**
 
-Make MarketSense sufficient as the sole catalog/query authority.
+MarketSense now publicly exposes:
 
-### Work
+- GetCatalogRevision();
+- GetPricingRevision();
+- IsCatalogReady();
+- GetCatalogItem();
+- QueryItems().
 
-Add public, documented equivalents for:
-
-- catalog readiness;
-- catalog revision;
-- pricing revision;
-- bounded QueryItems();
-- deterministic category/eligibility queries;
-- small descriptors rather than whole-registry copies.
-
-Use MarketSense's existing registry and internal indexes/caches. Add indexes inside MarketSense if necessary.
-
-### Constraints
-
-- no DynamicTrading-specific names or policy inside MarketSense;
-- API must be reusable by other mods/tools;
-- query limits must be bounded;
-- registry revision owns index invalidation.
-
-### Gate
-
-MarketSense tests prove query correctness, revision invalidation, >4096 coverage, and bounded result size.
+ItemsRegistry owns lightweight revision-keyed indexes for category, obtainable,
+and modded queries. The 4,412-item regression proves coverage beyond the former
+DynamicTrading cap and canonical revision invalidation.
 
 ## M2 — Introduce thin DynamicTrading MarketSense gateway
 
-### Objective
+**COMPLETE**
 
-Give DTCommon one dependency seam without creating state authority.
+DTCommon_MarketSenseGateway is stateless with respect to the item universe. It
+normalizes bounded MarketSense requests and applies only DynamicTrading-specific
+commercial exclusions such as currency.
 
-### Work
-
-- introduce or reshape a small gateway;
-- map MarketSense readiness/query failures to DT reason codes;
-- expose bounded candidate lookup and canonical fact lookup;
-- expose no resident full-catalog indexes.
-
-### Gate
-
-Gateway tests prove no GetAllKnownItems() call and no persistent universe mirror.
+The gateway has no Build/Ensure/Invalidate lifecycle and no universe mirror.
 
 ## M3 — Migrate trader stock seeding
 
-### Objective
+**COMPLETE**
 
-Remove MarketCatalog dependency from TraderStock.New().
+TraderStock.New() now obtains a bounded canonical MarketSense candidate pool,
+preserves valid configured defaults and modded-item preference, and prices only
+the candidates needed for the 8-slot initial stock.
 
-### Work
+The 4,412-item regression proves:
 
-- obtain small canonical candidate pool from MarketSense query API;
-- keep INITIAL_STOCK_LIMIT bounded;
-- retain deterministic/default-stock preference where valid;
-- price only selected/considered candidates;
-- use MarketSense queued pricing only if the operation genuinely needs asynchronous bulk pricing.
-
-### Gate
-
-With 4,412+ items:
-
-- zero DT-side full-catalog scan;
-- bounded candidate count;
-- <= configured initial-stock price requests;
-- repeated trader creation does not rebuild item indexes.
+- zero DynamicTrading GetAllKnownItems() use;
+- bounded MarketSense query calls;
+- at most eight initial price evaluations;
+- eligible modded item at position 4,300 can participate.
 
 ## M4 — Migrate pricing context and settlement exchange
 
-### Objective
+**COMPLETE**
 
-Remove remaining MarketCatalog consumers.
+MarketPricing and SettlementExchangeCandidates now use the stateless gateway.
 
-### Work
+DynamicTrading continues to own settlement pressure, event effects,
+relationship modifiers, budgets, and commercial margins.
 
-- MarketPricing canonical item/category lookup -> MarketSense/gateway;
-- SettlementExchangeCandidates category query -> MarketSense/gateway;
-- preserve DT-owned settlement/event/relationship/commercial policy;
-- add revision-change tests.
-
-### Gate
-
-No production caller requires DTCommon_MarketCatalog's state/indexes.
+Quote contexts capture MarketSense catalog/pricing revisions and are explicitly
+invalidated by canonical registry or pricing-policy changes.
 
 ## M5 — Remove shadow catalog and legacy tests
 
-### Objective
+**COMPLETE**
 
-Eliminate split catalog state.
+Deleted:
 
-### Work
+- DTCommon_MarketCatalog.lua;
+- dt_market_catalog_smoke.lua.
 
-Delete or reduce to a stateless gateway:
+Source audit confirms no DynamicTrading production use of:
 
-- MAX_ITEMS;
+- GetAllKnownItems();
+- MarketCatalog;
+- MAX_ITEMS shadow-universe cap;
 - MAX_DYNAMIC_FACTS;
-- byType;
-- byCategory;
-- stockSeedRows;
-- stockSeedSet;
-- dynamicByType;
-- dynamicCount;
-- GetAllKnownItems()-driven Build/Ensure/Invalidate lifecycle.
-
-Prefer deleting DTCommon_MarketCatalog.lua if the gateway supersedes it cleanly.
-
-Update tests to canonical authority rather than compatibility expectations.
-
-### Gate
-
-Source audit finds:
-
-- no DynamicTrading GetAllKnownItems() call;
-- no DT full-universe mirror;
-- no alternate item count cap;
-- no independent catalog invalidation;
-- no fallback intrinsic pricing/taxonomy.
+- byType/byCategory shadow indexes;
+- stockSeedRows/stockSeedSet;
+- dynamicByType/dynamicCount;
+- independent catalog Build/Ensure/Invalidate lifecycle.
 
 ## M6 — Full regression, performance and native handoff
 
-### Developer gates
+### Developer gates — COMPLETE
 
 MarketSense:
 
-- full suite passes;
-- query/revision/performance tests pass;
-- Kahlua/parse gates pass;
-- git diff --check clean.
+- full suite: **15/15 pass**;
+- 4,412-item bounded query/revision regression: pass.
 
 DynamicTrading:
 
-- full suite passes;
-- 4,412+ catalog performance regression passes;
-- trader spawn remains non-blocking;
-- settlement exchange regression passes;
-- pricing/audit regression passes;
-- Kahlua/parse gates pass;
-- source audit passes;
-- git diff --check clean.
+- full suite: **69/69 pass**;
+- stateless gateway regression: pass;
+- stock-seed performance regression: pass;
+- pricing/revision and settlement-exchange regressions: pass.
 
-Cross-repo:
+Cross-repository static gates:
 
-- MarketSense API loaded before DT consumers;
-- registry rebuild/revision becomes visible without DT reset;
-- pricing policy changes do not require DT catalog rebuild because no DT catalog exists.
+- installed-PZ Kahlua on changed production Lua: **9/9 pass**;
+- git diff --check: pass;
+- shadow-authority source audit: pass.
 
-### Native acceptance
+### Native acceptance — PENDING
 
-User-owned fresh-save acceptance:
+User-owned fresh-save matrix:
 
-- DTAbstract trader spawn remains responsive;
-- queued/debug notifications appear;
-- no long stall from stock seeding;
-- trader inventory populated;
-- trade UI quotes remain correct;
-- settlement market/exchange still functions;
-- modded items beyond the previous 4096 boundary can participate when eligible.
+- DTAbstract Spawn Trader stays responsive;
+- queued/final notifications appear;
+- trader initial stock populates without the former catalog stall;
+- Trade/Talk/map remain functional;
+- DTHoomans commercial behavior remains equivalent;
+- eligible modded items beyond the former 4,096 boundary can participate.
 
 ## Stop condition
 
-Do not stop merely because M1 API exists or TraderStock is fast.
-
-Stop only when M0–M6 developer gates pass and DynamicTrading no longer owns a shadow item universe. Native acceptance may remain as the final user-owned gate.
+Developer implementation is complete. Do not add another catalog compatibility
+layer. Reopen developer work only for a concrete native defect or an upstream
+MarketSense query requirement not covered by the canonical API.

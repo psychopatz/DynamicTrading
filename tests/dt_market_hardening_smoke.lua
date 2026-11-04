@@ -79,8 +79,8 @@ local Events = T.load(
     "DTCommon", "shared", "DTCommon/DTCommon_MarketEvents.lua")
 DTCommon.MarketEvents = Events
 local Catalog = T.load(
-    "DTCommon", "shared", "DTCommon/DTCommon_MarketCatalog.lua")
-DTCommon.MarketCatalog = Catalog
+    "DTCommon", "shared", "DTCommon/DTCommon_MarketSenseGateway.lua")
+DTCommon.MarketSenseGateway = Catalog
 
 local function countEntries(value)
     local count = 0
@@ -198,55 +198,34 @@ T.truthy(boundedEvents, boundedEventsReason)
 T.equal(countEntries(boundedEvents.events), Schema.MAX_EVENTS,
     "event migration bounds the persisted event envelope")
 
-local known = {
+local MarketSenseStub = require "tests/support/market_sense_stub"
+MarketSense = MarketSenseStub.New({
     ["Base.CannedBeans"] = {
         fullType = "Base.CannedBeans",
         category = "Food",
-        tags = { "FoodPreserved" },
-        availability = { status = "obtainable" },
+        primary = "Food",
+        availability = { status = "obtainable", obtainable = true },
+        price = 100,
     },
-}
-local knownCalls = 0
-MarketSense = {
-    EnsureRuntimeRegistryLoaded = function() return true end,
-    GetAllKnownItems = function()
-        knownCalls = knownCalls + 1
-        return known
-    end,
-    GetTags = function()
-        return { category = "Food", tags = { "Food" } }
-    end,
-    GetItemAvailability = function()
-        return { status = "obtainable" }
-    end,
-    GetPriceDetails = function() return { price = 100 } end,
-    GetPriceDetailsForInstance = function() return { price = 100 } end,
-}
+}, {
+    getPriceDetails = function() return { price = 100 } end,
+    getPriceDetailsForInstance = function() return { price = 100 } end,
+})
 
-Catalog.Reset()
-local built, builtReason = Catalog.Ensure()
-T.truthy(built, builtReason)
-T.equal(knownCalls, 1, "catalog warmup performs one registry scan")
-for index = 1, Catalog.MAX_DYNAMIC_FACTS + 32 do
-    T.truthy(Catalog.Get("Workshop.Dynamic" .. tostring(index)),
-        "uncatalogued MarketSense fact remains available to a quote")
-end
-local dynamicDiagnostics = Catalog.Diagnostics()
-T.equal(dynamicDiagnostics.dynamicCount, Catalog.MAX_DYNAMIC_FACTS,
-    "ad hoc taxonomy cache is bounded")
-for _ = 1, 6 do
-    Catalog.GetCandidates("Food", { limit = 4 })
-end
-T.equal(knownCalls, 1,
-    "warm catalog candidate queries do not rescan MarketSense")
-Catalog.Invalidate()
-local rebuilt, rebuiltReason = Catalog.GetCandidates("Food", { limit = 4 })
-T.truthy(rebuilt, rebuiltReason)
-T.equal(knownCalls, 2,
-    "explicit catalog invalidation permits exactly one new scan")
-Catalog.GetCandidates("Food", { limit = 4 })
-T.equal(knownCalls, 2,
-    "repeated post-invalidation candidate queries stay cached")
+T.truthy(Catalog.IsReady(),
+    "canonical MarketSense gateway is ready")
+local candidates = Catalog.GetCandidates("Food", { limit = 4 })
+T.equal(#candidates, 1,
+    "gateway exposes bounded canonical category candidates")
+T.equal(candidates[1], "Base.CannedBeans",
+    "gateway keeps canonical item identity")
+T.equal(MarketSense._allKnownCalls, 0,
+    "gateway never requests the full MarketSense universe")
+local fact = assert(Catalog.Get("Base.CannedBeans"))
+T.equal(fact.category, "Food",
+    "gateway exact lookup preserves MarketSense taxonomy")
+T.falsy(Catalog.Diagnostics().persistentUniverseState,
+    "gateway owns no persistent item universe")
 
 DTCommon.CoreActorPolicy = {
     Get = function(record) return record and record.ca end,
@@ -269,8 +248,10 @@ for _ = 1, 20 do
     T.equal(quote.unitPrice, 85,
         "warm catalog quote applies the bounded settlement context")
 end
-T.equal(knownCalls, 2,
+T.equal(MarketSense._allKnownCalls, 0,
     "repeated quotes never perform a full MarketSense registry scan")
+T.truthy(MarketSense._exactCalls <= 2,
+    "quote context reuses bounded canonical item facts")
 
 local coreRepository = T.repository .. "/../psychopatzCore"
 package.path = coreRepository
@@ -376,7 +357,7 @@ DTCommon = {
         ResolveContext = function() end,
         ListActive = function() end,
     },
-    MarketCatalog = { GetCandidates = function() end },
+    MarketSenseGateway = { GetCandidates = function() end },
     SettlementMarket = { Recover = function() end },
     SettlementExchange = { Execute = function() end },
 }
@@ -406,7 +387,7 @@ end
 DTCommon.MarketPricing.BuildContext()
 DTCommon.MarketEvents.ResolveContext()
 DTCommon.MarketEvents.ListActive()
-DTCommon.MarketCatalog.GetCandidates()
+DTCommon.MarketSenseGateway.GetCandidates()
 DTCommon.SettlementMarket.Recover()
 DTCommon.TraderService.MarkSettlementVisit()
 DTCommon.SettlementExchange.Execute()

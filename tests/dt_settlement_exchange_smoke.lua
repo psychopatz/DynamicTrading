@@ -187,7 +187,7 @@ DTCommon = {
             return { revision = market.revision + 1 }, true
         end,
     },
-    MarketCatalog = {
+    MarketSenseGateway = {
         Get = function(fullType)
             if fullType == "Base.Bandage" then
                 return { fullType = fullType, category = "Medical" }

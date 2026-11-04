@@ -36,7 +36,7 @@ DTCommon.SettlementMarket = {
         }
     end,
 }
-DTCommon.MarketCatalog = {
+DTCommon.MarketSenseGateway = {
     Get = function(fullType)
         if fullType == "Base.CannedBeans"
             or fullType == "Base.Bandage"

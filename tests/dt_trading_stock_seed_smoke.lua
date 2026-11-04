@@ -33,39 +33,58 @@ DTCommon = {
     TraderStock = {},
 }
 
-local availability = {
-    ["Base.Bandage"] = "obtainable",
-    ["Base.CannedBeans"] = "obtainable",
-    ["WorkshopMod.RareThing"] = "obtainable",
-    ["WorkshopMod.Unavailable"] = "not_obtainable",
-    ["Base.Money"] = "obtainable",
-}
+local MarketSenseStub = require "tests/support/market_sense_stub"
 local definitionRequests = 0
-MarketSense = {
-    EnsureRuntimeRegistryLoaded = function() return true end,
-    GetAllKnownItems = function()
-        return {
-            ["Base.Bandage"] = { fullType = "Base.Bandage" },
-            ["Base.CannedBeans"] = { fullType = "Base.CannedBeans" },
-            ["WorkshopMod.RareThing"] = { fullType = "WorkshopMod.RareThing" },
-            ["WorkshopMod.Unavailable"] = { fullType = "WorkshopMod.Unavailable" },
-            ["Base.Money"] = { fullType = "Base.Money" },
-        }
-    end,
-    GetItemAvailability = function(fullType)
-        return { status = availability[fullType] }
-    end,
-    GetPriceDetails = function(fullType)
+MarketSense = MarketSenseStub.New({
+    ["Base.Bandage"] = {
+        fullType = "Base.Bandage",
+        category = "Medical",
+        availability = { status = "obtainable", obtainable = true },
+        price = 100,
+    },
+    ["Base.CannedBeans"] = {
+        fullType = "Base.CannedBeans",
+        category = "Food",
+        availability = { status = "obtainable", obtainable = true },
+        price = 100,
+    },
+    ["WorkshopMod.RareThing"] = {
+        fullType = "WorkshopMod.RareThing",
+        sourceModId = "WorkshopMod",
+        category = "Tool",
+        availability = { status = "obtainable", obtainable = true },
+        price = 100,
+    },
+    ["WorkshopMod.Unavailable"] = {
+        fullType = "WorkshopMod.Unavailable",
+        sourceModId = "WorkshopMod",
+        category = "Tool",
+        availability = { status = "not_obtainable", obtainable = false },
+        price = 100,
+    },
+    ["Base.Money"] = {
+        fullType = "Base.Money",
+        category = "Currency",
+        availability = { status = "obtainable", obtainable = true },
+        price = 1,
+    },
+}, {
+    getPriceDetails = function(fullType)
         definitionRequests = definitionRequests + 1
-        if fullType == "WorkshopMod.Unavailable" then return { price = 100 } end
         return { price = 100 }
     end,
-}
+})
+
 
 InventoryItemFactory = {
     CreateItem = function(fullType) return { fullType = fullType } end,
 }
 
+DTCommon.MarketSenseGateway = T.load(
+    "DTCommon",
+    "shared",
+    "DTCommon/DTCommon_MarketSenseGateway.lua"
+)
 local Stock = T.load(
     "DTCommon",
     "shared",

@@ -178,27 +178,21 @@ PNC = {
     Travel = { Arrivals = { StrictActionTypes = {} } },
 }
 
-MarketSense = {
-    GetAllKnownItems = function()
-        return {
-            ["Base.CannedBeans"] = {
-                fullType = "Base.CannedBeans",
-                category = "Food",
-                availability = { status = "obtainable" },
-            },
-        }
-    end,
-    GetTags = function(fullType)
-        if fullType == "Base.CannedBeans" then
-            return { category = "Food", tags = { "food" } }
-        end
-        return nil
-    end,
-    GetPriceDetails = function(fullType)
+local MarketSenseStub = require "tests/support/market_sense_stub"
+MarketSense = MarketSenseStub.New({
+    ["Base.CannedBeans"] = {
+        fullType = "Base.CannedBeans",
+        category = "Food",
+        primary = "Food",
+        availability = { status = "obtainable", obtainable = true },
+        price = 100,
+    },
+}, {
+    getPriceDetails = function(fullType)
         if fullType == "Base.CannedBeans" then return { price = 100 } end
         return nil
     end,
-}
+})
 
 local savedRequire = require
 require = function(moduleName)
@@ -225,9 +219,8 @@ local Policy = loadSource(
 DTCommon.CoreActorPolicy = Policy
 
 local Catalog = loadSource(
-    "DTCommon", "shared", "DTCommon/DTCommon_MarketCatalog.lua")
-Catalog.Reset()
-DTCommon.MarketCatalog = Catalog
+    "DTCommon", "shared", "DTCommon/DTCommon_MarketSenseGateway.lua")
+DTCommon.MarketSenseGateway = Catalog
 local Registry = loadSource(
     "DTCommon", "shared", "DTCommon/DTCommon_SettlementMarket.lua")
 DTCommon.SettlementMarket = Registry
@@ -316,14 +309,14 @@ DTCommon.SettlementExchange = Exchange
 local farm, farmCreated = Registry.GetOrCreate("settlement_a", "farm")
 local military, militaryCreated = Registry.GetOrCreate(
     "settlement_b", "military")
-local catalogReady, catalogReason = Catalog.Ensure()
-T.truthy(catalogReady, catalogReason)
 T.truthy(farm, "farm market is created")
 T.truthy(military, "military market is created")
 T.equal(farmCreated, true, "farm market creation is persisted")
 T.equal(militaryCreated, true, "military market creation is persisted")
-T.equal(Catalog.Diagnostics().indexedCount, 1,
-    "logistics catalog is bounded to the MarketSense item")
+T.truthy(Catalog.IsReady(),
+    "logistics uses the canonical MarketSense gateway")
+T.falsy(Catalog.Diagnostics().persistentUniverseState,
+    "logistics gateway owns no shadow catalog")
 
 local farmBefore = Registry.Get("settlement_a")
 local farmBeforeQuote = Stock.Quote(

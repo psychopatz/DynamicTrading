@@ -5,8 +5,8 @@ local Stock = DTCommon.TraderStock
 local Inventory = require "PsychopatzCore/Inventory/PsychopatzInventory"
 local Storage = DTCommon.Storage
 local Support = DTCommon.TraderSupport
-local Catalog = DTCommon.MarketCatalog
-    or require "DTCommon/DTCommon_MarketCatalog"
+local MarketGateway = DTCommon.MarketSenseGateway
+    or require "DTCommon/DTCommon_MarketSenseGateway"
 local INITIAL_STOCK_LIMIT = 8
 local STOCK_SEED_CANDIDATE_LIMIT = 32
 
@@ -284,13 +284,13 @@ local function seedQuantity(value)
 end
 
 local function seedCandidates()
-    if not Catalog
-        or type(Catalog.GetStockSeedCandidates) ~= "function"
+    if not MarketGateway
+        or type(MarketGateway.GetStockSeedCandidates) ~= "function"
     then
         return {}
     end
 
-    local pool = Catalog.GetStockSeedCandidates({
+    local pool = MarketGateway.GetStockSeedCandidates({
         defaults = DTCommon.DEFAULT_STOCK or {},
         limit = STOCK_SEED_CANDIDATE_LIMIT,
     })

@@ -113,7 +113,7 @@ DTCommon.TraderService = T.load(
     "DTCommon", "shared", "DTCommon/DTCommon_TraderService.lua")
 require = savedRequire
 
-DTCommon.MarketCatalog = {
+DTCommon.MarketSenseGateway = {
     Get = function(fullType)
         if fullType == "Base.CannedBeans" then
             return { fullType = fullType, category = "Food" }

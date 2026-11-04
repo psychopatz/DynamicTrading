@@ -127,30 +127,23 @@ ModData = {
     end,
     transmit = function() end,
 }
-MarketSense = {
-    GetAllKnownItems = function()
-        return {
-            ["Base.CannedBeans"] = {
-                fullType = "Base.CannedBeans",
-                category = "Food",
-                availability = { status = "obtainable" },
-            },
-        }
-    end,
-    GetTags = function(fullType)
-        if fullType == "Base.CannedBeans" then
-            return { category = "Food", tags = { "food" } }
-        end
-        return nil
-    end,
-    GetItemAvailability = function()
-        return { status = "obtainable" }
-    end,
-    GetPriceDetails = function(fullType)
+local MarketSenseStub = require "tests/support/market_sense_stub"
+MarketSense = MarketSenseStub.New({
+    ["Base.CannedBeans"] = {
+        fullType = "Base.CannedBeans",
+        category = "Food",
+        primary = "Food",
+        availability = { status = "obtainable", obtainable = true },
+        price = 100,
+    },
+}, {
+    getPriceDetails = function(fullType)
         if fullType == "Base.CannedBeans" then return { price = 100 } end
+        if fullType == "Base.Unrelated" then return { price = 25 } end
         return nil
     end,
-}
+})
+
 
 PNC = {
     Core = { DeepCopy = copy, IsAuthority = function() return authority end },
@@ -216,9 +209,8 @@ DTCommon.TraderSupport = loadSource(
     "DTCommon", "shared", "DTCommon/DTCommon_TraderSupport.lua")
 DTCommon.CoreActorPolicy = loadSource(
     "DTCommon", "shared", "DTCommon/DTCommon_CoreActorPolicy.lua")
-DTCommon.MarketCatalog = loadSource(
-    "DTCommon", "shared", "DTCommon/DTCommon_MarketCatalog.lua")
-DTCommon.MarketCatalog.Reset()
+DTCommon.MarketSenseGateway = loadSource(
+    "DTCommon", "shared", "DTCommon/DTCommon_MarketSenseGateway.lua")
 DTCommon.SettlementMarket = loadSource(
     "DTCommon", "shared", "DTCommon/DTCommon_SettlementMarket.lua")
 DTCommon.MarketPricing = loadSource(

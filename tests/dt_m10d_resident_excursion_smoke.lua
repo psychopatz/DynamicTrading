@@ -406,9 +406,8 @@ DTCommon.TraderSupport = loadSource(
     "DTCommon", "shared", "DTCommon/DTCommon_TraderSupport.lua")
 DTCommon.CoreActorPolicy = loadSource(
     "DTCommon", "shared", "DTCommon/DTCommon_CoreActorPolicy.lua")
-DTCommon.MarketCatalog = loadSource(
-    "DTCommon", "shared", "DTCommon/DTCommon_MarketCatalog.lua")
-DTCommon.MarketCatalog.Reset()
+DTCommon.MarketSenseGateway = loadSource(
+    "DTCommon", "shared", "DTCommon/DTCommon_MarketSenseGateway.lua")
 DTCommon.SettlementMarket = loadSource(
     "DTCommon", "shared", "DTCommon/DTCommon_SettlementMarket.lua")
 DTCommon.MarketPricing = loadSource(
