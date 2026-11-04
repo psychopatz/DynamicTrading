@@ -42,6 +42,7 @@ local playerB = {
     getUsername = function() return "bob" end,
 }
 
+local denyAccess = false
 DTCommon = {
     STATUS_READY = "READY",
     Storage = { IsAuthority = function() return true end },
@@ -57,6 +58,7 @@ DTCommon = {
         end,
         ValidateTalkAccess = function(_, id, mode)
             if id ~= "trader:portable" then return false, "trader_not_found" end
+            if denyAccess then return false, "access_denied" end
             if mode ~= "radio" then return false, "wrong_mode" end
             return true
         end,
@@ -124,5 +126,35 @@ local closed, closeReason = Talk.Close(
     playerA, "trader:portable", first.sessionID, "radio")
 T.truthy(closed, closeReason)
 T.equal(Talk.Count(), 1, "closing one player leaves the other session")
+
+denyAccess = true
+local denied, deniedReason = Talk.Open(
+    playerA, "trader:portable", "radio")
+T.equal(denied, nil, "normal remote Talk remains access-gated")
+T.equal(deniedReason, "access_denied",
+    "normal remote Talk denial reason")
+
+local debugSession, debugReason = Talk.Open(
+    playerA,
+    "trader:portable",
+    "radio",
+    { debugBypassAccess = true }
+)
+T.truthy(debugSession, debugReason)
+T.truthy(debugSession.debugAccess,
+    "debug Talk session records its access override")
+local debugTurn, debugTurnReason = Talk.Submit(
+    playerA,
+    "trader:portable",
+    debugSession.sessionID,
+    "hello",
+    {
+        mode = "radio",
+        requestID = "debug-turn",
+    }
+)
+T.truthy(debugTurn, debugTurnReason)
+T.truthy(debugTurn.debugAccess,
+    "debug Talk turn keeps the server-authorized override")
 
 T.finish("dt_talk_service_smoke")

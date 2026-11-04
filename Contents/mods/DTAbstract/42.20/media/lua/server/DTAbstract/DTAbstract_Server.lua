@@ -36,12 +36,17 @@ local function canUseDebug(player)
     return true
 end
 
-local function send(player, command, payload)
+local function sendModule(player, module, command, payload)
+    payload = payload or {}
     if sendServerCommand then
-        sendServerCommand(player, "DTAbstract", command, payload or {})
+        sendServerCommand(player, module, command, payload)
     elseif triggerEvent then
-        triggerEvent("OnServerCommand", "DTAbstract", command, payload or {})
+        triggerEvent("OnServerCommand", module, command, payload)
     end
+end
+
+local function send(player, command, payload)
+    sendModule(player, "DTAbstract", command, payload)
 end
 
 
@@ -254,6 +259,43 @@ local function onClientCommand(module, command, player, args)
             accepted = false,
             action = command,
             reason = "not_authorized",
+        })
+        return
+    end
+
+    if command == "DebugTalkOpen" then
+        local Talk = DTCommon and DTCommon.TalkService or nil
+        local result
+        local reason
+        if not Talk or type(Talk.Open) ~= "function" then
+            reason = "talk_service_unavailable"
+        else
+            result, reason = Talk.Open(
+                player,
+                args.traderID,
+                "radio",
+                {
+                    debugBypassAccess = true,
+                }
+            )
+        end
+        sendModule(
+            player,
+            DTCommon.MOD_ID or "DynamicTrading",
+            "TalkResult",
+            result or {
+                accepted = false,
+                traderID = args.traderID,
+                mode = "radio",
+                reason = reason or "talk_rejected",
+            }
+        )
+        send(player, "TraderDebugActionResult", {
+            accepted = result ~= nil,
+            action = "debug_talk",
+            reason = result and "session_opened"
+                or (reason or "talk_rejected"),
+            traderID = args.traderID,
         })
         return
     end

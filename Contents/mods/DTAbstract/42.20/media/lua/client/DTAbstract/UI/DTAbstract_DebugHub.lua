@@ -153,6 +153,40 @@ function DebugHub.Dematerialize(traderID)
     return sendCommand("DematerializeTrader", { traderID = traderID })
 end
 
+function DebugHub.OpenDebugTalk(traderID)
+    traderID = tostring(traderID or "")
+    if traderID == "" then return false, "trader_required" end
+    if not canUseDebug() then return false, "not_authorized" end
+
+    local displayName = traderID
+    local traders = DebugHub.ListTraders()
+    for index = 1, #traders do
+        if traders[index].traderID == traderID then
+            displayName = traders[index].displayName or traderID
+            break
+        end
+    end
+
+    local TalkWindow = require
+        "DTAbstract/UI/DTAbstract_DebugTalkWindow"
+    local window, reason = TalkWindow.Open(
+        traderID,
+        displayName
+    )
+    if not window then return false, reason or "talk_window_unavailable" end
+
+    local sent, sendReason = sendCommand(
+        "DebugTalkOpen",
+        { traderID = traderID }
+    )
+    if not sent then
+        window.status = "Talk open failed: "
+            .. tostring(sendReason or "send_failed")
+        return false, sendReason
+    end
+    return true
+end
+
 function DebugHub.LocateOnMap(traderID)
     local traders = DebugHub.ListTraders()
     for index = 1, #traders do

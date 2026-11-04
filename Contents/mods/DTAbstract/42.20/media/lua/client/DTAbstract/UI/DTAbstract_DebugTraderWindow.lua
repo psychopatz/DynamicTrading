@@ -93,6 +93,9 @@ function Window:onButton(button)
     if id == "TP" then
         self.notice = "Teleport request: " .. traderID
         return api.TeleportToTrader(traderID)
+    elseif id == "TALK" then
+        self.notice = "Opening debug talk: " .. traderID
+        return api.OpenDebugTalk(traderID)
     elseif id == "ARRIVE" then
         self.notice = "Force-arrival request: " .. traderID
         return api.ForceArrival(traderID)
@@ -148,19 +151,20 @@ function Window:rebuildRowButtons()
         local row = self.rows[rowIndex] or {}
 
         if not row.teleport then
-            local x = self.width - 455
+            local x = self.width - 535
             row.locate = addButton(self, "LOCATE", "Map", x, y, 55)
             row.teleport = addButton(self, "TP", "TP", x + 60, y, 45)
-            row.arrive = addButton(self, "ARRIVE", "Arrive", x + 110, y, 60)
+            row.talk = addButton(self, "TALK", "Talk", x + 110, y, 55)
+            row.arrive = addButton(self, "ARRIVE", "Arrive", x + 170, y, 60)
             row.reset = addButton(
-                self, "RESET_DISCOVERY", "Reset Seen", x + 175, y, 80)
+                self, "RESET_DISCOVERY", "Reset Seen", x + 235, y, 80)
             row.provider = addButton(
-                self, "MATERIALIZE", "Materialize", x + 260, y, 90)
-            row.remove = addButton(self, "REMOVE", "Remove", x + 355, y, 75)
+                self, "MATERIALIZE", "Materialize", x + 320, y, 90)
+            row.remove = addButton(self, "REMOVE", "Remove", x + 415, y, 75)
         end
 
         local buttons = {
-            row.locate, row.teleport, row.arrive,
+            row.locate, row.teleport, row.talk, row.arrive,
             row.reset, row.provider, row.remove,
         }
         for _, button in ipairs(buttons) do

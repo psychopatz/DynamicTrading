@@ -238,6 +238,54 @@ T.equal(
 
 local traderID = spawned.traderID
 local actorID = spawned.actorID
+
+local debugTalkCall
+DTCommon.MOD_ID = "DynamicTrading"
+DTCommon.TalkService = {
+    Open = function(target, id, mode, options)
+        debugTalkCall = {
+            player = target,
+            traderID = id,
+            mode = mode,
+            options = options,
+        }
+        return {
+            accepted = true,
+            traderID = id,
+            actorID = actorID,
+            mode = mode,
+            debugAccess = options
+                and options.debugBypassAccess == true,
+            sessionID = "debug-session",
+        }
+    end,
+}
+sentCommands = {}
+clientCommandHandler(
+    "DTAbstract",
+    "DebugTalkOpen",
+    testPlayer,
+    { traderID = traderID }
+)
+T.truthy(debugTalkCall, "debug Talk did not reach TalkService")
+T.equal(debugTalkCall.traderID, traderID,
+    "debug Talk lost trader identity")
+T.equal(debugTalkCall.mode, "radio",
+    "debug Talk uses abstract radio conversation mode")
+T.truthy(debugTalkCall.options
+    and debugTalkCall.options.debugBypassAccess == true,
+    "debug Talk did not enable the server-only access override")
+T.equal(sentCommands[1].module, "DynamicTrading",
+    "debug Talk result did not use the normal DTCommon client channel")
+T.equal(sentCommands[1].command, "TalkResult",
+    "debug Talk result did not reuse normal TalkResult transport")
+T.truthy(sentCommands[1].args.debugAccess,
+    "debug Talk result did not expose debug session state")
+T.equal(sentCommands[2].command, "TraderDebugActionResult",
+    "debug Talk did not publish debug action feedback")
+T.equal(sentCommands[2].args.action, "debug_talk",
+    "debug Talk feedback action mismatch")
+
 local actor = actorRegistry:Get(actorID)
 T.truthy(actor, "canonical actor exists")
 T.equal(

@@ -58,6 +58,19 @@ ISWorldMap = {
 }
 package.preload["ISUI/Maps/ISWorldMap"] = function() return ISWorldMap end
 
+local debugTalkOpened
+package.preload["DTAbstract/UI/DTAbstract_DebugTalkWindow"] = function()
+    return {
+        Open = function(traderID, displayName)
+            debugTalkOpened = {
+                traderID = traderID,
+                displayName = displayName,
+            }
+            return { status = "opening" }
+        end,
+    }
+end
+
 local serverHandlers = {}
 Events = {
     OnServerCommand = {
@@ -184,6 +197,8 @@ T.truthy(DTAbstract.DebugTraderWindow.instance == window,
 T.truthy(window.refreshButton and window.spawnNearButton
     and window.spawnAtButton and window.tickButton,
     "manager controls were not constructed")
+T.truthy(window.rows and window.rows[1] and window.rows[1].talk,
+    "manager row did not construct the debug Talk button")
 
 local list = DebugHub.ListTraders()
 T.equal(#list, 1, "one synchronized trader listed")
@@ -210,6 +225,21 @@ T.equal(commands[1].command, "SpawnAbstractTraderAtPosition",
     "SpawnAt still routed through near-player command")
 T.equal(commands[1].args.position.x, 321, "SpawnAt X lost")
 T.equal(commands[1].args.position.y, 654, "SpawnAt Y lost")
+
+commands = {}
+T.truthy(DebugHub.OpenDebugTalk("trader:debug:1"),
+    "debug Talk action was rejected")
+T.truthy(debugTalkOpened
+    and debugTalkOpened.traderID == "trader:debug:1",
+    "debug Talk window did not open for the selected trader")
+T.equal(debugTalkOpened.displayName, "Inspected Trader",
+    "debug Talk window did not receive the trader display name")
+T.equal(commands[1].module, "DTAbstract",
+    "debug Talk used the wrong command module")
+T.equal(commands[1].command, "DebugTalkOpen",
+    "debug Talk did not request the server-authorized session")
+T.equal(commands[1].args.traderID, "trader:debug:1",
+    "debug Talk command lost trader identity")
 
 -- Server result must be received and presented distinctly from gameplay notice.
 for _, callback in ipairs(serverHandlers) do

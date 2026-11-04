@@ -200,6 +200,7 @@ local function snapshot(session, result)
         traderID = session.traderID,
         actorID = session.actorID,
         mode = session.mode,
+        debugAccess = session.debugBypassAccess == true,
         providerRevision = session.providerRevision,
         openedAt = session.openedAt,
         lastAt = session.lastAt,
@@ -209,14 +210,22 @@ local function snapshot(session, result)
     }
 end
 
-local function access(player, traderID, mode)
+local function access(player, traderID, mode, options)
     if not TraderService
-        or type(TraderService.ValidateTalkAccess) ~= "function"
+        or type(TraderService.GetRecord) ~= "function"
     then
         return nil, "trader_access_service_unavailable"
     end
     local record = TraderService.GetRecord(traderID)
     if not record then return nil, "trader_not_found" end
+    if type(options) == "table"
+        and options.debugBypassAccess == true
+    then
+        return record
+    end
+    if type(TraderService.ValidateTalkAccess) ~= "function" then
+        return nil, "trader_access_service_unavailable"
+    end
     local allowed, reason = TraderService.ValidateTalkAccess(
         player, traderID, mode)
     if not allowed then return nil, reason end
@@ -227,13 +236,15 @@ function Service.Open(player, traderID, mode, options)
     local providerRevision
     if not authority() then return nil, "server_authority_required" end
     if not ActorService then return nil, "core_conversation_unavailable" end
+    options = type(options) == "table" and options or {}
     traderID = boundedText(traderID, 128)
     mode = tostring(mode or "radio")
     if traderID == "" then return nil, "trader_required" end
     if mode ~= "radio" and mode ~= "physical" then
         return nil, "talk_mode_invalid"
     end
-    local record, accessReason = access(player, traderID, mode)
+    local record, accessReason = access(
+        player, traderID, mode, options)
     if not record then return nil, accessReason end
     local actor, actorReason = actorFor(record)
     if not actor then return nil, actorReason end
@@ -243,6 +254,9 @@ function Service.Open(player, traderID, mode, options)
     if existing and existing.actorID == actor.actorId
         and tonumber(existing.providerRevision) == providerRevision
     then
+        if options.debugBypassAccess == true then
+            existing.debugBypassAccess = true
+        end
         return snapshot(existing)
     end
     if existing then Service.Sessions[key] = nil end
@@ -253,6 +267,7 @@ function Service.Open(player, traderID, mode, options)
         traderID = traderID,
         actorID = tostring(actor.actorId or actor.id or ""),
         mode = mode,
+        debugBypassAccess = options.debugBypassAccess == true,
         providerRevision = providerRevision,
         openedAt = now(),
         lastAt = now(),
@@ -531,7 +546,15 @@ function Service.Submit(player, traderID, talkSessionID, text, options)
     if not session or session.id ~= tostring(talkSessionID or "") then
         return nil, "talk_session_invalid"
     end
-    local record, accessReason = access(player, traderID, mode)
+    local record, accessReason = access(
+        player,
+        traderID,
+        mode,
+        {
+            debugBypassAccess =
+                session.debugBypassAccess == true,
+        }
+    )
     if not record then return nil, accessReason end
     if tostring(record.ca and record.ca.actorID or "") ~= session.actorID then
         return nil, "actor_binding_changed"
