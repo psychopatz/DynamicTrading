@@ -59,14 +59,13 @@ ISWorldMap = {
 package.preload["ISUI/Maps/ISWorldMap"] = function() return ISWorldMap end
 
 local debugTalkOpened
-package.preload["DTAbstract/UI/DTAbstract_DebugTalkWindow"] = function()
+package.preload["DTAbstract/UI/DTAbstract_DebugConversation"] = function()
     return {
-        Open = function(traderID, displayName)
-            debugTalkOpened = {
-                traderID = traderID,
-                displayName = displayName,
+        Open = function(item)
+            debugTalkOpened = item
+            return {
+                close = function() end,
             }
-            return { status = "opening" }
         end,
     }
 end
@@ -231,9 +230,11 @@ T.truthy(DebugHub.OpenDebugTalk("trader:debug:1"),
     "debug Talk action was rejected")
 T.truthy(debugTalkOpened
     and debugTalkOpened.traderID == "trader:debug:1",
-    "debug Talk window did not open for the selected trader")
+    "debug Talk conversation did not open for the selected trader")
 T.equal(debugTalkOpened.displayName, "Inspected Trader",
-    "debug Talk window did not receive the trader display name")
+    "debug Talk conversation did not receive the trader display name")
+T.equal(debugTalkOpened.actorID, "actor:debug:1",
+    "debug Talk conversation did not receive the Core actor")
 T.equal(commands[1].module, "DTAbstract",
     "debug Talk used the wrong command module")
 T.equal(commands[1].command, "DebugTalkOpen",

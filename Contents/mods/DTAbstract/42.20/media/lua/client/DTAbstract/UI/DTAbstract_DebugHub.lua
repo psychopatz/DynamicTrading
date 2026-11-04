@@ -86,6 +86,7 @@ function DebugHub.ListTraders()
                 position = pos and {
                     x = pos.x, y = pos.y, z = pos.z or 0,
                 } or nil,
+                portrait = projection and projection.portrait or nil,
                 distance = distance,
                 discovered = discovered,
                 homeSettlementID = ca.homeSettlementID,
@@ -158,30 +159,29 @@ function DebugHub.OpenDebugTalk(traderID)
     if traderID == "" then return false, "trader_required" end
     if not canUseDebug() then return false, "not_authorized" end
 
-    local displayName = traderID
+    local selected
     local traders = DebugHub.ListTraders()
     for index = 1, #traders do
         if traders[index].traderID == traderID then
-            displayName = traders[index].displayName or traderID
+            selected = traders[index]
             break
         end
     end
+    if not selected then return false, "trader_not_found" end
 
-    local TalkWindow = require
-        "DTAbstract/UI/DTAbstract_DebugTalkWindow"
-    local window, reason = TalkWindow.Open(
-        traderID,
-        displayName
-    )
-    if not window then return false, reason or "talk_window_unavailable" end
+    local Conversation = require
+        "DTAbstract/UI/DTAbstract_DebugConversation"
+    local view, reason = Conversation.Open(selected)
+    if not view then
+        return false, reason or "conversation_open_failed"
+    end
 
     local sent, sendReason = sendCommand(
         "DebugTalkOpen",
         { traderID = traderID }
     )
     if not sent then
-        window.status = "Talk open failed: "
-            .. tostring(sendReason or "send_failed")
+        if view.close then view:close("debug_talk_open_failed") end
         return false, sendReason
     end
     return true
