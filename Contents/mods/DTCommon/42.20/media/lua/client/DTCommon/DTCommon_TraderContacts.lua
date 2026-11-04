@@ -130,15 +130,10 @@ function Contacts.Invoke(spec, context, traderID, actionID, snapshot)
     if not row then return false, spec.unavailableReason or "trader_unavailable" end
     local client = DTCommon and DTCommon.Client or nil
 
-    if actionID == tostring(spec.talkActionID or "") then
-        if not client or type(client.RequestTalk) ~= "function" then
-            return false, "talk_service_unavailable"
-        end
-        return client.RequestTalk(traderID, spec.talkMode or "radio", {
-            npcID = row.capabilities and row.capabilities.npcID,
-            snapshot = snapshot,
-        })
-    end
+    -- Talk actions are provider-owned because both physical and
+    -- abstract providers must enter ProjectHoomans.Conversation.Open using
+    -- their appropriate presence contract. DTCommon intentionally exposes
+    -- no alternate talk transport or session authority.
     if actionID == tostring(spec.tradeActionID or "") then
         if not client or type(client.OpenTrader) ~= "function" then
             return false, "trade_service_unavailable"

@@ -6,6 +6,8 @@ local ROOT = os.getenv("DT_MODS_ROOT") or "."
 local CORE_REPOSITORY = os.getenv("PZ_TEST_CORE_REPOSITORY")
     or "../psychopatzCore"
 package.path = table.concat({
+    ROOT .. "/DTCommon/42.20/media/lua/shared/?.lua",
+    ROOT .. "/DTCommon/42.20/media/lua/shared/?/init.lua",
     CORE_REPOSITORY
         .. "/Contents/mods/PsychopatzCore/common/media/lua/shared/?.lua",
     CORE_REPOSITORY

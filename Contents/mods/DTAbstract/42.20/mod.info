@@ -1,9 +1,10 @@
 name=Dynamic Trading Abstract
 id=DTAbstract
-description=Standalone abstract trader simulation, world-map presentation, nearby discovery, and remote/radio access.
+description=Core-backed abstract trader simulation with canonical NPC identity, portrait, semantic conversation, trading, and social state without spawning visible NPC bodies. Mutually exclusive with ProjectHoomans and DTHoomans.
 author=Psychopatz
 category=features
 version=0.1.0
 versionMin=42.20
 require=DTCommon,MarketSense
-loadModAfter=DTCommon,MarketSense
+incompatible=\DTHoomans,\ProjectHoomans
+loadModAfter=MarketSense,DTCommon

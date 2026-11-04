@@ -1,3 +1,5 @@
+if DTHoomans and DTHoomans.Enabled == false then return end
+
 require "DTHoomans/DTHoomans_Context"
 require "DTHoomans/DTHoomans_DebugTraderWindow"
 require "DTHoomans/DTHoomans_DebugSpawnMenu"

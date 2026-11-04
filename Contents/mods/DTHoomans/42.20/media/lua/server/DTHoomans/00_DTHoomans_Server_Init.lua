@@ -1,3 +1,5 @@
+if DTHoomans and DTHoomans.Enabled == false then return end
+
 require "DTHoomans/DTHoomans_ProviderRuntime"
 require "DTHoomans/DTHoomans_CaravanService"
 require "DTHoomans/DTHoomans_SettlementTrader"

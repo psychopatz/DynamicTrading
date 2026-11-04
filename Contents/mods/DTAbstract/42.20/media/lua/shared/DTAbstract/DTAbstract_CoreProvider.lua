@@ -39,15 +39,11 @@ function Adapter.Acquire(actor, core, spec)
     return service.Acquire(actor, spec)
 end
 
-function Adapter.Materialize(actor, core, spec)
-    local service = provider(core)
-    if not service or type(service.Materialize) ~= "function" then
-        return nil, "core_provider_unavailable"
-    end
-    spec = type(spec) == "table" and spec or {}
-    spec.provider = "DTAbstract"
-    spec.owner = owner(spec)
-    return service.Materialize(actor, spec)
+function Adapter.Materialize()
+    -- DTAbstract is the permanently bodyless provider. Moving the same actor
+    -- to a physical representation requires an explicit provider handoff
+    -- (for example to DTHoomans), never an in-provider materialize transition.
+    return nil, "abstract_provider_permanently_abstract"
 end
 
 function Adapter.Dematerialize(actor, core, spec)

@@ -4,6 +4,7 @@ T.addPackagePaths()
 local registered
 local opened
 local talked
+local legacyTalkCalled = false
 package.preload["PsychopatzCore/UI/Radio/OS/PsychopatzRadioOS"] = function()
     return {
         RegisterContactProvider = function(provider) registered = provider end,
@@ -26,13 +27,21 @@ DTCommon = {
             opened = { id = id, options = options }
             return true
         end,
-        RequestTalk = function(id, mode, options)
-            talked = { id = id, mode = mode, options = options }
-            return true
+        RequestTalk = function()
+            legacyTalkCalled = true
+            return false, "legacy_talk_must_not_run"
         end,
     },
 }
-DTAbstract = { Enabled = true }
+DTAbstract = {
+    Enabled = true,
+    CoreConversation = {
+        Request = function(id, mode, options)
+            talked = { id = id, mode = mode, options = options }
+            return true, "access_requested"
+        end,
+    },
+}
 
 local provider = dofile(T.repository
     .. "/Contents/mods/DTAbstract/42.20/media/lua/client/DTAbstract/"
@@ -47,9 +56,11 @@ T.equal(#page.contacts[1].actions, 2,
 
 local accepted = provider.invoke(provider, "trader:remote",
     "dynamictrading:talk", page.contacts[1])
-T.truthy(accepted, "abstract Talk delegates to DTCommon")
+T.truthy(accepted, "abstract Talk delegates to Core bridge")
 T.equal(talked.id, "trader:remote", "Talk keeps remote trader identity")
-T.equal(talked.mode, "radio", "Talk identifies radio authority")
+T.equal(talked.mode, "radio", "Talk identifies radio authorization mode")
+T.falsy(legacyTalkCalled,
+    "RadioOS Talk must not invoke the legacy DT TalkService path")
 
 accepted = provider.invoke(provider, "trader:remote", "dynamictrading:trade")
 T.truthy(accepted, "existing abstract trade remains available")

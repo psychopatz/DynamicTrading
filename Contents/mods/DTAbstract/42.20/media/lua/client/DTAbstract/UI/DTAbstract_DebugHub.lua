@@ -146,45 +146,30 @@ function DebugHub.RemoveTrader(traderID)
     return sendCommand("RemoveTrader", { traderID = traderID })
 end
 
-function DebugHub.Materialize(traderID)
-    return sendCommand("MaterializeTrader", { traderID = traderID })
-end
-
-function DebugHub.Dematerialize(traderID)
-    return sendCommand("DematerializeTrader", { traderID = traderID })
-end
-
 function DebugHub.OpenDebugTalk(traderID)
     traderID = tostring(traderID or "")
     if traderID == "" then return false, "trader_required" end
     if not canUseDebug() then return false, "not_authorized" end
 
     local selected
-    local traders = DebugHub.ListTraders()
-    for index = 1, #traders do
-        if traders[index].traderID == traderID then
-            selected = traders[index]
+    for _, item in ipairs(DebugHub.ListTraders()) do
+        if item.traderID == traderID then
+            selected = item
             break
         end
     end
     if not selected then return false, "trader_not_found" end
 
-    local Conversation = require
-        "DTAbstract/UI/DTAbstract_DebugConversation"
-    local view, reason = Conversation.Open(selected)
-    if not view then
-        return false, reason or "conversation_open_failed"
-    end
-
-    local sent, sendReason = sendCommand(
-        "DebugTalkOpen",
-        { traderID = traderID }
+    local Bridge = DTAbstract.CoreConversation
+        or require "DTAbstract/DTAbstract_CoreConversation"
+    return Bridge.Request(
+        traderID,
+        "debug",
+        {
+            actorID = selected.actorID,
+            displayName = selected.displayName,
+        }
     )
-    if not sent then
-        if view.close then view:close("debug_talk_open_failed") end
-        return false, sendReason
-    end
-    return true
 end
 
 function DebugHub.LocateOnMap(traderID)
@@ -285,6 +270,21 @@ local function onServerCommand(module, command, args)
             DTAbstract.DebugTraderWindow.SetResult(
                 "Spawned " .. tostring(args.traderID or "trader"), args)
         end
+        return
+    end
+
+    if command == "ConversationAccessResult"
+        and tostring(args.mode or "") == "debug"
+    then
+        local feedback = {
+            accepted = args.accepted == true,
+            action = "debug_talk",
+            reason = args.reason,
+            traderID = args.traderID,
+            actorID = args.actorID,
+        }
+        DebugHub.LastResult = feedback
+        publishDebugFeedback(feedback)
         return
     end
 

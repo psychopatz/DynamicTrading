@@ -241,6 +241,60 @@ function Server.TeleportPlayerToTrader(player, traderID)
     return ok, reason
 end
 
+local function authorizeConversation(player, args)
+    args = type(args) == "table" and args or {}
+    local traderID = tostring(args.traderID or "")
+    local mode = tostring(args.mode or "radio")
+    local service = DTCommon and DTCommon.TraderService or nil
+    local record = service
+        and type(service.GetRecord) == "function"
+        and service.GetRecord(traderID) or nil
+    local actorID = record
+        and record.ca
+        and record.ca.actorID or nil
+    local accepted = false
+    local reason
+
+    if traderID == "" or not record or not actorID then
+        reason = "trader_not_found"
+    elseif mode == "debug" then
+        if not canUseDebug(player) then
+            reason = "not_authorized"
+        else
+            accepted = true
+        end
+    elseif mode == "radio" then
+        if not service
+            or type(service.ValidateTalkAccess) ~= "function"
+        then
+            reason = "trader_access_service_unavailable"
+        else
+            accepted, reason =
+                service.ValidateTalkAccess(
+                    player,
+                    traderID,
+                    "radio"
+                )
+        end
+    else
+        reason = "conversation_mode_invalid"
+    end
+
+    -- Conversation presentation is Core-owned for DTAbstract. The server
+    -- only authorizes the channel here; no ProjectHoomans runtime view,
+    -- lease, body, or registry record is created.
+    send(player, "ConversationAccessResult", {
+        accepted = accepted == true,
+        reason = accepted
+            and "core_conversation_authorized"
+            or (reason or "conversation_access_denied"),
+        traderID = traderID,
+        actorID = actorID,
+        mode = mode,
+    })
+    return accepted == true, reason
+end
+
 local function onClientCommand(module, command, player, args)
     if module ~= "DTAbstract" then return end
     args = type(args) == "table" and args or {}
@@ -253,52 +307,12 @@ local function onClientCommand(module, command, player, args)
         Server.SpawnAbstractTraderAtPosition(player, args)
         return
     end
-
-    if not canUseDebug(player) then
-        send(player, "TraderDebugActionResult", {
-            accepted = false,
-            action = command,
-            reason = "not_authorized",
-        })
+    if command == "ConversationAccessRequest" then
+        authorizeConversation(player, args)
         return
     end
-
-    if command == "DebugTalkOpen" then
-        local Talk = DTCommon and DTCommon.TalkService or nil
-        local result
-        local reason
-        if not Talk or type(Talk.Open) ~= "function" then
-            reason = "talk_service_unavailable"
-        else
-            result, reason = Talk.Open(
-                player,
-                args.traderID,
-                "radio",
-                {
-                    debugBypassAccess = true,
-                }
-            )
-        end
-        sendModule(
-            player,
-            DTCommon.MOD_ID or "DynamicTrading",
-            "TalkResult",
-            result or {
-                accepted = false,
-                traderID = args.traderID,
-                mode = "radio",
-                reason = reason or "talk_rejected",
-            }
-        )
-        send(player, "TraderDebugActionResult", {
-            accepted = result ~= nil,
-            action = "debug_talk",
-            reason = result and "session_opened"
-                or (reason or "talk_rejected"),
-            traderID = args.traderID,
-        })
-        return
-    end
+    -- Debug and RadioOS use the same server-authorized Core conversation
+    -- bridge. DTAbstract never enters ProjectHoomans conversation authority.
 
     if command == "ForceTick" then
         local summary = TraderRuntime
@@ -356,31 +370,24 @@ local function onClientCommand(module, command, player, args)
         return
     end
 
-    if command == "MaterializeTrader" or command == "DematerializeTrader" then
-        local representation =
-            DTCommon and DTCommon.TraderRepresentationRuntime or nil
-        local action = command == "MaterializeTrader"
-            and "materialize" or "dematerialize"
-        if not representation then
-            send(player, "TraderDebugActionResult", {
-                accepted = false,
-                action = action,
-                reason = "representation_runtime_unavailable",
-                traderID = args.traderID,
-            })
-            return
-        end
-        local fn = command == "MaterializeTrader"
-            and representation.MaterializeTrader
-            or representation.DematerializeTrader
-        local actor, reason = fn(args.traderID, {
-            reason = "dt_debug_" .. action,
-        })
+    if command == "MaterializeTrader" then
+        -- DTAbstract's representation contract is permanently bodyless.
+        -- Hoomans parity is provided by the transient logical runtime view,
+        -- never by spawning a visible NPC.
         send(player, "TraderDebugActionResult", {
-            accepted = actor ~= nil,
-            action = action,
-            reason = actor and (action .. "d")
-                or (reason or (action .. "_failed")),
+            accepted = false,
+            action = "materialize",
+            reason = "abstract_provider_permanently_abstract",
+            traderID = args.traderID,
+        })
+        return
+    end
+
+    if command == "DematerializeTrader" then
+        send(player, "TraderDebugActionResult", {
+            accepted = true,
+            action = "dematerialize",
+            reason = "already_abstract",
             traderID = args.traderID,
         })
         return

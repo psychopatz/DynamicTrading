@@ -44,6 +44,33 @@ local definition = {
         return Contacts.List(spec, context, page)
     end,
     invoke = function(context, contactID, actionID, snapshot)
+        if tostring(actionID or "")
+            == tostring(spec.talkActionID)
+        then
+            local Bridge = DTAbstract.CoreConversation
+                or require
+                    "DTAbstract/DTAbstract_CoreConversation"
+            local row = Contacts.Find(
+                spec,
+                contactID,
+                context
+            )
+            if not row then
+                return false, "trader_unavailable"
+            end
+            return Bridge.Request(
+                contactID,
+                "radio",
+                {
+                    actorID = row.capabilities
+                        and row.capabilities.actorID
+                        or row.capabilities
+                            and row.capabilities.npcID,
+                    displayName = row.title,
+                    snapshot = snapshot,
+                }
+            )
+        end
         return Contacts.Invoke(
             spec, context, contactID, actionID, snapshot)
     end,

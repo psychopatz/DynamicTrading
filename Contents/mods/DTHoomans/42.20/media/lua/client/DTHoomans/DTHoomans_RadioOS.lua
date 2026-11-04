@@ -88,6 +88,34 @@ local function displayName(record, npcID)
     return name ~= "" and name or npcID
 end
 
+local function buildConversationEntry(
+    body,
+    record,
+    snapshot,
+    current
+)
+    local selection = PNC and PNC.NPCSelection or nil
+    if selection
+        and type(selection.BuildEntry) == "function"
+    then
+        return selection.BuildEntry(
+            body,
+            record,
+            snapshot,
+            coordinate(current, "getX"),
+            coordinate(current, "getY")
+        )
+    end
+    -- Load-order-safe canonical minimum. PNC.Conversation.Open resolves all
+    -- additional identity/relationship/presence data from Registry by ID.
+    return {
+        id = record and record.id,
+        zombie = body,
+        record = record,
+        snapshot = snapshot,
+    }
+end
+
 local function portraitDescriptor(npcID)
     local shared = PNC and PNC.CharacterWindowShared or nil
     local record = registryRecord(npcID)
@@ -150,6 +178,49 @@ local definition = {
         return Contacts.List(spec, context, page)
     end,
     invoke = function(context, contactID, actionID, snapshot)
+        if tostring(actionID or "")
+            == tostring(spec.talkActionID)
+        then
+            local row = Contacts.Find(
+                spec,
+                contactID,
+                context
+            )
+            if not row then
+                return false, "trader_unavailable"
+            end
+            local npcID = row.capabilities
+                and row.capabilities.npcID
+            local body = npcID and liveBody(npcID) or nil
+            local record = npcID and registryRecord(npcID) or nil
+            local current = player()
+            local conversation = PNC and PNC.Conversation or nil
+            if not npcID or not body or not record
+                or not current
+                or not conversation
+                or type(conversation.Open) ~= "function"
+            then
+                return false, "hoomans_conversation_unavailable"
+            end
+            local state = PNC.Network
+                and PNC.Network.ClientState or nil
+            local replicated = state
+                and state.snapshots
+                and state.snapshots[tostring(npcID)]
+                or nil
+            local entry = buildConversationEntry(
+                body,
+                record,
+                replicated,
+                current
+            )
+            local view = entry
+                and conversation.Open(entry, current)
+                or nil
+            return view ~= nil,
+                view and "conversation_opened"
+                    or "conversation_open_failed"
+        end
         return Contacts.Invoke(
             spec, context, contactID, actionID, snapshot)
     end,

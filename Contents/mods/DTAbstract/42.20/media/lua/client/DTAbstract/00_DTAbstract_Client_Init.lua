@@ -1,3 +1,5 @@
+if DTAbstract and DTAbstract.Enabled == false then return end
+
 if PsychopatzCore and PsychopatzCore.Require then
     PsychopatzCore.Require("core.radio_os", "DTAbstract")
 end

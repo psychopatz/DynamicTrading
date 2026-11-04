@@ -59,16 +59,6 @@ ISWorldMap = {
 package.preload["ISUI/Maps/ISWorldMap"] = function() return ISWorldMap end
 
 local debugTalkOpened
-package.preload["DTAbstract/UI/DTAbstract_DebugConversation"] = function()
-    return {
-        Open = function(item)
-            debugTalkOpened = item
-            return {
-                close = function() end,
-            }
-        end,
-    }
-end
 
 local serverHandlers = {}
 Events = {
@@ -135,6 +125,19 @@ DTCommon.TraderService = {
         for id, record in pairs(traderStore.t) do callback(id, record) end
     end,
     GetRecord = function(id) return traderStore.t[id] end,
+}
+DTCommon.CoreTraderConversation = {
+    Open = function(traderID, actorID, options)
+        debugTalkOpened = {
+            traderID = traderID,
+            actorID = actorID,
+            options = options,
+        }
+        return {
+            traderID = traderID,
+            actorID = actorID,
+        }
+    end,
 }
 
 local actor = assert(authority:Create({
@@ -228,19 +231,34 @@ T.equal(commands[1].args.position.y, 654, "SpawnAt Y lost")
 commands = {}
 T.truthy(DebugHub.OpenDebugTalk("trader:debug:1"),
     "debug Talk action was rejected")
-T.truthy(debugTalkOpened
-    and debugTalkOpened.traderID == "trader:debug:1",
-    "debug Talk conversation did not open for the selected trader")
-T.equal(debugTalkOpened.displayName, "Inspected Trader",
-    "debug Talk conversation did not receive the trader display name")
-T.equal(debugTalkOpened.actorID, "actor:debug:1",
-    "debug Talk conversation did not receive the Core actor")
+T.equal(debugTalkOpened, nil,
+    "debug Talk opened before the server authorized the Core conversation")
 T.equal(commands[1].module, "DTAbstract",
     "debug Talk used the wrong command module")
-T.equal(commands[1].command, "DebugTalkOpen",
-    "debug Talk did not request the server-authorized session")
+T.equal(commands[1].command, "ConversationAccessRequest",
+    "debug Talk did not use the shared Core access bridge")
 T.equal(commands[1].args.traderID, "trader:debug:1",
     "debug Talk command lost trader identity")
+T.equal(commands[1].args.mode, "debug",
+    "debug Talk did not identify debug authorization mode")
+
+for _, callback in ipairs(serverHandlers) do
+    callback("DTAbstract", "ConversationAccessResult", {
+        accepted = true,
+        reason = "core_conversation_authorized",
+        traderID = "trader:debug:1",
+        actorID = "actor:debug:1",
+        mode = "debug",
+    })
+end
+T.truthy(debugTalkOpened,
+    "debug Talk did not open the Core conversation")
+T.equal(debugTalkOpened.traderID, "trader:debug:1",
+    "debug Talk lost trader identity")
+T.equal(debugTalkOpened.actorID, "actor:debug:1",
+    "debug Talk lost canonical Core actor identity")
+T.equal(debugTalkOpened.options.mode, "debug",
+    "debug Talk lost authorization mode")
 
 -- Server result must be received and presented distinctly from gameplay notice.
 for _, callback in ipairs(serverHandlers) do

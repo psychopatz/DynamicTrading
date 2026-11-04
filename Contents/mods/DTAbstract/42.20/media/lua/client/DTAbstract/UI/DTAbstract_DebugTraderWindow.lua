@@ -121,12 +121,6 @@ function Window:onButton(button)
     elseif id == "REMOVE" then
         self.notice = "Remove request: " .. traderID
         return api.RemoveTrader(traderID)
-    elseif id == "MATERIALIZE" then
-        self.notice = "Materialize request: " .. traderID
-        return api.Materialize(traderID)
-    elseif id == "DEMATERIALIZE" then
-        self.notice = "Dematerialize request: " .. traderID
-        return api.Dematerialize(traderID)
     end
     return false
 end
@@ -151,21 +145,19 @@ function Window:rebuildRowButtons()
         local row = self.rows[rowIndex] or {}
 
         if not row.teleport then
-            local x = self.width - 535
+            local x = self.width - 440
             row.locate = addButton(self, "LOCATE", "Map", x, y, 55)
             row.teleport = addButton(self, "TP", "TP", x + 60, y, 45)
             row.talk = addButton(self, "TALK", "Talk", x + 110, y, 55)
             row.arrive = addButton(self, "ARRIVE", "Arrive", x + 170, y, 60)
             row.reset = addButton(
                 self, "RESET_DISCOVERY", "Reset Seen", x + 235, y, 80)
-            row.provider = addButton(
-                self, "MATERIALIZE", "Materialize", x + 320, y, 90)
-            row.remove = addButton(self, "REMOVE", "Remove", x + 415, y, 75)
+            row.remove = addButton(self, "REMOVE", "Remove", x + 320, y, 75)
         end
 
         local buttons = {
             row.locate, row.teleport, row.talk, row.arrive,
-            row.reset, row.provider, row.remove,
+            row.reset, row.remove,
         }
         for _, button in ipairs(buttons) do
             button.traderID = item.traderID
@@ -179,14 +171,6 @@ function Window:rebuildRowButtons()
         else
             row.reset.internal = "MARK_DISCOVERY"
             row.reset:setTitle("Mark Seen")
-        end
-
-        if item.providerState == "materialized" then
-            row.provider.internal = "DEMATERIALIZE"
-            row.provider:setTitle("Dematerialize")
-        else
-            row.provider.internal = "MATERIALIZE"
-            row.provider:setTitle("Materialize")
         end
 
         self.rows[rowIndex] = row

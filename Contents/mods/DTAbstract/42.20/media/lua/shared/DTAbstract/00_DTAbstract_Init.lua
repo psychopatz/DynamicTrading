@@ -1,7 +1,14 @@
 DTAbstract = DTAbstract or {}
 DTAbstract.VERSION = 1
 DTAbstract.MOD_ID = "DTAbstract"
-DTAbstract.Enabled = true
+
+local Activation = DTCommon and DTCommon.ModActivationPolicy
+    or require "DTCommon/DTCommon_ModActivationPolicy"
+local enabled = Activation.Apply(DTAbstract, DTAbstract.MOD_ID)
+if enabled ~= true then
+    return DTAbstract
+end
+
 DTAbstract.RequireRadio = true
 -- Development-only preview. Default false: no UI entry or changes to trading.
 DTAbstract.EnableRadioOSPreview = DTAbstract.EnableRadioOSPreview == true

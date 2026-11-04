@@ -41,6 +41,16 @@ local abstractProjection, projectionReason = abstract.Project(acquired, core)
 T.truthy(abstractProjection, projectionReason)
 T.equal(abstractProjection.identity.identitySeed,
     acquired.identity.identitySeed, "DTAbstract identity projection")
+local forbiddenBody, forbiddenReason =
+    abstract.Materialize(acquired, core, {
+        owner = "radio:provider",
+        now = 1.5,
+    })
+T.equal(forbiddenBody, nil,
+    "DTAbstract must never create an in-provider body")
+T.equal(forbiddenReason,
+    "abstract_provider_permanently_abstract",
+    "DTAbstract materialization rejection reason")
 local released, releaseReason = abstract.Release(acquired, core, {
     owner = "radio:provider",
     now = 2,

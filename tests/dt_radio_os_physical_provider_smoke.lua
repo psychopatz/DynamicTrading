@@ -3,6 +3,7 @@ local T = require "tests/support/test"
 local registered
 local opened
 local talked
+local legacyTalkCalled = false
 local player = {
     getX = function() return 100 end,
     getY = function() return 100 end,
@@ -62,9 +63,9 @@ DTCommon = {
             opened = { id = id, options = options }
             return true
         end,
-        RequestTalk = function(id, mode, options)
-            talked = { id = id, mode = mode, options = options }
-            return true
+        RequestTalk = function()
+            legacyTalkCalled = true
+            return false, "legacy_talk_must_not_run"
         end,
     },
 }
@@ -93,9 +94,34 @@ local bodies = {
 }
 
 PNC = {
+    NPCSelection = {
+        BuildEntry = function(body, record, snapshot)
+            return {
+                id = record.id,
+                zombie = body,
+                record = record,
+                snapshot = snapshot,
+            }
+        end,
+    },
+    Conversation = {
+        Open = function(entry, currentPlayer)
+            talked = {
+                entry = entry,
+                player = currentPlayer,
+            }
+            return { entry = entry }
+        end,
+    },
     Registry = {
         GetLiveZombie = function(id) return bodies[id] end,
-        Get = function(id) return { id = id, identitySeed = 7 } end,
+        Get = function(id)
+            return {
+                id = id,
+                identitySeed = 7,
+                presenceState = "live",
+            }
+        end,
     },
     Factions = {
         GetNPCAffiliation = function(id)
@@ -143,11 +169,17 @@ T.equal(opened.options.npcID, "merchant_near",
     "action carries the verified nearby merchant")
 local talkAccepted = registered.invoke(registered, "settlement_near",
     "dynamictrading:physical_talk")
-T.truthy(talkAccepted, "physical Talk delegates to the Core talk request")
-T.equal(talked.id, "settlement_near", "Talk keeps trader identity")
-T.equal(talked.mode, "physical", "Talk identifies physical authority")
-T.equal(talked.options.npcID, "merchant_near",
-    "Talk carries the verified nearby body")
+T.truthy(talkAccepted, "physical Talk opens Hoomans conversation")
+T.truthy(talked and talked.entry,
+    "physical Talk did not reach PNC.Conversation.Open")
+T.equal(talked.entry.id, "merchant_near",
+    "Talk keeps canonical Hoomans NPC identity")
+T.equal(talked.entry.zombie, bodies.merchant_near,
+    "Talk carries the verified nearby Hoomans body")
+T.equal(talked.player, player,
+    "Talk carries the local player")
+T.falsy(legacyTalkCalled,
+    "physical RadioOS Talk must not invoke legacy DT TalkService")
 T.falsy(registered.invoke(registered, "settlement_near", "bad_action"),
     "provider rejects unsupported actions")
 

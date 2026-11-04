@@ -1,6 +1,14 @@
 DTHoomans = DTHoomans or {}
 DTHoomans.VERSION = 1
 DTHoomans.MOD_ID = "DTHoomans"
+
+local Activation = DTCommon and DTCommon.ModActivationPolicy
+    or require "DTCommon/DTCommon_ModActivationPolicy"
+local enabled = Activation.Apply(DTHoomans, DTHoomans.MOD_ID)
+if enabled ~= true then
+    return DTHoomans
+end
+
 DTHoomans.SPAWN_COMMAND = "SpawnTrader"
 
 -- Conversation definitions and the shared eligibility provider are loaded
