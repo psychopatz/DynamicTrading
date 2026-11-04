@@ -131,14 +131,7 @@ dispatch("ProjectHoomans", "ConversationOutcome", {
     npcID = "merchant_one",
     choiceID = "trade",
 })
-T.truthy(sentCommand, "merchant trade requests shared conversation access")
-T.equal(sentCommand.command, "ConversationAccessRequest",
-    "merchant trade uses the shared conversation bridge")
-T.equal(sentCommand.args.mode, "physical",
-    "merchant trade carries the physical provider mode")
-T.equal(sentCommand.args.traderID, "dt_caravan_one",
-    "merchant trade uses the correct trader record")
-T.equal(sentCommand.args.npcID, "merchant_one",
-    "merchant trade keeps the merchant NPC target")
+T.equal(sentCommand, nil,
+    "superseded native merchant trade outcome was removed")
 
 T.finish("dt_guard_referral_client_smoke")

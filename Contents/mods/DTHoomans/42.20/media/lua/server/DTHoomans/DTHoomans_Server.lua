@@ -366,7 +366,7 @@ local function handleTraderReferral(player, args)
     local learned
     local knowledgeReason
     if not requestID or not guardNPCID or not conversationToken
-        or (choiceID ~= "trader_referral" and choiceID ~= "trade")
+        or choiceID ~= "trader_referral"
     then
         send(player, "TraderReferral", {
             accepted = false,

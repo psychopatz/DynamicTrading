@@ -370,10 +370,10 @@ local function onServerCommand(module, command, args)
     end
 end
 
--- Project Hoomans owns conversation authority and NPC presentation. The
--- merchant's native `trade` choice opens DynamicTrading's commerce window;
--- a guard's separate referral choice only requests the authoritative name
--- disclosure path and can never open that window.
+-- Project Hoomans owns conversation authority and NPC presentation. Dynamic
+-- Trading trader leaders use the shared DTCommon opener before this native
+-- outcome bridge; this listener retains only the Hoomans-only guard referral
+-- disclosure path.
 local function onConversationOutcome(module, command, args)
     local pncModule = PNC and PNC.Const and PNC.Const.MODULE
         or "ProjectHoomans"
@@ -386,14 +386,10 @@ local function onConversationOutcome(module, command, args)
     local current
     local requestID
     local choiceID
-    local opened
-    local reason
     if module ~= pncModule or command ~= outcomeCommand then return end
     args = type(args) == "table" and args or {}
     choiceID = tostring(args.choiceID or "")
-    if args.success ~= true
-        or (choiceID ~= "trade" and choiceID ~= "trader_referral")
-    then
+    if args.success ~= true or choiceID ~= "trader_referral" then
         return
     end
     npcID = tostring(args.npcID or "")
@@ -405,7 +401,7 @@ local function onConversationOutcome(module, command, args)
         .. " choice=" .. choiceID
         .. " success=" .. tostring(args.success))
     if not traderID then
-        log("WARN", "conversation_trade_unmapped npc=" .. npcID)
+        log("WARN", "conversation_referral_unmapped npc=" .. npcID)
         return
     end
     if merchantNPCID ~= npcID then
@@ -436,25 +432,7 @@ local function onConversationOutcome(module, command, args)
             .. " choice=" .. choiceID .. " request=" .. requestID)
         return
     end
-    if choiceID ~= "trade" then
-        log("WARN", "conversation_referral_invalid_merchant npc=" .. npcID)
-        return
-    end
-    if type(Client.RequestTraderConversation) ~= "function"
-    then
-        log("WARN", "conversation_trade_shared_path_unavailable trader="
-            .. traderID)
-        return
-    end
-    opened, reason = Client.RequestTraderConversation(traderID, {
-        mode = "physical",
-        npcID = merchantNPCID,
-        displayName = args.npcName,
-    })
-    if opened ~= true and reason then
-        log("WARN", "conversation_trade_access_failed trader=" .. traderID
-            .. " reason=" .. tostring(reason))
-    end
+    log("WARN", "conversation_referral_invalid_merchant npc=" .. npcID)
 end
 
 if Events and Events.OnServerCommand

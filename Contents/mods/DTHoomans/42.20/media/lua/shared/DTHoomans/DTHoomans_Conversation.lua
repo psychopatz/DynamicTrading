@@ -2,8 +2,6 @@ DTHoomans = DTHoomans or {}
 DTHoomans.Conversation = DTHoomans.Conversation or {}
 
 local Integration = DTHoomans.Conversation
-local Trade = DTCommon and DTCommon.HoomansConversation
-    or require "DTCommon/DTCommon_HoomansConversation"
 
 local CATEGORY_ID = "dthoomans:caravan_referral"
 local GUARD_ROLE = "guard"
@@ -13,8 +11,6 @@ local BLOCK_ID = "dthoomans:caravan_referral_basic"
 
 Integration.CATEGORY_ID = CATEGORY_ID
 Integration.REFERRAL_CHOICE_ID = "trader_referral"
-Integration.TRADE_CATEGORY_ID = Trade.TRADE_CATEGORY_ID
-Integration.TRADE_CHOICE_ID = Trade.TRADE_CHOICE_ID
 
 local TEXT_SOURCE = {
     modID = DTHoomans.MOD_ID,
@@ -208,14 +204,6 @@ local function registerDefinitions()
         return false, "conversation_api_unavailable"
     end
 
-    local tradeOK, tradeReason = Trade.Register()
-    if not tradeOK then
-        print(
-            "[DT][WARN] shared_trade_conversation_registration_failed"
-                .. " reason=" .. tostring(tradeReason)
-        )
-    end
-
     local referralOK, referralReason =
         registerReferral(conversations)
     if not referralOK then return false, referralReason end
@@ -225,8 +213,6 @@ local function registerDefinitions()
             .. " category=" .. CATEGORY_ID
             .. " block=" .. BLOCK_ID
             .. " provider=" .. PROVIDER_ID
-            .. " tradeCategory=" .. Trade.TRADE_CATEGORY_ID
-            .. " tradeProvider=" .. Trade.TRADE_PROVIDER_ID
     )
     return true
 end

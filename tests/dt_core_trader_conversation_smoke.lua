@@ -99,6 +99,16 @@ T.equal(spec.portrait.equipment.worn.Torso_Upper, "Base.Tshirt",
     "Core conversation keeps canonical clothing portrait")
 T.falsy(spec.context.abstractOnly,
     "shared Core conversation retained abstract-only policy")
+T.truthy(type(spec.actorConversation) == "table",
+    "shared trader conversation does not expose the Core semantic host")
+T.truthy(type(spec.actorConversation.createService) == "function",
+    "shared trader conversation does not provide an actor service factory")
+T.truthy(type(spec.actorConversation.onResult) == "function",
+    "shared trader conversation does not provide a semantic result handler")
+T.truthy(type(spec.extensionParts) == "table"
+    and spec.extensionParts[1]
+    and spec.extensionParts[1].partID == "llmInput",
+    "shared trader conversation does not mount the Core semantic input")
 T.equal(#spec.nodes.root.choices, 5,
     "Core trader conversation exposes expected root choices")
 T.equal(spec.nodes.root.choices[2].response(),

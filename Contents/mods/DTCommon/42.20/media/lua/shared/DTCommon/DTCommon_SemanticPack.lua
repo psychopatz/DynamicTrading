@@ -511,6 +511,18 @@ local function registerPack()
         },
     }
 
+    -- Core's IR contract keeps intent and speechAct aligned. The pack still
+    -- registers Dynamic Trading-specific speech-act IDs as metadata above,
+    -- but emitted runtime turns use the normalized public act so the shared
+    -- ActorConversationService can validate and process them.
+    for _, pattern in ipairs(packSpec.patterns or {}) do
+        if type(pattern) == "table" and type(pattern.emit) == "table"
+            and pattern.emit.intent ~= nil
+        then
+            pattern.emit.speechAct = pattern.emit.intent
+        end
+    end
+
     local registered, reason = Semantics.RegisterPack(packSpec)
     if not registered then
         print("[DT][WARN] semantic_pack_registration_failed reason=" .. tostring(reason))

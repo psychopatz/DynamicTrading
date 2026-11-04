@@ -196,12 +196,31 @@ function DebugHub.MarkDiscovery(traderID)
     return Manager.Action("mark_seen", traderID)
 end
 
+function DebugHub.OnConversationResult(result)
+    result = type(result) == "table" and result or {}
+    DebugHub.LastResult = result
+    local status = result.accepted == true and "OK" or "FAILED"
+    Manager.SetResult(
+        status .. " talk"
+            .. (result.reason and (" (" .. tostring(result.reason) .. ")")
+                or ""),
+        result
+    )
+    return result.accepted == true
+end
+
 function DebugHub.Open()
     return Manager.Open()
 end
 
 local function onServerCommand(module, command, args)
     args = type(args) == "table" and args or {}
+    if module == "DTAbstract"
+        and command == "ConversationAccessResult"
+    then
+        DebugHub.OnConversationResult(args)
+        return
+    end
     if module == "DTAbstract"
         and (command == "TraderDebugActionResult"
             or command == "TraderSpawned")

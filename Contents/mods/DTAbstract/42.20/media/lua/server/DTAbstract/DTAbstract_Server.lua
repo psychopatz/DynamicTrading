@@ -36,13 +36,33 @@ local function canUseDebug(player)
     return true
 end
 
+local function isLocalPlayer(player)
+    local localPlayer = getSpecificPlayer and getSpecificPlayer(0) or nil
+    if localPlayer ~= nil and player == localPlayer then return true end
+    if player and type(player.isLocalPlayer) == "function" then
+        local ok, value = pcall(player.isLocalPlayer, player)
+        return ok and value == true
+    end
+    return false
+end
+
 local function sendModule(player, module, command, payload)
     payload = payload or {}
-    if sendServerCommand then
-        sendServerCommand(player, module, command, payload)
-    elseif triggerEvent then
+    -- Singleplayer does not reliably loop a server command through
+    -- OnServerCommand. Mirror the provider bridges so an authorized Talk
+    -- request reaches the same shared Core conversation path immediately.
+    if isLocalPlayer(player) and type(triggerEvent) == "function" then
         triggerEvent("OnServerCommand", module, command, payload)
+        return true
     end
+    if type(sendServerCommand) == "function" then
+        sendServerCommand(player, module, command, payload)
+        return true
+    elseif type(triggerEvent) == "function" then
+        triggerEvent("OnServerCommand", module, command, payload)
+        return true
+    end
+    return false
 end
 
 local function send(player, command, payload)

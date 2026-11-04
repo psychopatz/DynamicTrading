@@ -7,3 +7,31 @@ require "DTHoomans/DTHoomans_Client"
 require "DTHoomans/DTHoomans_TradePresentation"
 require "DTHoomans/DTHoomans_RadioOS"
 require "DTHoomans/DTHoomans_DebugAdapter"
+
+if DTCommon and DTCommon.TraderConversation
+    and type(DTCommon.TraderConversation.RegisterProviderTransport)
+        == "function"
+then
+    DTCommon.TraderConversation.RegisterProviderTransport(
+        "DTHoomans",
+        function(traderID, entry, player, options)
+            return DTHoomans.Client.RequestTraderConversation(
+                traderID,
+                options
+            )
+        end
+    )
+end
+
+if DTCommon and DTCommon.TraderConversation
+    and type(DTCommon.TraderConversation.RegisterExternalOpener)
+        == "function"
+then
+    local loaded, openers = pcall(
+        require,
+        "PNC/Conversation/PNC_ConversationOpeners"
+    )
+    if loaded then
+        DTCommon.TraderConversation.RegisterExternalOpener(openers)
+    end
+end
