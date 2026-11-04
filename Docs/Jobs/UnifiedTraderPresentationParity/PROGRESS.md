@@ -153,3 +153,26 @@ Native fresh-save acceptance remains user-owned: verify proximity persistence
 and dismissal, Talk opening/content, save/reload trader persistence, the
 DTAbstract bodyless presentation, and DTHoomans physical materialization after
 restarting PZ to load the changed Lua.
+
+## GlobalModData recovery remediation — 2026-11-04
+
+The native restart exposed a save-format defect in the Core actor registry.
+PZ's installed `GameWindow.StringUTF` stores ByteBuffer string lengths as
+signed 16-bit values. The actor registry had reached 44,109 bytes, so loading
+the single JSON string overflowed its length and caused `invalid lua table type
+123` during `GlobalModData.load`.
+
+- PsychopatzCore now keeps actor-registry strings below a 30,000-byte safety
+  boundary and writes larger registries as UTF-8-safe nested `registryChunks`.
+- Loading accepts both the existing single-string format and the new chunked
+  format; malformed chunks fail explicitly instead of being treated as an
+  empty registry.
+- Added `psychopatz_actor_runtime_store_chunk_smoke.lua` covering chunk size,
+  byte-preserving reassembly, and reload behavior.
+
+Validation: chunk/runtime-store/notification Core smokes pass; Core sweep is
+**148/155** with the same seven documented baseline UI/environment failures;
+Dynamic Trading remains **76/76**; Kahlua verification passes for the changed
+runtime-store file; and `git diff --check` passes. The current Apocalypse
+`global_mod_data.bin` is already malformed on disk and was not overwritten;
+restore a backup or use a fresh save after this fix before native acceptance.
