@@ -22,12 +22,16 @@ local function newState()
         indexedCount = 0,
         byType = {},
         byCategory = {},
+        stockSeedRows = {},
+        stockSeedSet = {},
         dynamicByType = {},
         dynamicCount = 0,
     }
 end
 
 Catalog._state = Catalog._state or newState()
+Catalog._state.stockSeedRows = Catalog._state.stockSeedRows or {}
+Catalog._state.stockSeedSet = Catalog._state.stockSeedSet or {}
 Catalog._state.dynamicByType = Catalog._state.dynamicByType or {}
 Catalog._state.dynamicCount = math.max(0, math.min(
     Catalog.MAX_DYNAMIC_FACTS,
@@ -103,10 +107,8 @@ local function tagsFor(fullType, entry, marketSense)
     }
 end
 
-local function factFor(fullType, entry, marketSense)
-    local tags = tagsFor(fullType, entry, marketSense)
+local function resolveAvailability(fullType, entry, marketSense)
     local availability = type(entry) == "table" and entry.availability or nil
-    local status
     if not availability and type(marketSense.GetItemAvailability) == "function"
     then
         local ok
@@ -114,6 +116,14 @@ local function factFor(fullType, entry, marketSense)
             marketSense.GetItemAvailability, fullType)
         if not ok then availability = nil end
     end
+    return availability
+end
+
+local function factFor(fullType, entry, marketSense, availability)
+    local tags = tagsFor(fullType, entry, marketSense)
+    availability = availability
+        or resolveAvailability(fullType, entry, marketSense)
+    local status
     if not tags then return nil end
     status = availabilityStatus(availability)
     return {
@@ -128,6 +138,23 @@ local function factFor(fullType, entry, marketSense)
             ~= tostring(DTCommon.MONEY_FULL_TYPE or "Base.Money"),
         price = tonumber(type(entry) == "table" and entry.price or nil),
     }
+end
+
+local function addStockSeed(state, fullType, availability)
+    if not fullType
+        or tostring(fullType) == tostring(DTCommon.MONEY_FULL_TYPE or "Base.Money")
+        or tostring(fullType) == "Base.MoneyBundle"
+    then
+        return false
+    end
+    if availabilityStatus(availability) ~= "obtainable" then
+        return false
+    end
+    fullType = tostring(fullType)
+    if state.stockSeedSet[fullType] then return true end
+    state.stockSeedSet[fullType] = true
+    state.stockSeedRows[#state.stockSeedRows + 1] = fullType
+    return true
 end
 
 local function addFact(state, fact)
@@ -178,11 +205,23 @@ function Catalog.Build()
         local fullType = type(entry) == "table"
             and (entry.fullType or entry.item or key) or key
         fullType = boundedText(fullType, 192)
-        if fullType then addFact(state, factFor(fullType, entry, marketSense)) end
+        if fullType then
+            local availability = resolveAvailability(
+                fullType,
+                entry,
+                marketSense
+            )
+            addStockSeed(state, fullType, availability)
+            addFact(
+                state,
+                factFor(fullType, entry, marketSense, availability)
+            )
+        end
     end
     for _, rows in pairs(state.byCategory) do
         table.sort(rows)
     end
+    table.sort(state.stockSeedRows)
     state.built = true
     state.buildCount = state.buildCount + 1
     return true, "built"
@@ -262,6 +301,76 @@ function Catalog.GetCandidates(category, options)
     for key, value in pairs(options) do request[key] = value end
     if request.availableOnly == nil then request.availableOnly = true end
     return Catalog.ListCategory(category, request)
+end
+
+function Catalog.GetStockSeedCandidates(options)
+    options = type(options) == "table" and options or {}
+    local state = Catalog._state
+    local output = {}
+    local selected = {}
+    local limit = math.max(
+        1,
+        math.min(
+            Catalog.MAX_QUERY_RESULTS,
+            math.floor(tonumber(options.limit) or 32)
+        )
+    )
+    local defaults = type(options.defaults) == "table"
+        and options.defaults or {}
+
+    local ok, reason = Catalog.Ensure()
+    if not ok then return output, reason end
+
+    local function add(fullType, quantity, fixture)
+        fullType = boundedText(fullType, 192)
+        if not fullType or selected[fullType] or #output >= limit then
+            return
+        end
+        local eligible = state.stockSeedSet[fullType] == true
+        if not eligible and fixture == true then
+            local marketSense = api()
+            if type(marketSense) == "table" then
+                local availability = resolveAvailability(
+                    fullType,
+                    {},
+                    marketSense
+                )
+                eligible = availabilityStatus(availability) == "obtainable"
+            end
+        end
+        if not eligible then return end
+        selected[fullType] = true
+        output[#output + 1] = {
+            fullType = fullType,
+            quantity = quantity,
+            fixture = fixture == true,
+            workshop = string.sub(fullType, 1, 5) ~= "Base.",
+        }
+    end
+
+    for _, value in ipairs(defaults) do
+        if type(value) == "table" and value.fullType then
+            add(
+                value.fullType,
+                value.quantity,
+                true
+            )
+        end
+    end
+
+    for _, fullType in ipairs(state.stockSeedRows or {}) do
+        if string.sub(tostring(fullType), 1, 5) ~= "Base." then
+            add(fullType, 1, false)
+            if #output >= limit then return output end
+        end
+    end
+
+    for _, fullType in ipairs(state.stockSeedRows or {}) do
+        add(fullType, 1, false)
+        if #output >= limit then return output end
+    end
+
+    return output
 end
 
 function Catalog.Diagnostics()
