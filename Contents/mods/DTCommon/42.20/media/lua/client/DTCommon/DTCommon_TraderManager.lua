@@ -102,6 +102,10 @@ function Manager.Request(action, traderID, args)
     if ok == true then
         Manager.notice = tostring(action) .. " requested for "
             .. tostring(row.name or row.traderID) .. "."
+    elseif result ~= nil then
+        Manager.SetNotice(
+            tostring(action) .. " unavailable: " .. tostring(result)
+        )
     end
     return ok, result
 end
@@ -154,6 +158,10 @@ function Manager.Action(action, traderID, args)
     if ok == true then
         Manager.notice = tostring(action) .. " requested for "
             .. tostring(row.name or row.traderID) .. "."
+    elseif result ~= nil then
+        Manager.SetNotice(
+            tostring(action) .. " unavailable: " .. tostring(result)
+        )
     end
     return ok, result
 end

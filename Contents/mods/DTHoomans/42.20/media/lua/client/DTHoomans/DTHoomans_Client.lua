@@ -157,6 +157,20 @@ function Client.HandleTraderConversationResult(args)
             reason = args.reason or "conversation_access_denied",
             traderID = args.traderID or pending and pending.traderID,
         }
+        local manager = DTCommon and DTCommon.TraderManager
+        if not manager then
+            local loaded, value = pcall(
+                require,
+                "DTCommon/DTCommon_TraderManager"
+            )
+            if loaded then manager = value end
+        end
+        if manager and type(manager.SetNotice) == "function" then
+            manager.SetNotice(
+                "Talk unavailable: "
+                    .. tostring(Client.LastConversationResult.reason)
+            )
+        end
         return false, Client.LastConversationResult.reason
     end
 

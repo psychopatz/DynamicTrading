@@ -8,4 +8,5 @@ then return end
 
 require "DTAbstract/DTAbstract_SurvivorWorldRuntime"
 require "DTAbstract/DTAbstract_TraderWorldProvider"
+require "DTAbstract/DTAbstract_CommonIntegration"
 require "DTAbstract/DTAbstract_Server"

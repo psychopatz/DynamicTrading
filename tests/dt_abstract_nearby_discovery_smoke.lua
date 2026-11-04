@@ -2,10 +2,27 @@ local T = require "tests/support/test"
 T.addPackagePaths()
 
 local notificationsShown = {}
+local notificationsUpdated = {}
+local notificationsDismissed = {}
+local notificationIDs = {}
 PsychopatzCore = {
     ActorNotifications = {
         Show = function(def)
             notificationsShown[#notificationsShown + 1] = def
+            notificationIDs[def.id] = true
+            return true
+        end,
+        Update = function(id, def)
+            if not notificationIDs[id] then return false end
+            notificationsUpdated[#notificationsUpdated + 1] = {
+                id = id,
+                definition = def,
+            }
+            return true
+        end,
+        Dismiss = function(id)
+            notificationsDismissed[#notificationsDismissed + 1] = id
+            notificationIDs[id] = nil
             return true
         end,
     },
@@ -126,6 +143,10 @@ T.equal(
     "notification ID identifies trader"
 )
 T.truthy(
+    notificationsShown[1].persistent == true,
+    "nearby trader notification must remain visible while in proximity"
+)
+T.truthy(
     Discovery.IsTraderDiscovered("trader:disc:1"),
     "Core contact discovery did not become canonical truth"
 )
@@ -146,6 +167,8 @@ for step = 1, 5 do
     T.equal(#notificationsShown, 1,
         "notification count remains 1")
 end
+T.truthy(#notificationsUpdated >= 1,
+    "nearby trader notification did not refresh while still in range")
 T.equal(#coreActions, 1,
     "remaining inside repeatedly rewrote Core discovery")
 
@@ -163,13 +186,15 @@ detected = Discovery.CheckNearbyTraders(player, 130)
 T.equal(detected, 0, "no detection on exit")
 T.falsy(state.inside,
     "state marked outside after exceeding exit radius")
+T.equal(#notificationsDismissed, 1,
+    "nearby trader notification did not dismiss on proximity exit")
 
 player.x = 10050
 detected = Discovery.CheckNearbyTraders(player, 160)
-T.equal(detected, 0,
-    "re-entering before cooldown does not spam")
-T.equal(#notificationsShown, 1,
-    "notification count still 1")
+T.equal(detected, 1,
+    "re-entering proximity must restore the contact notification")
+T.equal(#notificationsShown, 2,
+    "re-entering proximity did not restore the contact notification")
 T.equal(#coreActions, 2,
     "re-entry should reassert contact once, not every tick")
 T.equal(coreActions[2].action, "mark_contacted",
@@ -181,8 +206,8 @@ player.x = 10050
 detected = Discovery.CheckNearbyTraders(player, 500)
 T.equal(detected, 1,
     "detection triggers again after cooldown")
-T.equal(#notificationsShown, 2,
-    "second notification emitted after cooldown")
+T.equal(#notificationsShown, 3,
+    "third proximity entry emitted a fresh contact notification")
 
 local reset, resetReason =
     Discovery.ResetDiscovery("trader:disc:1")

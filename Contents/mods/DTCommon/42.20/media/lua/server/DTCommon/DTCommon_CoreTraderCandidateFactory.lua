@@ -188,6 +188,28 @@ function Factory.Create(spec)
                     SurvivorWorld.RuntimeStore.MarkDirty(
                         "dynamic_trading_debug_group_created"
                     )
+                    local saved, saveReason =
+                        SurvivorWorld.RuntimeStore.Save()
+                    if saved ~= true and saveReason ~= "not_dirty" then
+                        print(
+                            "[DT][WARN] Core trader group persistence "
+                                .. "deferred: " .. tostring(saveReason)
+                        )
+                    end
+                    if actorRegistry == Actors.DefaultRegistry
+                        and Actors.RuntimeStore
+                        and type(Actors.RuntimeStore.Save) == "function"
+                    then
+                        local actorSaved, actorSaveReason =
+                            Actors.RuntimeStore.Save()
+                        if actorSaved ~= true then
+                            print(
+                                "[DT][WARN] Core trader actor persistence "
+                                    .. "deferred: "
+                                    .. tostring(actorSaveReason)
+                            )
+                        end
+                    end
                     return {
                         actorID = plan.leaderActorID,
                         groupID = plan.groupID,

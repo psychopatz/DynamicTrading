@@ -118,3 +118,38 @@ On a fresh save, verify:
 - Trade works.
 - DTAbstract creates no visible NPC body.
 - DTHoomans presents the same trader-facing systems while retaining physical materialization.
+
+## Proximity/persistence remediation — 2026-11-04
+
+The native follow-up audit reproduced three defects in DTAbstract: nearby actor
+notifications expired after the fixed toast duration, nearby Talk lost its
+proximity mode and fell back to radio-only authorization, and a newly-created
+Core trader group was marked dirty without an immediate world-registry write.
+
+- Core actor notifications now support bounded persistent items, in-place
+  updates, explicit dismissal, and non-blocking Talk actions.
+- DTAbstract nearby discovery refreshes one canonical notification while the
+  player remains inside the contact radius, dismisses it after the hysteresis
+  exit radius, and restores it on re-entry.
+- DTCommon carries the nearby access mode through provider adapters. DTAbstract
+  authorizes nearby Talk from the canonical Core actor position and retains
+  radio authorization for remote abstract access; DTHoomans keeps its physical
+  body/faction/distance validation.
+- Core trader-group and actor-registry creation paths perform an immediate
+  authoritative ModData write after marking new debug materialization state
+  dirty. Talk failures now surface in the shared Trader Manager notice.
+
+Validation for this chunk: focused remediation tests **3/3** plus the Core
+notification smoke pass; Dynamic Trading full suite **76/76**; ProjectHoomans
+remains at its documented five unrelated baseline failures; the Core sweep
+retains its documented seven baseline failures; installed PZ Kahlua checks
+pass for all **12/12** changed production Lua files; and `git diff --check`
+passes in all three repositories. The source-removal audit still finds one
+Core actor-marker renderer, one DTCommon trader presentation/manager/
+conversation path, one Core notification widget, and no DTAbstract runtime
+dependency on ProjectHoomans or PNC.
+
+Native fresh-save acceptance remains user-owned: verify proximity persistence
+and dismissal, Talk opening/content, save/reload trader persistence, the
+DTAbstract bodyless presentation, and DTHoomans physical materialization after
+restarting PZ to load the changed Lua.

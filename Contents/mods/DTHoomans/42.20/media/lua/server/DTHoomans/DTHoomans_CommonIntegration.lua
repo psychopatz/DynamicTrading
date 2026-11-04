@@ -52,11 +52,11 @@ Integrations.RegisterTraderAdapter("DTHoomans", {
         return caravan.ResolveTraderDisplayName(record)
     end,
     resolveBody = resolveBody,
-    validateAccess = function(player, record)
+    validateAccess = function(player, record, mode)
         if type(DTHoomans.ValidateTraderAccess) ~= "function" then
             return false, "physical_access_unavailable"
         end
-        return DTHoomans.ValidateTraderAccess(player, record)
+        return DTHoomans.ValidateTraderAccess(player, record, mode)
     end,
 })
 

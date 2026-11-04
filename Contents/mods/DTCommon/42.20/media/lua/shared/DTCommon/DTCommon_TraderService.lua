@@ -306,11 +306,11 @@ local function hasActiveRadio(player)
     return ok and device ~= nil
 end
 
--- `a` is a server-created capability for an abstract/radio trader. It still
--- requires a real active player radio on the authoritative side. A physical
--- trader must prove a live nearby body; a guessed trader ID cannot open that
--- path remotely. Optional physical adapters may add stricter access checks.
-local function validateAccess(player, record)
+-- `a` is a server-created capability for an abstract/radio trader. Ordinary
+-- remote access still requires a real active player radio. A nearby contact
+-- is a separate capability: its provider adapter must prove that the
+-- canonical trader position is inside the provider's proximity radius.
+local function validateAccess(player, record, mode)
     local policyOK, policyReason = Policy.IsAvailable(record)
     if not policyOK then return false, policyReason end
     local status = tostring(record and record.s or DTCommon.STATUS_READY)
@@ -319,9 +319,15 @@ local function validateAccess(player, record)
     end
 
     local handled, allowed, reason =
-        Integrations.ValidateTraderAccess(player, record)
+        Integrations.ValidateTraderAccess(player, record, mode)
     if handled and allowed == true then
         return true, reason
+    end
+    if tostring(mode or "") == "nearby"
+        and tonumber(record and record.a) == 1
+    then
+        if handled then return false, reason end
+        return false, "nearby_access_unavailable"
     end
     if handled and tonumber(record and record.a) ~= 1 then
         return false, reason
@@ -589,7 +595,7 @@ function Service.ValidateTalkAccess(player, traderID, mode)
     if mode == "physical" and tonumber(record.a) == 1 then
         return false, "physical_talk_unavailable"
     end
-    return validateAccess(player, record)
+    return validateAccess(player, record, mode)
 end
 
 local function requestVersion(request, record, pricingContext)

@@ -145,6 +145,22 @@ local function onServerCommand(module, command, args)
             or reason,
         view = view,
     }
+    if not view then
+        local manager = DTCommon and DTCommon.TraderManager
+        if not manager then
+            local loaded, value = pcall(
+                require,
+                "DTCommon/DTCommon_TraderManager"
+            )
+            if loaded then manager = value end
+        end
+        if manager and type(manager.SetNotice) == "function" then
+            manager.SetNotice(
+                "Talk unavailable: "
+                    .. tostring(Bridge.LastResult.reason)
+            )
+        end
+    end
     local debugHub = DTAbstract and DTAbstract.DebugHub or nil
     if tostring(Bridge.LastResult.mode or "") == "debug"
         and debugHub

@@ -33,7 +33,7 @@ Discovery.CONTACT_PHASE = 3
 local traderStates = {}
 local lastCheckTime = 0
 
-local function notifyTraderNearby(traderID, record, actorID)
+local function nearbyNotification(traderID, record, actorID)
     local name = record and record.n or traderID
     local message = tostring(name) .. " is operating nearby."
     local actor = actorID and CoreClient.GetActor(actorID) or nil
@@ -43,53 +43,72 @@ local function notifyTraderNearby(traderID, record, actorID)
     local faction = view and view.factionPresentation or nil
     local badge = faction and (faction.badge or faction) or nil
 
-    if ActorNotifications
-        and type(ActorNotifications.Show) == "function"
-    then
-        local actions = {
-            {
-                id = "talk",
-                label = "Talk",
-                callback = function()
-                    local manager = DTCommon and DTCommon.TraderManager
-                    if not manager then
-                        local ok, value = pcall(
-                            require,
-                            "DTCommon/DTCommon_TraderManager"
-                        )
-                        if ok then manager = value end
+    local actions = {
+        {
+            id = "talk",
+            label = "Talk",
+            callback = function()
+                local manager = DTCommon and DTCommon.TraderManager
+                if not manager then
+                    local ok, value = pcall(
+                        require,
+                        "DTCommon/DTCommon_TraderManager"
+                    )
+                    if ok then manager = value end
+                end
+                if manager and type(manager.Request) == "function" then
+                    local ok, reason = manager.Request(
+                        "talk",
+                        traderID,
+                        {
+                            mode = "nearby",
+                            actorID = actorID,
+                        }
+                    )
+                    if not ok and manager.SetNotice then
+                        manager.SetNotice(reason)
                     end
-                    if manager and type(manager.Request) == "function" then
-                        local ok, reason = manager.Request(
-                            "talk",
-                            traderID,
-                            {
-                                mode = "nearby",
-                                actorID = actorID,
-                            }
-                        )
-                        if not ok and manager.SetNotice then
-                            manager.SetNotice(reason)
-                        end
-                        return ok
-                    end
-                    return false
-                end,
-            },
-        }
-        ActorNotifications.Show({
-            id = "dt_nearby:" .. tostring(traderID),
-            actorID = actorID,
-            name = view and view.name or name,
-            message = message,
-            portraitSpec = view and view.portraitSpec
-                or CoreClient.GetPortraitSpec
-                and CoreClient.GetPortraitSpec(actor),
-            factionBadge = badge,
-            actions = actions,
-        })
-    else
-        print("[DT][NEARBY] " .. message)
+                    return ok
+                end
+                return false
+            end,
+        },
+    }
+    return {
+        id = "dt_nearby:" .. tostring(traderID),
+        actorID = actorID,
+        name = view and view.name or name,
+        message = message,
+        persistent = true,
+        portraitSpec = view and view.portraitSpec
+            or CoreClient.GetPortraitSpec
+            and CoreClient.GetPortraitSpec(actor),
+        factionBadge = badge,
+        actions = actions,
+    }
+end
+
+local function showOrRefreshNearby(definition)
+    if not ActorNotifications then return false end
+    if type(ActorNotifications.Update) == "function" then
+        local updated = ActorNotifications.Update(
+            definition.id,
+            definition
+        )
+        if updated == true then return true end
+    end
+    if type(ActorNotifications.Show) == "function" then
+        local shown = ActorNotifications.Show(definition)
+        return shown == true
+    end
+    return false
+end
+
+local function notifyTraderNearby(traderID, record, actorID)
+    local definition = nearbyNotification(traderID, record, actorID)
+    if not showOrRefreshNearby(definition) then
+        local message = definition.message
+        print("[DT][NEARBY] " .. tostring(message))
     end
 end
 
@@ -216,31 +235,35 @@ function Discovery.CheckNearbyTraders(player, now)
 
                 if dist <= Discovery.DETECTION_RADIUS then
                     if not state.inside then
-                        local elapsed = now
-                            - (state.lastNotifiedAt or 0)
-                        local cooldownPassed =
-                            state.lastNotifiedAt == 0
-                            or elapsed
-                                >= Discovery.COOLDOWN_SECONDS
-
                         state.inside = true
                         Discovery.MarkDiscovered(traderID)
 
-                        if cooldownPassed then
-                            state.lastNotifiedAt = now
-                            notifyTraderNearby(
-                                traderID,
-                                record,
-                                actorID
-                            )
-                            detectedCount = detectedCount + 1
-                        end
+                        state.lastNotifiedAt = now
+                        notifyTraderNearby(
+                            traderID,
+                            record,
+                            actorID
+                        )
+                        detectedCount = detectedCount + 1
+                    else
+                        notifyTraderNearby(
+                            traderID,
+                            record,
+                            actorID
+                        )
                     end
                 elseif dist > Discovery.EXIT_RADIUS
                     and state.inside
                 then
                     state.inside = false
                     state.lastExitedAt = now
+                    if ActorNotifications
+                        and type(ActorNotifications.Dismiss) == "function"
+                    then
+                        ActorNotifications.Dismiss(
+                            "dt_nearby:" .. tostring(traderID)
+                        )
+                    end
                 end
             end
         end

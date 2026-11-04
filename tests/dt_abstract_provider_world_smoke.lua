@@ -283,6 +283,45 @@ T.equal(
     "trader record provider is DTAbstract"
 )
 
+T.load(
+    "DTAbstract",
+    "server",
+    "DTAbstract/DTAbstract_CommonIntegration.lua"
+)
+local handled, nearbyAllowed, nearbyReason =
+    DTCommon.Integrations.ValidateTraderAccess(
+        testPlayer,
+        record,
+        "nearby"
+    )
+T.truthy(handled, "DTAbstract nearby access adapter did not claim the record")
+T.truthy(nearbyAllowed,
+    "DTAbstract nearby access rejected an in-range canonical trader")
+T.equal(nearbyReason, nil,
+    "DTAbstract nearby access returned an unexpected reason")
+testPlayer = {
+    debugAllowed = true,
+    getX = function() return 10700 end,
+    getY = function() return 9950 end,
+    getZ = function() return 0 end,
+}
+local _, farAllowed, farReason =
+    DTCommon.Integrations.ValidateTraderAccess(
+        testPlayer,
+        record,
+        "nearby"
+    )
+T.falsy(farAllowed,
+    "DTAbstract nearby access ignored the provider proximity radius")
+T.equal(farReason, "access_denied",
+    "DTAbstract nearby access denial reason changed")
+testPlayer = {
+    debugAllowed = true,
+    getX = function() return 10600 end,
+    getY = function() return 9950 end,
+    getZ = function() return 0 end,
+}
+
 -- A second debug bind selects another unused canonical trader-group leader and
 -- repositions that canonical group to the requested debug tile.
 local explicit, explicitReason = TraderWorld.SpawnTrader(
@@ -350,6 +389,15 @@ T.equal(
 T.truthy(
     SurvivorRuntime.GetRegistry():GetGroup(generated.groupID),
     "generated debug trader group is missing from Core"
+)
+local persistedWorld = roots["PsychopatzCore.SurvivorWorld"]
+T.truthy(
+    persistedWorld and type(persistedWorld.registry) == "string",
+    "generated debug trader did not leave a persisted Core world registry"
+)
+T.truthy(
+    string.find(persistedWorld.registry, generated.groupID, 1, true),
+    "generated debug trader group was not written to Core world persistence"
 )
 
 -- Select any other canonical community as the commercial destination.

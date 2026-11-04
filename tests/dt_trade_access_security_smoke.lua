@@ -19,6 +19,7 @@ local player = {
     getY = function() return 100 end,
 }
 local radioPresent = false
+local nearbyAbstractGranted = true
 
 package.preload["PsychopatzCore/Inventory/PsychopatzInventory"] =
     function() return {} end
@@ -37,6 +38,7 @@ PsychopatzCore = {
 DTCommon = {
     STATUS_READY = "READY",
     Storage = {
+        IsAuthority = function() return true end,
         LoadInventory = function() return {} end,
     },
     TraderStock = {
@@ -67,7 +69,13 @@ T.load("DTHoomans", "server", "DTHoomans/DTHoomans_Server.lua")
 DTCommon.Integrations = {
     ApplyCapacity = function() return nil, nil, "unhandled" end,
     ResolveDisplayName = function() return nil, "unhandled" end,
-    ValidateTraderAccess = function(current, currentRecord)
+    ValidateTraderAccess = function(current, currentRecord, mode)
+        if currentRecord.a == 1 and mode == "nearby" then
+            if nearbyAbstractGranted then
+                return true, true
+            end
+            return true, false, "access_denied"
+        end
         local allowed, reason =
             DTHoomans.ValidateTraderAccess(current, currentRecord)
         return true, allowed, reason
@@ -113,5 +121,21 @@ radioPresent = true
 local remote, remoteReason = Service.Snapshot(record.traderID, player)
 T.truthy(remote, "abstract trader is allowed with an active radio")
 T.equal(remoteReason, nil, "remote access has no denial reason")
+
+nearbyAbstractGranted = true
+local nearby, nearbyReason = Service.ValidateTalkAccess(
+    player, record.traderID, "nearby")
+T.truthy(nearby,
+    "abstract nearby Talk must use the proximity authorization contract")
+T.equal(nearbyReason, nil,
+    "abstract nearby Talk returned an unexpected denial")
+
+nearbyAbstractGranted = false
+local farNearby, farNearbyReason = Service.ValidateTalkAccess(
+    player, record.traderID, "nearby")
+T.falsy(farNearby,
+    "abstract nearby Talk must deny a stale/out-of-range contact")
+T.equal(farNearbyReason, "access_denied",
+    "abstract nearby Talk denial must remain explicit")
 
 T.finish("dt_trade_access_security_smoke")

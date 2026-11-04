@@ -26,6 +26,7 @@ local CoreTraderCandidateFactory = require
 
 Provider.ID = "DTAbstract"
 Provider.DEFAULT_SPEED = 60
+Provider.NEARBY_TALK_RADIUS = 60
 
 local function authority()
     return DTCommon and DTCommon.Storage
@@ -169,6 +170,12 @@ local function placeDebugCandidate(candidate, position)
     local updated = world:UpsertGroup(group)
     if updated then
         Runtime.MarkDirty("dtabstract_debug_spawn_reposition")
+        if Runtime.SurvivorWorld
+            and Runtime.SurvivorWorld.RuntimeStore
+            and type(Runtime.SurvivorWorld.RuntimeStore.Save) == "function"
+        then
+            Runtime.SurvivorWorld.RuntimeStore.Save()
+        end
         candidate.position = {
             x = group.location.x,
             y = group.location.y,
