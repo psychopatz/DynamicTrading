@@ -176,3 +176,28 @@ Dynamic Trading remains **76/76**; Kahlua verification passes for the changed
 runtime-store file; and `git diff --check` passes. The current Apocalypse
 `global_mod_data.bin` is already malformed on disk and was not overwritten;
 restore a backup or use a fresh save after this fix before native acceptance.
+
+## Shared faction-generation contract remediation — 2026-11-04
+
+The provider audit confirmed that Project Hoomans' existing
+`MobileGroupDirector.GenerateForFaction` supports an `abstract` presence hint,
+but that hint still creates a Project Hoomans record and permits later body
+materialization. DTAbstract therefore must not call that optional-adopter API.
+
+- Added the single DTCommon `TraderGeneration.GenerateForFaction(spec)` seam.
+- `presenceMode = "abstract"` delegates to the Core canonical candidate factory
+  and never imports or calls Project Hoomans/PNC.
+- `presenceMode = "live"` and `"auto"` delegate through a registered
+  DTHoomans adapter, which is the only layer that transports the native
+  Project Hoomans generation spec to `MobileGroupDirector`.
+- Added fail-first coverage for abstract/live/auto dispatch, invalid modes,
+  missing providers, and the DTAbstract/DTHoomans source boundary.
+
+Validation for this chunk: the focused generation/caravan/provider regressions
+pass; Dynamic Trading full smoke suite is **77/77**; the DTHoomans bridge
+harness passes; installed-PZ Kahlua verification passes for all **4/4** changed
+production Lua files; and `git diff --check` passes.
+
+Final source-removal/exclusivity audit, repository status review, coherent
+commit (`f568bf7a`), and post-commit smoke/bridge gates are complete. The only
+remaining work is user-owned fresh-save native acceptance.

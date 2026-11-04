@@ -5,6 +5,8 @@ local source = T.read(
     "DTHoomans/DTHoomans_CaravanService.lua")
 T.contains(source, "GenerateForFaction",
     "caravan delegates NPC creation to MobileGroupDirector")
+T.contains(source, "TraderGeneration.GenerateForFaction",
+    "caravan routes faction generation through the shared facade")
 T.contains(source, "groupSize = GROUP_SIZE",
     "caravan requests a multi-NPC group")
 T.contains(source, "mobileControlMode = constants.MOBILE_CONTROL_STRATEGIC",

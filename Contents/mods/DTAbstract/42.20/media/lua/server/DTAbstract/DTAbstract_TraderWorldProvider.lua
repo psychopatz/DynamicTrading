@@ -21,8 +21,8 @@ local Runtime = DTAbstract.SurvivorWorldRuntime
     or require "DTAbstract/DTAbstract_SurvivorWorldRuntime"
 local PreSurvivorWorldImport = require
     "DTAbstract/DTAbstract_PreSurvivorWorldImport"
-local CoreTraderCandidateFactory = require
-    "DTCommon/DTCommon_CoreTraderCandidateFactory"
+local TraderGeneration = require
+    "DTCommon/DTCommon_TraderGeneration"
 
 Provider.ID = "DTAbstract"
 Provider.DEFAULT_SPEED = 60
@@ -197,7 +197,9 @@ function Provider.spawnTrader(spec)
         actorRegistry = registry(),
     })
     if not candidate and spec.debug == true then
-        candidate, reason = CoreTraderCandidateFactory.Create({
+        candidate, reason = TraderGeneration.GenerateForFaction({
+            provider = Provider.ID,
+            presenceMode = "abstract",
             registry = Runtime.GetRegistry(),
             actorRegistry = registry(),
             position = spec.position,

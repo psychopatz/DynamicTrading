@@ -11,6 +11,8 @@ local Service = DTCommon and DTCommon.TraderService
 local Runtime = DTHoomans.CaravanRuntime
 local Generation = require
     "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldGeneration"
+local TraderGeneration = require
+    "DTCommon/DTCommon_TraderGeneration"
 local pendingTable = type(Runtime.PendingSpawns) == "table"
     and Runtime.PendingSpawns
     or type(Caravan.PendingSpawns) == "table"
@@ -473,6 +475,28 @@ local function nativeSpec(state)
     }
 end
 
+-- The physical provider is the only owner of the Project Hoomans transport.
+-- DTCommon still owns the public GenerateForFaction contract and supplies the
+-- requested presence mode without duplicating the bodyless Core path here.
+TraderGeneration.RegisterProvider("DTHoomans", {
+    GenerateForFaction = function(spec)
+        local native = {}
+        local key
+        if not PNC or not PNC.MobileGroupDirector
+            or type(PNC.MobileGroupDirector.GenerateForFaction) ~= "function"
+        then
+            return false, "mobile_director_unavailable"
+        end
+        for key, value in pairs(spec.nativeSpec or {}) do
+            native[key] = value
+        end
+        native.presenceMode = spec.presenceMode or native.presenceMode
+            or "live"
+        return PNC.MobileGroupDirector.GenerateForFaction(
+            spec.factionID, native)
+    end,
+})
+
 local UNRESOLVED_NAMES = {
     [""] = true,
     Unknown = true,
@@ -774,18 +798,14 @@ processState = function(state)
     log("INFO", "caravan_processing request=" .. tostring(state.requestID)
         .. " faction=" .. tostring(state.faction and state.faction.id))
 
-    if not PNC or not PNC.MobileGroupDirector
-        or type(PNC.MobileGroupDirector.GenerateForFaction) ~= "function"
-    then
-        cleanupFaction(
-            state.faction.id, {}, state.at, "mobile_director_unavailable")
-        finish(state, false, "mobile_director_unavailable")
-        return false, "mobile_director_unavailable"
-    end
     callOK, ok, reason, generated = pcall(
-        PNC.MobileGroupDirector.GenerateForFaction,
-        state.faction.id,
-        nativeSpec(state)
+        TraderGeneration.GenerateForFaction,
+        {
+            provider = "DTHoomans",
+            presenceMode = state.presenceMode or "live",
+            factionID = state.faction.id,
+            nativeSpec = nativeSpec(state),
+        }
     )
     if not callOK then
         log("WARN", "native_generation_exception request="
