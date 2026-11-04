@@ -7,6 +7,10 @@ DTCommon.TraderDebug = DTCommon.TraderDebug or {}
 
 local Debug = DTCommon.TraderDebug
 
+if not (PsychopatzCore and PsychopatzCore.Notifications) then
+    pcall(require, "PsychopatzCore/UI/PsychopatzNotificationWindow")
+end
+
 local function canUseDebug()
     local player = getSpecificPlayer and getSpecificPlayer(0) or nil
     if not player then return true end
@@ -130,17 +134,46 @@ local function onServerCommand(module, command, args)
     end
     args = type(args) == "table" and args or {}
     Debug.LastSpawnResult = args
-    local message = args.accepted == true
-        and ("Spawned trader " .. tostring(args.traderID or ""))
-        or ("Trader spawn failed: " .. tostring(args.reason or "unknown"))
+
+    local position = type(args.position) == "table"
+        and args.position or nil
+    local positionText = position
+        and (" at " .. tostring(math.floor(tonumber(position.x) or 0))
+            .. "," .. tostring(math.floor(tonumber(position.y) or 0)))
+        or ""
+    local message
+    if args.pending == true then
+        message = "Trader spawn queued" .. positionText .. "."
+    elseif args.accepted == true then
+        message = "Spawned trader " .. tostring(args.traderID or "")
+            .. positionText .. "."
+        if tostring(args.provider or "") == "DTAbstract" then
+            message = message
+                .. " Abstract mode creates no visible world body; check the map dot."
+        end
+    else
+        message = "Trader spawn failed: "
+            .. tostring(args.reason or "unknown")
+    end
+
     if PsychopatzCore and PsychopatzCore.Notifications
         and type(PsychopatzCore.Notifications.Show) == "function"
     then
+        local requestID = tostring(args.requestID or "unknown")
+        local phase = args.pending == true and "queued" or "result"
+        local details = {}
+        if args.actorID then
+            details[#details + 1] = "Actor: " .. tostring(args.actorID)
+        end
+        if args.provider then
+            details[#details + 1] = "Provider: " .. tostring(args.provider)
+        end
         PsychopatzCore.Notifications.Show({
-            id = "dtcommon:debug_spawn",
+            id = "dtcommon:debug_spawn:" .. requestID .. ":" .. phase,
             title = "Dynamic Trading Debug",
             message = message,
             text = message,
+            details = details,
         })
     else
         print("[DT][DEBUG] " .. message)

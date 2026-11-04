@@ -188,14 +188,17 @@ function World.CountByProvider(providerID)
     return #World.ListByProvider(providerID)
 end
 
-local function publishCoreActors()
-    local server = PsychopatzCore
-        and PsychopatzCore.SurvivorWorldProjectionServer or nil
-    if server and type(server.Publish) == "function" then
-        server.Publish()
-        return true
-    end
-    return false
+World.ProjectionDirty = World.ProjectionDirty == true
+
+function World.MarkProjectionDirty()
+    World.ProjectionDirty = true
+    return true
+end
+
+function World.ConsumeProjectionDirty()
+    if World.ProjectionDirty ~= true then return false end
+    World.ProjectionDirty = false
+    return true
 end
 
 function World.SpawnTrader(providerID, spec)
@@ -230,7 +233,7 @@ function World.SpawnTrader(providerID, spec)
     if not adopted then return nil, adoptReason end
     if type(result) ~= "table" then result = { traderID = traderID } end
     result.record = adopted
-    publishCoreActors()
+    World.MarkProjectionDirty()
     return result
 end
 

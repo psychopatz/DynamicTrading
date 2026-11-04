@@ -296,14 +296,17 @@ local function onServerCommand(module, command, args)
     then
         local feedback = {
             accepted = args.accepted == true,
-            action = "spawn",
+            pending = args.pending == true,
+            action = args.pending == true and "spawn_queued" or "spawn",
             reason = args.reason,
             traderID = args.traderID,
             actorID = args.actorID,
+            requestID = args.requestID,
         }
         DebugHub.LastSpawn = args
         DebugHub.LastResult = feedback
-        if args.accepted == true then DebugHub.RefreshProjection() end
+        -- DTCommon owns projection publication after the queued spawn commits.
+        -- Do not issue a nested projection request from this server callback.
         publishDebugFeedback(feedback)
         return
     end

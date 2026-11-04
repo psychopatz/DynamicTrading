@@ -153,8 +153,14 @@ T.equal(forced.spawned, 2,
     "forced/bootstrap tick did not fill bounded trader target")
 T.equal(World.CountManaged("roaming"), 2,
     "forced/bootstrap tick population target mismatch")
-T.equal(projectionPublishes, 2,
-    "shared trader creation did not publish one Core projection per spawn")
+T.equal(projectionPublishes, 0,
+    "shared trader creation published projection synchronously")
+T.truthy(World.ProjectionDirty,
+    "shared trader creation did not mark Core projection dirty")
+T.truthy(World.ConsumeProjectionDirty(),
+    "shared projection dirty flag was not consumable")
+T.falsy(World.ConsumeProjectionDirty(),
+    "shared projection dirty flag was not coalesced")
 
 -- Normal cadence remains bounded to one spawn per population check.
 data.t = {}

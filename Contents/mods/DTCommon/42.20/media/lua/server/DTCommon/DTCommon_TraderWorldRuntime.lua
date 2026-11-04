@@ -38,8 +38,26 @@ function Runtime.Tick(force, now)
     return Runtime.LastSummary
 end
 
+function Runtime.PublishProjectionIfDirty(force)
+    local dirty = World.ProjectionDirty == true
+    if force ~= true and not dirty then return false, "not_dirty" end
+
+    local projection = PsychopatzCore
+        and PsychopatzCore.SurvivorWorldProjectionServer or nil
+    if not projection or type(projection.Publish) ~= "function" then
+        return false, "projection_server_unavailable"
+    end
+
+    if dirty and type(World.ConsumeProjectionDirty) == "function" then
+        World.ConsumeProjectionDirty()
+    end
+    projection.Publish()
+    return true
+end
+
 local function onTick()
     Runtime.Tick(false, worldAge())
+    Runtime.PublishProjectionIfDirty(false)
 end
 
 if Events and Events.OnGameStart
@@ -50,11 +68,7 @@ then
     Events.OnGameStart.Add(function()
         local now = worldAge()
         Runtime.Tick(true, now)
-        local projection = PsychopatzCore
-            and PsychopatzCore.SurvivorWorldProjectionServer or nil
-        if projection and type(projection.Publish) == "function" then
-            projection.Publish()
-        end
+        Runtime.PublishProjectionIfDirty(true)
     end)
 end
 

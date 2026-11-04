@@ -123,18 +123,43 @@ T.equal(commands[1].args.y, 654,
 for _, callback in ipairs(serverHandlers) do
     callback("DTCommon", "TraderDebugSpawnResult", {
         accepted = true,
+        pending = true,
+        requestID = "dt_debug_spawn:1",
+        position = { x = 321, y = 654, z = 0 },
+        reason = "queued",
+    })
+end
+T.truthy(Debug.LastSpawnResult
+    and Debug.LastSpawnResult.pending == true,
+    "shared debug queued result was not retained")
+T.equal(#notices, 1,
+    "shared debug queued result did not notify")
+T.contains(notices[1].message, "queued",
+    "shared debug queued notification wording missing")
+T.contains(notices[1].message, "321,654",
+    "shared debug queued notification lost position")
+
+for _, callback in ipairs(serverHandlers) do
+    callback("DTCommon", "TraderDebugSpawnResult", {
+        accepted = true,
+        pending = false,
+        requestID = "dt_debug_spawn:1",
         provider = "DTAbstract",
         traderID = "trader:debug:1",
         actorID = "actor:debug:1",
+        position = { x = 321, y = 654, z = 0 },
         reason = "spawned",
     })
 end
 T.truthy(Debug.LastSpawnResult
-    and Debug.LastSpawnResult.accepted == true,
-    "shared debug result was not retained")
-T.truthy(#notices == 1,
-    "shared debug result did not use common notification surface")
-T.contains(notices[1].message, "trader:debug:1",
-    "shared debug notification lost trader identity")
+    and Debug.LastSpawnResult.accepted == true
+    and Debug.LastSpawnResult.pending == false,
+    "shared debug final result was not retained")
+T.equal(#notices, 2,
+    "shared debug final result did not use common notification surface")
+T.contains(notices[2].message, "trader:debug:1",
+    "shared debug final notification lost trader identity")
+T.contains(notices[2].message, "no visible world body",
+    "abstract debug notification did not explain bodyless spawn")
 
 T.finish("dt_common_trader_debug_client_smoke")

@@ -8,6 +8,11 @@ DTAbstract = DTAbstract or {}
 DTAbstract.NearbyDiscovery = DTAbstract.NearbyDiscovery or {}
 
 local Discovery = DTAbstract.NearbyDiscovery
+
+if not (PsychopatzCore and PsychopatzCore.Notifications) then
+    pcall(require, "PsychopatzCore/UI/PsychopatzNotificationWindow")
+end
+
 local CoreClient = require
     "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"
 local Presentation = DTCommon.TraderPresentation

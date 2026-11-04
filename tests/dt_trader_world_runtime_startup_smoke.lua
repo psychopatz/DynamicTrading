@@ -23,6 +23,14 @@ local calls = {}
 DTCommon = {
     TraderWorld = {
         INTERVAL_HOURS = 1,
+        ProjectionDirty = false,
+        ConsumeProjectionDirty = function()
+            if DTCommon.TraderWorld.ProjectionDirty ~= true then
+                return false
+            end
+            DTCommon.TraderWorld.ProjectionDirty = false
+            return true
+        end,
         Tick = function(force, at)
             calls[#calls + 1] = {
                 force = force,
@@ -71,9 +79,14 @@ T.truthy(Runtime.NextTickAt > now,
     "startup bootstrap did not schedule normal next cadence")
 
 now = 12.25
+DTCommon.TraderWorld.ProjectionDirty = true
 tickHandler()
 T.equal(#calls, 1,
     "normal cadence tick ran before next scheduled world tick")
+T.equal(published, 2,
+    "dirty projection did not publish independently of hourly world cadence")
+T.falsy(DTCommon.TraderWorld.ProjectionDirty,
+    "dirty projection flag was not consumed after publish")
 
 now = 13.1
 tickHandler()

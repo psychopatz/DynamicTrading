@@ -2,9 +2,13 @@ local T = require "tests/support/test"
 T.addPackagePaths()
 
 local clientHandler
+local tickHandler
 Events = {
     OnClientCommand = {
         Add = function(fn) clientHandler = fn end,
+    },
+    OnTick = {
+        Add = function(fn) tickHandler = fn end,
     },
 }
 
@@ -76,22 +80,40 @@ clientHandler("DTCommon", "DebugSpawnTrader", player, {
     z = 1,
 })
 
-T.truthy(selectedContext and selectedContext.debug,
-    "shared debug provider selection lost debug context")
-T.equal(spawnProvider, "DTAbstract",
-    "shared debug did not dispatch to selected provider")
-T.truthy(spawnSpec and spawnSpec.debug,
-    "shared debug provider call lost debug flag")
-T.equal(spawnSpec.position.x, 123,
-    "shared debug provider call lost X")
-T.equal(spawnSpec.position.y, 456,
-    "shared debug provider call lost Y")
+T.truthy(tickHandler, "shared debug spawn queue tick hook missing")
+T.equal(selectedContext, nil,
+    "provider selection ran synchronously inside client command")
+T.equal(spawnProvider, nil,
+    "trader spawn ran synchronously inside client command")
 T.equal(sent[1].command, "TraderDebugSpawnResult",
-    "shared debug result command mismatch")
+    "shared debug queue acknowledgement command mismatch")
 T.truthy(sent[1].args.accepted,
-    "shared debug spawn result was not accepted")
-T.equal(sent[1].args.provider, "DTAbstract",
-    "shared debug result lost provider identity")
+    "shared debug queue acknowledgement was not accepted")
+T.truthy(sent[1].args.pending,
+    "shared debug queue acknowledgement was not pending")
+T.equal(sent[1].args.reason, "queued",
+    "shared debug queue acknowledgement reason mismatch")
+
+tickHandler()
+
+T.truthy(selectedContext and selectedContext.debug,
+    "queued spawn provider selection lost debug context")
+T.equal(spawnProvider, "DTAbstract",
+    "queued spawn did not dispatch to selected provider")
+T.truthy(spawnSpec and spawnSpec.debug,
+    "queued provider call lost debug flag")
+T.equal(spawnSpec.position.x, 123,
+    "queued provider call lost X")
+T.equal(spawnSpec.position.y, 456,
+    "queued provider call lost Y")
+T.equal(sent[2].command, "TraderDebugSpawnResult",
+    "shared debug final result command mismatch")
+T.truthy(sent[2].args.accepted,
+    "shared debug final spawn was not accepted")
+T.falsy(sent[2].args.pending,
+    "shared debug final result remained pending")
+T.equal(sent[2].args.provider, "DTAbstract",
+    "shared debug final result lost provider identity")
 
 allowed = false
 sent = {}
