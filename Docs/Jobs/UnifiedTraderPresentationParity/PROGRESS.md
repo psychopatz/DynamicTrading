@@ -201,3 +201,45 @@ production Lua files; and `git diff --check` passes.
 Final source-removal/exclusivity audit, repository status review, coherent
 commit (`f568bf7a`), and post-commit smoke/bridge gates are complete. The only
 remaining work is user-owned fresh-save native acceptance.
+
+## Canonical trader/guard preset remediation — 2026-11-04
+
+- Added Dynamic Trading-authored presets instead of copying Project Hoomans
+  archetype loadouts: one caravan trader with formal clothing and a
+  `Base.Bag_DuffelBag`, plus dedicated shotgun and sidearm guard presets with
+  explicit ammunition and authored identity/appearance data.
+- Added fail-first parity smokes in DynamicTrading, PsychopatzCore, and
+  ProjectHoomans. The tests now pass for preset selection, Core authored-slot
+  expansion, exact Core starter inventory, PNC member-spec transport, and the
+  canonical inventory branch.
+- Core now expands authored appearance policy slots into concrete portrait
+  specs and accepts member-specific identity/appearance/starter inventory data
+  during survivor-world commits.
+- DTAbstract and DTHoomans both use the shared DTCommon preset planner. The
+  physical provider creates the same Core actor projections before invoking
+  Project Hoomans `MobileGroupDirector`, then transports the exact Core
+  inventory payload into PNC records and native materialization.
+- Removed the superseded DTHoomans guard-weapon override/diagnostic path so
+  provider code remains role/transport glue and cannot overwrite the shared
+  guard presets.
+
+Focused validation for this chunk: DynamicTrading preset/caravan tests pass;
+Core preset/runtime tests pass; ProjectHoomans canonical-member test passes;
+the DTHoomans bridge harness passes with **78/78** checks; `luac -p` passes for
+all changed production Lua; installed-PZ Kahlua verification reports zero
+issues for all changed production Lua; and `git diff --check` passes.
+
+Full regression update: DynamicTrading full suite **78/78**; required
+provider-exclusivity, MarketSense gateway, stock, and 4k+/performance checks
+**11/11**; ProjectHoomans **1000/1005**, matching the five documented unrelated
+baseline failures; PsychopatzCore **149/156**, matching the seven documented
+unrelated baseline failures. The final ownership audit finds one Core
+actor-map renderer, one shared DTCommon trader presentation/manager/conversation
+path, one Core notification widget, no DTAbstract runtime dependency on
+ProjectHoomans or PNC, and no provider-owned duplicate trader actor-marker,
+debug-manager, notification, or conversation-content path.
+
+Next mandatory chunk: make the coherent repository commits and leave only
+user-owned fresh-save native acceptance: verify trader/guard appearance and
+equipment, proximity persistence, Talk opening/content, save/reload persistence,
+DTAbstract bodyless presentation, and DTHoomans physical materialization.

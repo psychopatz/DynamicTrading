@@ -15,8 +15,12 @@ T.contains(source, "caravan_processing",
     "caravan processing remains observable")
 T.contains(source, "caravan_ready",
     "caravan completion remains observable")
-T.contains(source, "SetEquipmentSlot",
-    "guard equipment uses the native Hoomans slot API")
+T.contains(source, "memberSpecs",
+    "caravan transports the shared authored member presets")
+T.contains(source, "CreateCanonicalActors",
+    "caravan creates Core actors before native materialization")
+T.falsy(string.find(source, "GUARD_WEAPONS", 1, true),
+    "provider does not retain a duplicate guard loadout")
 T.falsy(string.find(source, "PNC.API.SetLoadout", 1, true),
     "caravan does not replace the native appearance loadout")
 T.contains(source, "PendingSpawns[requestID] = state",

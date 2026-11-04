@@ -11,6 +11,7 @@ local Factory = DTCommon.CoreTraderCandidateFactory
 local SurvivorWorld = require
     "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorld"
 local Actors = require "PsychopatzCore/Actors/PsychopatzActors"
+local Presets = require "DTCommon/DTCommon_TraderPresets"
 
 Factory.MAX_GENERATION_ATTEMPTS = 16
 Factory.DEFAULT_MEMBER_COUNT = 3
@@ -174,53 +175,65 @@ function Factory.Create(spec)
             })
         if plan then
             plan.homeCommunityID = community.id
-            if not registry:GetGroup(plan.groupID)
-                and actorsUnused(plan, actorRegistry)
-            then
-                local group
-                group, lastReason =
-                    SurvivorWorld.Bootstrap.CommitGroupPlan(
-                        registry,
-                        plan,
-                        actorRegistry
-                    )
-                if group then
-                    SurvivorWorld.RuntimeStore.MarkDirty(
-                        "dynamic_trading_debug_group_created"
-                    )
-                    local saved, saveReason =
-                        SurvivorWorld.RuntimeStore.Save()
-                    if saved ~= true and saveReason ~= "not_dirty" then
-                        print(
-                            "[DT][WARN] Core trader group persistence "
-                                .. "deferred: " .. tostring(saveReason)
+            local memberPlan, presetReason = Presets.BuildMembers({
+                seed = plan.seed or spec.seed or plan.groupID,
+                actorPrefix = plan.groupID,
+                actorIDs = plan.memberActorIDs,
+                memberCount = #(plan.memberActorIDs or {}),
+            })
+            if not memberPlan then
+                lastReason = presetReason
+            else
+                plan.memberSpecs = memberPlan.memberSpecs
+                if not registry:GetGroup(plan.groupID)
+                    and actorsUnused(plan, actorRegistry)
+                then
+                    local group
+                    group, lastReason =
+                        SurvivorWorld.Bootstrap.CommitGroupPlan(
+                            registry,
+                            plan,
+                            actorRegistry
                         )
-                    end
-                    if actorRegistry == Actors.DefaultRegistry
-                        and Actors.RuntimeStore
-                        and type(Actors.RuntimeStore.Save) == "function"
-                    then
-                        local actorSaved, actorSaveReason =
-                            Actors.RuntimeStore.Save()
-                        if actorSaved ~= true then
+                    if group then
+                        SurvivorWorld.RuntimeStore.MarkDirty(
+                            "dynamic_trading_debug_group_created"
+                        )
+                        local saved, saveReason =
+                            SurvivorWorld.RuntimeStore.Save()
+                        if saved ~= true and saveReason ~= "not_dirty" then
                             print(
-                                "[DT][WARN] Core trader actor persistence "
-                                    .. "deferred: "
-                                    .. tostring(actorSaveReason)
+                                "[DT][WARN] Core trader group persistence "
+                                    .. "deferred: " .. tostring(saveReason)
                             )
                         end
+                        if actorRegistry == Actors.DefaultRegistry
+                            and Actors.RuntimeStore
+                            and type(Actors.RuntimeStore.Save) == "function"
+                        then
+                            local actorSaved, actorSaveReason =
+                                Actors.RuntimeStore.Save()
+                            if actorSaved ~= true then
+                                print(
+                                    "[DT][WARN] Core trader actor persistence "
+                                        .. "deferred: "
+                                        .. tostring(actorSaveReason)
+                                )
+                            end
+                        end
+                        return {
+                            actorID = plan.leaderActorID,
+                            groupID = plan.groupID,
+                            factionID = plan.factionID,
+                            communityID = community.id,
+                            position = position,
+                            memberActorIDs = plan.memberActorIDs,
+                            memberSpecs = plan.memberSpecs,
+                        }, "canonical_group_created"
                     end
-                    return {
-                        actorID = plan.leaderActorID,
-                        groupID = plan.groupID,
-                        factionID = plan.factionID,
-                        communityID = community.id,
-                        position = position,
-                        memberActorIDs = plan.memberActorIDs,
-                    }, "canonical_group_created"
+                else
+                    lastReason = "generated_identity_collision"
                 end
-            else
-                lastReason = "generated_identity_collision"
             end
         end
     end

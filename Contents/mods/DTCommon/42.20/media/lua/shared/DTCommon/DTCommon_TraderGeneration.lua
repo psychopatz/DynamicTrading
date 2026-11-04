@@ -6,6 +6,8 @@ DTCommon = DTCommon or {}
 DTCommon.TraderGeneration = DTCommon.TraderGeneration or {}
 
 local Generation = DTCommon.TraderGeneration
+local Presets = require "DTCommon/DTCommon_TraderPresets"
+local ActorSystem = require "PsychopatzCore/Actors/PsychopatzActors"
 Generation.Adapters = Generation.Adapters or {}
 Generation.MAX_ADAPTERS = 8
 Generation.PRESENCE_ABSTRACT = "abstract"
@@ -23,6 +25,98 @@ local function copySpec(spec)
     local copy = {}
     for key, value in pairs(spec) do copy[key] = value end
     return copy
+end
+
+function Generation.BuildMemberSpecs(spec)
+    return Presets.BuildMembers(spec)
+end
+
+function Generation.CreateCanonicalActors(spec, memberPlan)
+    spec = type(spec) == "table" and spec or {}
+    memberPlan = type(memberPlan) == "table" and memberPlan or {}
+    local registry = spec.actorRegistry or ActorSystem.DefaultRegistry
+    local position = type(spec.position) == "table" and spec.position or {}
+    local createdActorIDs = {}
+    local memberSpecs = memberPlan.memberSpecs or {}
+    local actorIDs = memberPlan.actorIDs or {}
+    local created = {}
+    local index
+    local member
+    local actor
+    local reason
+
+    if not registry or type(registry.Create) ~= "function" then
+        return nil, "actor_registry_unavailable"
+    end
+    for index = 1, #memberSpecs do
+        member = memberSpecs[index]
+        if type(member) ~= "table" or not member.actorID then
+            for _, actorID in ipairs(createdActorIDs) do
+                registry:Remove(actorID)
+            end
+            return nil, "trader_member_spec_invalid"
+        end
+        if registry:Get(member.actorID) then
+            for _, actorID in ipairs(createdActorIDs) do
+                registry:Remove(actorID)
+            end
+            return nil, "canonical_actor_id_collision"
+        end
+        actor, reason = registry:Create({
+            actorId = member.actorID,
+            identitySeed = member.identitySeed,
+            identity = member.identity,
+            archetypeID = member.archetypeID or "core.survivor",
+            ownerMod = "DynamicTrading",
+            appearance = member.appearance,
+            starterItems = member.startingItems,
+            world = {
+                position = {
+                    x = tonumber(position.x) or 0,
+                    y = tonumber(position.y) or 0,
+                    z = tonumber(position.z) or 0,
+                },
+            },
+            extensions = {
+                ["dynamictrading.traderPreset"] = {
+                    schemaVersion = tonumber(member.schemaVersion) or 1,
+                    presetID = member.presetID,
+                    role = member.role,
+                    visualProfile = member.visualProfile,
+                },
+            },
+            source = member.source,
+        })
+        if not actor then
+            for _, actorID in ipairs(createdActorIDs) do
+                registry:Remove(actorID)
+            end
+            return nil, reason or "canonical_actor_create_failed"
+        end
+        member.identity = actor.identity
+        member.personalInventory = actor.personalInventory
+        member.coreActorID = actor.actorId
+        actorIDs[index] = actor.actorId
+        createdActorIDs[#createdActorIDs + 1] = actor.actorId
+        created[#created + 1] = actor
+    end
+    return {
+        schemaVersion = Presets.SCHEMA_VERSION,
+        actorIDs = actorIDs,
+        memberSpecs = memberSpecs,
+        actors = created,
+        createdActorIDs = createdActorIDs,
+    }, "canonical_actors_created"
+end
+
+function Generation.RemoveCanonicalActors(result)
+    if type(result) ~= "table" then return false end
+    local registry = result.actorRegistry or ActorSystem.DefaultRegistry
+    if not registry or type(registry.Remove) ~= "function" then return false end
+    for _, actorID in ipairs(result.createdActorIDs or {}) do
+        registry:Remove(actorID)
+    end
+    return true
 end
 
 local function normalize(spec)

@@ -48,11 +48,6 @@ local spawnSequence = 0
 local DEBUG_SITE_RADIUS = 3
 local MAX_RUNTIME_DIAGNOSTIC_SNAPSHOTS = 12
 local MAX_RUNTIME_DIAGNOSTIC_ENTRIES = 16
-local MAX_EQUIPMENT_DIAGNOSTICS = 32
-local GUARD_WEAPONS = {
-    "Base.Pistol",
-    "Base.DoubleBarrelShotgun",
-}
 
 -- SandboxVars is a plain global on both sides and can be nil before the world
 -- options load, so every read is defaulted and clamped.
@@ -87,7 +82,6 @@ local function pendingCount()
 end
 
 local processState
-local equipmentDiagnosticCount = 0
 
 -- Bounded diagnostics for the live queue audit. The normal spawn path is
 -- synchronous, so this table is only an active transaction table; the fields
@@ -166,75 +160,6 @@ local function physicalNPC(npcID)
         or "live"
     if not record or record.presenceState ~= liveState then return nil end
     return record
-end
-
-local function mapCount(map)
-    local count = 0
-    for _, _ in pairs(type(map) == "table" and map or {}) do
-        count = count + 1
-    end
-    return count
-end
-
-local function mapSummary(map, limit)
-    local values = {}
-    local count = 0
-    limit = tonumber(limit) or 8
-    for key, value in pairs(type(map) == "table" and map or {}) do
-        count = count + 1
-        if #values < limit then
-            values[#values + 1] = tostring(key) .. ":" .. tostring(value)
-        end
-    end
-    table.sort(values)
-    if count > limit then values[#values + 1] = "..." end
-    return table.concat(values, ",")
-end
-
-local function liveVisualCount(npcID)
-    local registry = PNC and PNC.Registry
-    local body
-    local visuals
-    local ok
-    local count
-    if not registry or type(registry.GetLiveZombie) ~= "function" then
-        return "unavailable"
-    end
-    body = registry.GetLiveZombie(npcID)
-    if not body or type(body.getItemVisuals) ~= "function" then
-        return "none"
-    end
-    ok, visuals = pcall(body.getItemVisuals, body)
-    if not ok or not visuals or type(visuals.size) ~= "function" then
-        return "unavailable"
-    end
-    ok, count = pcall(visuals.size, visuals)
-    return ok and tostring(count) or "unavailable"
-end
-
--- Temporary bounded evidence for the native equipment path. This deliberately
--- reports the Hoomans record and live visual counts rather than maintaining a
--- DynamicTrading clothing representation.
-local function equipmentDiagnostics(npcID, phase)
-    local record
-    local equipment
-    local inventory
-    if equipmentDiagnosticCount >= MAX_EQUIPMENT_DIAGNOSTICS then return end
-    equipmentDiagnosticCount = equipmentDiagnosticCount + 1
-    record = PNC and PNC.Registry and type(PNC.Registry.Get) == "function"
-        and PNC.Registry.Get(npcID) or nil
-    equipment = record and record.equipment or {}
-    inventory = record and record.inventory or {}
-    log("INFO", "caravan_equipment_diag phase=" .. tostring(phase)
-        .. " npc=" .. tostring(npcID)
-        .. " primary=" .. tostring(equipment.primaryFullType)
-        .. " wornCount=" .. tostring(mapCount(equipment.worn))
-        .. " worn=" .. mapSummary(equipment.worn, 8)
-        .. " attachedCount=" .. tostring(mapCount(equipment.attached))
-        .. " attached=" .. mapSummary(equipment.attached, 8)
-        .. " inventoryWornCount=" .. tostring(mapCount(inventory.worn))
-        .. " inventoryItems=" .. tostring(mapCount(inventory.items))
-        .. " liveVisuals=" .. tostring(liveVisualCount(npcID)))
 end
 
 local function memberIDs(faction)
@@ -430,6 +355,8 @@ local function nativeSpec(state)
         y = state.y,
         z = state.z,
         groupSize = GROUP_SIZE,
+        actorPrefix = "dt:" .. tostring(state.seed) .. ":"
+            .. tostring(state.faction.id),
         -- One trader plus guards. This is a base-less mobile faction, so the
         -- group is generated leaderless with an explicit role order and no
         -- implied offscreen home.
@@ -482,6 +409,12 @@ TraderGeneration.RegisterProvider("DTHoomans", {
     GenerateForFaction = function(spec)
         local native = {}
         local key
+        local memberPlan
+        local canonical
+        local ok
+        local reason
+        local generated
+        local callOK
         if not PNC or not PNC.MobileGroupDirector
             or type(PNC.MobileGroupDirector.GenerateForFaction) ~= "function"
         then
@@ -492,8 +425,46 @@ TraderGeneration.RegisterProvider("DTHoomans", {
         end
         native.presenceMode = spec.presenceMode or native.presenceMode
             or "live"
-        return PNC.MobileGroupDirector.GenerateForFaction(
-            spec.factionID, native)
+        memberPlan, reason = TraderGeneration.BuildMemberSpecs({
+            seed = native.generation and native.generation.seed,
+            actorPrefix = native.actorPrefix,
+            memberCount = native.groupSize,
+        })
+        if not memberPlan then return false, reason end
+        canonical, reason = TraderGeneration.CreateCanonicalActors({
+            position = {
+                x = native.x,
+                y = native.y,
+                z = native.z,
+            },
+        }, memberPlan)
+        if not canonical then return false, reason end
+        native.actorIDs = canonical.actorIDs
+        native.memberSpecs = canonical.memberSpecs
+        callOK, ok, reason, generated = pcall(
+            PNC.MobileGroupDirector.GenerateForFaction,
+            spec.factionID,
+            native
+        )
+        if not callOK then
+            TraderGeneration.RemoveCanonicalActors(canonical)
+            return false, "mobile_generation_exception"
+        end
+        if not ok then
+            TraderGeneration.RemoveCanonicalActors(canonical)
+            return ok, reason, generated
+        end
+        generated = generated or {}
+        generated.canonicalCreatedActorIDs = canonical.createdActorIDs
+        generated.canonicalActorIDs = canonical.actorIDs
+        generated.memberSpecs = canonical.memberSpecs
+        local actors = PsychopatzCore and PsychopatzCore.Actors or nil
+        if actors and actors.RuntimeStore
+            and type(actors.RuntimeStore.Save) == "function"
+        then
+            actors.RuntimeStore.Save()
+        end
+        return ok, reason, generated
     end,
 })
 
@@ -576,7 +547,6 @@ end
 
 local function configureMembers(factionID, npcIDs, at)
     local merchantID
-    local guardIndex = 0
     local index
     local npcID
     local ok
@@ -599,31 +569,11 @@ local function configureMembers(factionID, npcIDs, at)
     for index = 1, #npcIDs do
         npcID = npcIDs[index]
         if tostring(npcID) ~= tostring(merchantID) then
-            guardIndex = guardIndex + 1
             if PNC.Factions.SetNPCRole then
                 ok, reason = PNC.Factions.SetNPCRole(npcID, GUARD_ROLE)
                 if not ok and reason ~= "unchanged" then
                     return nil, reason or "guard_role_failed"
                 end
-            end
-            -- Guard weapons are a bounded flavour list: guards beyond it stay
-            -- unarmed instead of failing a caravan whose size the sandbox
-            -- option raised.
-            if GUARD_WEAPONS[guardIndex] then
-                equipmentDiagnostics(npcID, "before")
-                if not PNC.API
-                    or type(PNC.API.SetEquipmentSlot) ~= "function"
-                then
-                    return nil, "project_hoomans_equipment_slot_unavailable"
-                end
-                ok = PNC.API.SetEquipmentSlot(
-                    npcID,
-                    "primary",
-                    nil,
-                    GUARD_WEAPONS[guardIndex]
-                )
-                equipmentDiagnostics(npcID, "after")
-                if not ok then return nil, "guard_equipment_slot_failed" end
             end
         end
     end
@@ -661,11 +611,20 @@ local function finalize(state, generated)
     local faction
     local createdCount = tonumber(generated and generated.createdCount) or 0
 
+    local function cleanupCanonicalActors()
+        if generated and generated.canonicalCreatedActorIDs then
+            TraderGeneration.RemoveCanonicalActors({
+                createdActorIDs = generated.canonicalCreatedActorIDs,
+            })
+        end
+    end
+
     for index = 1, #(generated and generated.npcIDs or {}) do
         npcIDs[#npcIDs + 1] = tostring(generated.npcIDs[index])
     end
     local wanted = tonumber(state.memberCount) or MEMBER_COUNT_DEFAULT
     if #npcIDs < wanted or createdCount < wanted then
+        cleanupCanonicalActors()
         cleanupFaction(
             state.faction.id,
             npcIDs,
@@ -679,6 +638,7 @@ local function finalize(state, generated)
     merchantID, reason = configureMembers(
         state.faction.id, npcIDs, state.at)
     if not merchantID then
+        cleanupCanonicalActors()
         cleanupFaction(
             state.faction.id, npcIDs, state.at, reason or "role_setup_failed")
         finish(state, false, reason or "role_setup_failed")
@@ -686,6 +646,7 @@ local function finalize(state, generated)
     end
     merchant = physicalNPC(merchantID)
     if not merchant then
+        cleanupCanonicalActors()
         cleanupFaction(
             state.faction.id, npcIDs, state.at, "merchant_not_live")
         finish(state, false, "merchant_not_live")
@@ -715,6 +676,7 @@ local function finalize(state, generated)
     if not Service or type(Service.Create) ~= "function"
         or type(Service.BindCaravan) ~= "function"
     then
+        cleanupCanonicalActors()
         cleanupFaction(
             state.faction.id, npcIDs, state.at, "trader_service_unavailable")
         finish(state, false, "trader_service_unavailable")
@@ -734,6 +696,7 @@ local function finalize(state, generated)
         lifecycleState = "idle",
     })
     if not traderID or not record then
+        cleanupCanonicalActors()
         cleanupFaction(
             state.faction.id, npcIDs, state.at, "trader_record_failed")
         finish(state, false, "trader_record_failed")
@@ -745,6 +708,7 @@ local function finalize(state, generated)
         if type(Service.Remove) == "function" then
             Service.Remove(traderID)
         end
+        cleanupCanonicalActors()
         cleanupFaction(
             state.faction.id, npcIDs, state.at, reason or "trader_binding_failed")
         finish(state, false, reason or "trader_binding_failed")
@@ -756,6 +720,7 @@ local function finalize(state, generated)
     local coreActor = coreRegistry and type(coreRegistry.Get) == "function"
         and coreRegistry:Get(merchantID) or nil
     if coreActor and coreActor.providerLease
+        and tostring(coreActor.providerLease.state or "") ~= "released"
         and Service and type(Service.SetProviderLease) == "function"
     then
         pcall(Service.SetProviderLease, traderID, coreActor.providerLease)
@@ -830,6 +795,11 @@ processState = function(state)
             .. tostring(finalizeReason))
         if Service and type(Service.Remove) == "function" then
             Service.Remove("dt_" .. tostring(state.faction.id))
+        end
+        if generated and generated.canonicalCreatedActorIDs then
+            TraderGeneration.RemoveCanonicalActors({
+                createdActorIDs = generated.canonicalCreatedActorIDs,
+            })
         end
         cleanupFaction(
             state.faction.id,
