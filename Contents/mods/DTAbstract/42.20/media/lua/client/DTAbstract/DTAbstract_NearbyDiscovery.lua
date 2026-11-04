@@ -9,20 +9,12 @@ DTAbstract.NearbyDiscovery = DTAbstract.NearbyDiscovery or {}
 
 local Discovery = DTAbstract.NearbyDiscovery
 
-local ActorNotifications = PsychopatzCore
-    and PsychopatzCore.ActorNotifications
-if not ActorNotifications then
-    local ok, value = pcall(
-        require,
-        "PsychopatzCore/UI/PsychopatzActorNotificationToast"
-    )
-    if ok then ActorNotifications = value end
-end
-
 local CoreClient = require
     "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"
 local Presentation = DTCommon.TraderPresentation
     or require "DTCommon/DTCommon_TraderPresentation"
+local Notification = DTCommon.TraderNotification
+    or require "DTCommon/DTCommon_TraderNotification"
 
 Discovery.DETECTION_RADIUS = 60
 Discovery.EXIT_RADIUS = 75
@@ -36,77 +28,18 @@ local lastCheckTime = 0
 local function nearbyNotification(traderID, record, actorID)
     local name = record and record.n or traderID
     local message = tostring(name) .. " is operating nearby."
-    local actor = actorID and CoreClient.GetActor(actorID) or nil
-    local view = Presentation.GetTraderView
-        and Presentation.GetTraderView(traderID, false)
-        or nil
-    local faction = view and view.factionPresentation or nil
-    local badge = faction and (faction.badge or faction) or nil
-
-    local actions = {
-        {
-            id = "talk",
-            label = "Talk",
-            callback = function()
-                local manager = DTCommon and DTCommon.TraderManager
-                if not manager then
-                    local ok, value = pcall(
-                        require,
-                        "DTCommon/DTCommon_TraderManager"
-                    )
-                    if ok then manager = value end
-                end
-                if manager and type(manager.Request) == "function" then
-                    local ok, reason = manager.Request(
-                        "talk",
-                        traderID,
-                        {
-                            mode = "nearby",
-                            actorID = actorID,
-                        }
-                    )
-                    if not ok and manager.SetNotice then
-                        manager.SetNotice(reason)
-                    end
-                    return ok
-                end
-                return false
-            end,
-        },
-    }
-    return {
+    return Notification.Build(traderID, message, {
         id = "dt_nearby:" .. tostring(traderID),
         actorID = actorID,
-        name = view and view.name or name,
-        message = message,
+        mode = "nearby",
         persistent = true,
-        portraitSpec = view and view.portraitSpec
-            or CoreClient.GetPortraitSpec
-            and CoreClient.GetPortraitSpec(actor),
-        factionBadge = badge,
-        actions = actions,
-    }
-end
-
-local function showOrRefreshNearby(definition)
-    if not ActorNotifications then return false end
-    if type(ActorNotifications.Update) == "function" then
-        local updated = ActorNotifications.Update(
-            definition.id,
-            definition
-        )
-        if updated == true then return true end
-    end
-    if type(ActorNotifications.Show) == "function" then
-        local shown = ActorNotifications.Show(definition)
-        return shown == true
-    end
-    return false
+    })
 end
 
 local function notifyTraderNearby(traderID, record, actorID)
     local definition = nearbyNotification(traderID, record, actorID)
-    if not showOrRefreshNearby(definition) then
+    local shown = Notification.Show(traderID, definition)
+    if not shown then
         local message = definition.message
         print("[DT][NEARBY] " .. tostring(message))
     end
@@ -257,13 +190,9 @@ function Discovery.CheckNearbyTraders(player, now)
                 then
                     state.inside = false
                     state.lastExitedAt = now
-                    if ActorNotifications
-                        and type(ActorNotifications.Dismiss) == "function"
-                    then
-                        ActorNotifications.Dismiss(
-                            "dt_nearby:" .. tostring(traderID)
-                        )
-                    end
+                    Notification.Dismiss(
+                        "dt_nearby:" .. tostring(traderID)
+                    )
                 end
             end
         end

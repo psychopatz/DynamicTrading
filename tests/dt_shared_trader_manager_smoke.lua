@@ -25,6 +25,15 @@ local rows = {
         displayName = "Physical Trader",
         position = { x = 30, y = 40, z = 0 },
     },
+    {
+        traderID = "trader:manager:one",
+        actorID = "actor:manager:guard",
+        provider = "DTAbstract",
+        displayName = "Abstract Guard",
+        talkAvailable = true,
+        tradeAvailable = false,
+        position = { x = 11, y = 21, z = 0 },
+    },
 }
 
 DTCommon = {
@@ -52,7 +61,7 @@ local Manager = T.load(
 T.truthy(Manager, "shared trader manager did not load")
 T.truthy(tools["dtcommon.traderManager"],
     "shared trader manager did not register one Core Debug Hub tool")
-T.equal(#Manager.ListTraders(true), 2,
+T.equal(#Manager.ListTraders(true), 3,
     "shared trader manager did not use one model for both providers")
 
 Manager.RegisterProvider("DTAbstract", {
@@ -76,5 +85,11 @@ T.equal(calls[1].row.actorID, "actor:manager:one",
     "abstract manager action lost actor identity")
 T.equal(calls[2].row.actorID, "actor:manager:two",
     "physical manager action lost actor identity")
+
+T.truthy(Manager.Request("talk", "trader:manager:one", {
+    actorID = "actor:manager:guard",
+}), "shared manager did not dispatch guard Talk")
+T.equal(calls[3].row.actorID, "actor:manager:guard",
+    "shared manager Talk collapsed a guard onto the trader leader")
 
 print("dt_shared_trader_manager_smoke: PASS")

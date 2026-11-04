@@ -310,7 +310,7 @@ end
 -- remote access still requires a real active player radio. A nearby contact
 -- is a separate capability: its provider adapter must prove that the
 -- canonical trader position is inside the provider's proximity radius.
-local function validateAccess(player, record, mode)
+local function validateAccess(player, record, mode, actorID)
     local policyOK, policyReason = Policy.IsAvailable(record)
     if not policyOK then return false, policyReason end
     local status = tostring(record and record.s or DTCommon.STATUS_READY)
@@ -319,7 +319,7 @@ local function validateAccess(player, record, mode)
     end
 
     local handled, allowed, reason =
-        Integrations.ValidateTraderAccess(player, record, mode)
+        Integrations.ValidateTraderAccess(player, record, mode, actorID)
     if handled and allowed == true then
         return true, reason
     end
@@ -534,7 +534,7 @@ local function validateBuyCapacity(physical, stock, player,
     return true
 end
 
-function Service.Snapshot(traderID, player)
+function Service.Snapshot(traderID, player, accessOptions)
     local record = Service.GetRecord(traderID)
     local store
     local loadReason
@@ -546,7 +546,12 @@ function Service.Snapshot(traderID, player)
     local pricingContext
     if not record then return nil, "trader_not_found" end
     if player then
-        local accessOK, accessReason = validateAccess(player, record)
+        local mode = type(accessOptions) == "table"
+            and accessOptions.mode or nil
+        local actorID = type(accessOptions) == "table"
+            and accessOptions.actorID or nil
+        local accessOK, accessReason = validateAccess(
+            player, record, mode, actorID)
         if not accessOK then return nil, accessReason end
     end
     store, loadReason = Storage.LoadInventory(record)
@@ -584,7 +589,7 @@ end
 -- become an authorization source.  Trade continues to use Snapshot and the
 -- existing quote/commit endpoints; this method does not inspect or mutate
 -- stock, budget, prices, or player inventory.
-function Service.ValidateTalkAccess(player, traderID, mode)
+function Service.ValidateTalkAccess(player, traderID, mode, actorID)
     if not authority() then return false, "server_authority_required" end
     local record = Service.GetRecord(traderID)
     if not record then return false, "trader_not_found" end
@@ -595,7 +600,7 @@ function Service.ValidateTalkAccess(player, traderID, mode)
     if mode == "physical" and tonumber(record.a) == 1 then
         return false, "physical_talk_unavailable"
     end
-    return validateAccess(player, record, mode)
+    return validateAccess(player, record, mode, actorID)
 end
 
 local function requestVersion(request, record, pricingContext)
@@ -886,7 +891,12 @@ function Service.ExecuteTradeBasket(player, request)
     end
     record = Service.GetRecord(traderID)
     if not record then return failure(traderID, "BASKET", "trader_not_found") end
-    accessOK, reason = validateAccess(player, record)
+    accessOK, reason = validateAccess(
+        player,
+        record,
+        request.mode,
+        request.actorID
+    )
     if not accessOK then return failure(traderID, "BASKET", reason) end
     pricingContext = buildPricingContext(record, player)
     local versionOK, versionReason = requestVersion(

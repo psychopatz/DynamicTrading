@@ -16,14 +16,26 @@ local actorEntry = {
         glyph = "N",
     },
 }
+local guardEntry = {
+    actorID = "actor:interaction:guard",
+    label = "Northstar Guard",
+    provider = "DTAbstract",
+    providerState = "abstract",
+    position = { x = 110, y = 210, z = 0 },
+    factionID = actorEntry.factionID,
+    factionName = actorEntry.factionName,
+    role = "guard",
+}
 
 package.preload[
     "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"
 ] = function()
     return {
-        ListActors = function() return { actorEntry } end,
+        ListActors = function() return { actorEntry, guardEntry } end,
         GetActor = function(id)
-            return id == actorEntry.actorID and actorEntry or nil
+            if id == actorEntry.actorID then return actorEntry end
+            if id == guardEntry.actorID then return guardEntry end
+            return nil
         end,
     }
 end
@@ -50,6 +62,18 @@ package.preload[
             if x == 100 and y == 200 then
                 return {
                     entry = actorEntry,
+                    actorID = actorEntry.actorID,
+                    marker = {
+                        hoverMetadata = {
+                            traderID = "trader:interaction:one",
+                        },
+                    },
+                }
+            end
+            if x == 110 and y == 210 then
+                return {
+                    entry = guardEntry,
+                    actorID = guardEntry.actorID,
                     marker = {
                         hoverMetadata = {
                             traderID = "trader:interaction:one",
@@ -75,6 +99,16 @@ DTCommon = {
                     name = actorEntry.label,
                     factionID = actorEntry.factionID,
                 },
+                {
+                    traderID = "trader:interaction:one",
+                    actorID = guardEntry.actorID,
+                    provider = "DTAbstract",
+                    providerState = "abstract",
+                    name = guardEntry.label,
+                    role = "guard",
+                    talkAvailable = true,
+                    tradeAvailable = false,
+                },
             }
         end,
         GetTraderView = function(traderID)
@@ -87,6 +121,20 @@ DTCommon = {
                     name = actorEntry.label,
                     talkAvailable = true,
                     tradeAvailable = true,
+                }
+            end
+            return nil
+        end,
+        GetTraderViewForActor = function(actorID)
+            if actorID == guardEntry.actorID then
+                return {
+                    traderID = "trader:interaction:one",
+                    actorID = guardEntry.actorID,
+                    provider = "DTAbstract",
+                    providerState = "abstract",
+                    name = guardEntry.label,
+                    talkAvailable = true,
+                    tradeAvailable = false,
                 }
             end
             return nil
@@ -133,5 +181,17 @@ T.equal(requests[1].action, "talk",
 optionDefinitions[2].onSelect()
 T.equal(requests[2].action, "trade",
     "map Trade did not use the shared trader manager request path")
+
+optionDefinitions = {}
+definition.augment({ x = 110, y = 210, z = 0 }, options, 110, 210)
+T.truthy(optionDefinitions[1],
+    "guard map interaction did not add a Talk option")
+T.falsy(optionDefinitions[2],
+    "guard map interaction incorrectly added Trade")
+optionDefinitions[1].onSelect()
+T.equal(requests[3].action, "talk",
+    "guard map Talk did not use the shared trader manager request path")
+T.equal(requests[3].args.actorID, guardEntry.actorID,
+    "guard map Talk opened the trader leader instead of the guard")
 
 print("dt_common_trader_interaction_surface_smoke: PASS")

@@ -6,6 +6,7 @@ local Presentations = DTCommon.TradePresentations
     or require "DTCommon/DTCommon_TradePresentationRegistry"
 Client.Snapshots = Client.Snapshots or {}
 Client.PendingOpen = Client.PendingOpen or {}
+Client.AccessContext = Client.AccessContext or {}
 Client.RequestSerial = tonumber(Client.RequestSerial) or 0
 
 local function log(level, message)
@@ -16,8 +17,9 @@ local function player()
     return getSpecificPlayer and getSpecificPlayer(0) or nil
 end
 
-function Client.RequestSnapshot(traderID)
+function Client.RequestSnapshot(traderID, options)
     local current = player()
+    options = type(options) == "table" and options or {}
     traderID = tostring(traderID or "")
     if traderID == "" or not current or type(sendClientCommand) ~= "function" then
         log("WARN", "snapshot_request_rejected trader=" .. traderID)
@@ -26,6 +28,10 @@ function Client.RequestSnapshot(traderID)
     log("INFO", "snapshot_request trader=" .. traderID)
     sendClientCommand(current, DTCommon.MOD_ID, "RequestTrader", {
         traderID = traderID,
+        mode = options.mode,
+        npcID = options.npcID,
+        actorID = options.actorID,
+        provider = options.provider,
     })
     return true
 end
@@ -36,9 +42,18 @@ function Client.OpenTrader(traderID, options)
     if traderID == "" then return false, "trader_id_required" end
     log("INFO", "open_trader trader=" .. traderID
         .. " npc=" .. tostring(options.npcID))
+    local access = {
+        mode = options.mode,
+        npcID = options.npcID and tostring(options.npcID) or nil,
+        actorID = options.actorID and tostring(options.actorID) or nil,
+        provider = options.provider,
+    }
+    Client.AccessContext[traderID] = access
     Client.PendingOpen[traderID] = options.mode == "trade" and {
         mode = "trade",
         npcID = options.npcID and tostring(options.npcID) or nil,
+        actorID = options.actorID and tostring(options.actorID) or nil,
+        provider = options.provider,
     } or { mode = "legacy" }
     local snapshot = Client.Snapshots[traderID]
     if snapshot then
@@ -47,7 +62,7 @@ function Client.OpenTrader(traderID, options)
         local opened = Client.OpenSnapshot(traderID, snapshot)
         if opened == true then return true end
     end
-    return Client.RequestSnapshot(traderID)
+    return Client.RequestSnapshot(traderID, access)
 end
 
 function Client.OpenSnapshot(traderID, snapshot)
@@ -81,6 +96,7 @@ function Client.SubmitTrade(traderID, operation, fullType, quantity)
         return false, "trade_transport_unavailable"
     end
     Client.RequestSerial = Client.RequestSerial + 1
+    local access = Client.AccessContext[tostring(traderID or "")] or {}
     log("INFO", "trade_request trader=" .. tostring(traderID)
         .. " request=" .. tostring(Client.RequestSerial)
         .. " operation=" .. tostring(operation)
@@ -94,6 +110,10 @@ function Client.SubmitTrade(traderID, operation, fullType, quantity)
         quantity = quantity,
         observedStockVersion = snapshot.stockVersion,
         observedQuoteRevision = snapshot.quoteRevision,
+        mode = access.mode,
+        npcID = access.npcID,
+        actorID = access.actorID,
+        provider = access.provider,
     })
     return true
 end
@@ -105,6 +125,7 @@ function Client.SubmitTradeBasket(traderID, buyRows, sellRows)
         return false, "trade_transport_unavailable"
     end
     Client.RequestSerial = Client.RequestSerial + 1
+    local access = Client.AccessContext[tostring(traderID or "")] or {}
     log("INFO", "trade_basket_request trader=" .. tostring(traderID)
         .. " request=" .. tostring(Client.RequestSerial)
         .. " buy=" .. tostring(#(buyRows or {}))
@@ -116,6 +137,10 @@ function Client.SubmitTradeBasket(traderID, buyRows, sellRows)
         sellRows = sellRows or {},
         observedStockVersion = snapshot.stockVersion,
         observedQuoteRevision = snapshot.quoteRevision,
+        mode = access.mode,
+        npcID = access.npcID,
+        actorID = access.actorID,
+        provider = access.provider,
     })
     return true
 end

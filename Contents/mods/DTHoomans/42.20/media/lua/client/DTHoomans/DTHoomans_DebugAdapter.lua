@@ -70,6 +70,7 @@ local function action(action, row, args)
         if type(Client.RequestTraderConversation) == "function" then
             return Client.RequestTraderConversation(row.traderID, {
                 mode = args.mode or "debug",
+                actorID = row.actorID,
                 npcID = row.actorID,
             })
         end

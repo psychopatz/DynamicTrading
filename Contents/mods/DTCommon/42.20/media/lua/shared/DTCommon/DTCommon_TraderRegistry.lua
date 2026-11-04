@@ -163,6 +163,38 @@ function Service.BindFaction(traderID, factionID, traderNPCID, memberNPCIDs)
     return true
 end
 
+-- Bind the same canonical faction roster for a bodyless provider.  The
+-- actor/group identity is shared with the physical provider, but `p` must
+-- remain empty: DTAbstract may expose portraits and conversation participants
+-- without materializing a Project Hoomans body.
+function Service.BindActorGroup(traderID, factionID, leaderActorID, memberActorIDs)
+    local record
+    local members = {}
+    local seen = {}
+    local value
+    if not DTCommon.Storage.IsAuthority() then
+        return false, "server_authority_required"
+    end
+    record = Service.GetRecord(traderID)
+    if not record then return false, "trader_not_found" end
+    record.g = Support.Bounded(factionID, 192)
+    record.l = Support.Bounded(leaderActorID, 128)
+    record.p = nil
+    for index = 1, math.min(#(memberActorIDs or {}), 24) do
+        value = Support.Bounded(memberActorIDs[index], 128)
+        if value ~= "" and not seen[value] then
+            members[#members + 1] = value
+            seen[value] = true
+        end
+    end
+    if record.l ~= "" and not seen[record.l] then
+        table.insert(members, 1, record.l)
+    end
+    record.m = members
+    Stock.SaveAndTransmit()
+    return true
+end
+
 -- Bind a resident trader to the canonical Hoomans community identity without
 -- pretending that the trader commercially visited it. The service owns the
 -- persisted merchant context, but does not provision or mutate a market here.

@@ -42,9 +42,17 @@ local function traderForNPC(npcID)
     service.ForEach(function(traderID, record)
         if foundID or type(record) ~= "table" then return end
         local ca = type(record.ca) == "table" and record.ca or {}
-        if tostring(ca.actorID or "") == npcID
+        local matched = tostring(ca.actorID or "") == npcID
             or tostring(record.p or record.l or "") == npcID
-        then
+        if not matched then
+            for _, memberID in ipairs(record.m or {}) do
+                if tostring(memberID) == npcID then
+                    matched = true
+                    break
+                end
+            end
+        end
+        if matched then
             foundID = tostring(traderID)
             foundRecord = record
         end
@@ -73,6 +81,51 @@ local function displayName(projection, record, fallback)
             or record and record.n
             or "Trader"
     )
+end
+
+local function knowledgeKey(value)
+    value = type(value) == "table" and value or {}
+    return table.concat({
+        tostring(value.state or ""),
+        tostring(value.nameKnown == true),
+        tostring(value.knownName or ""),
+        tostring(value.factionKnown == true),
+        tostring(value.factionID or ""),
+        tostring(value.factionName or ""),
+        tostring(value.revision or 0),
+    }, "|")
+end
+
+local function actorKnowledge(actorID, projection, options, record)
+    local provider = options.provider
+        or projection and projection.provider
+        or record and record.ca and record.ca.provider
+        or "Core"
+    if CoreClient.RequestActorKnowledge then
+        pcall(CoreClient.RequestActorKnowledge, actorID, {
+            provider = provider,
+        })
+    end
+    local knowledge
+    if CoreClient.GetActorKnowledge then
+        local ok, value = pcall(
+            CoreClient.GetActorKnowledge,
+            actorID,
+            { provider = provider }
+        )
+        if ok and type(value) == "table" then knowledge = value end
+    end
+    return knowledge or {
+        actorID = actorID,
+        provider = provider,
+        state = "known",
+        nameKnown = true,
+        knownName = displayName(projection, record),
+        factionKnown = projection and projection.factionID ~= nil,
+        factionID = projection and projection.factionID,
+        factionName = projection and projection.factionName,
+        revision = projection and projection.revision or 0,
+    }
 end
 
 local function destinationResponse(record)
@@ -126,6 +179,54 @@ local function factionContext(projection, record)
         communityID = projection and projection.communityID
             or ca.communityID,
     }
+end
+
+local function appendRosterID(roster, seen, value)
+    value = tostring(value or "")
+    if value == "" or seen[value] then return end
+    seen[value] = true
+    roster[#roster + 1] = value
+end
+
+local function rosterFor(record, activeActorID, supplied)
+    local roster = {}
+    local seen = {}
+    local source = type(supplied) == "table" and supplied
+        or record and record.m
+    for _, memberID in ipairs(type(source) == "table" and source or {}) do
+        appendRosterID(roster, seen, memberID)
+    end
+    local ca = record and record.ca or {}
+    appendRosterID(roster, seen, record and record.l)
+    appendRosterID(roster, seen, ca.actorID)
+    if #roster == 0 then appendRosterID(roster, seen, activeActorID) end
+
+    local index = 1
+    for i, memberID in ipairs(roster) do
+        if tostring(memberID) == tostring(activeActorID) then
+            index = i
+            break
+        end
+    end
+    if not seen[tostring(activeActorID or "")] then
+        table.insert(roster, 1, tostring(activeActorID))
+        index = 1
+    end
+    return roster, index
+end
+
+local function roleFor(projection, options)
+    local role = options and options.role
+        or projection and projection.role
+        or "trader"
+    role = string.lower(tostring(role))
+    return role ~= "" and role or "trader"
+end
+
+local function canTradeRole(role)
+    return role == "trader"
+        or role == "merchant"
+        or role == "merchant_trader"
 end
 
 local function actorService()
@@ -273,6 +374,11 @@ local function contextFor(
 )
     local faction = factionContext(projection, record)
     local ca = record and record.ca or {}
+    local role = roleFor(projection, options)
+    local capabilities = {}
+    if canTradeRole(role) then
+        capabilities["dynamictrading.trade"] = true
+    end
     return {
         actorID = actorID,
         traderID = traderID,
@@ -285,8 +391,8 @@ local function contextFor(
         providerState = options.providerState
             or projection and projection.providerState
             or ca.providerState,
-        traderRole = "trader",
-        capabilities = { ["dynamictrading.trade"] = true },
+        traderRole = role,
+        capabilities = capabilities,
         factionID = faction.factionID,
         factionName = faction.factionName,
         factionArchetypeID = faction.factionArchetypeID,
@@ -403,7 +509,8 @@ function Conversation.OpenForNPC(entry, player)
         {
             mode = "physical",
             npcID = npcID,
-            displayName = ca.n or entry and entry.name,
+            actorID = npcID,
+            displayName = entry and entry.name,
         }
     )
 end
@@ -438,6 +545,8 @@ function Conversation.BuildSpec(traderID, actorID, options)
     if traderID == "" then return nil, "trader_required" end
     if actorID == "" then return nil, "core_actor_required" end
 
+    local record = recordFor(traderID)
+    if not record then return nil, "trader_not_found" end
     local projection = CoreClient.GetActor(actorID)
     if not projection then
         return nil, "core_actor_projection_unavailable"
@@ -446,11 +555,21 @@ function Conversation.BuildSpec(traderID, actorID, options)
     if not portrait then
         return nil, "core_actor_portrait_unavailable"
     end
-    local record = recordFor(traderID)
-    if not record then return nil, "trader_not_found" end
     local ca = record.ca or {}
-    local name = displayName(projection, record, options.displayName)
+    local knowledge = actorKnowledge(actorID, projection, options, record)
+    local canonicalName = displayName(projection, record, options.displayName)
+    local name = knowledge.nameKnown == false
+        and "Unknown survivor"
+        or knowledge.knownName or canonicalName
     local faction = factionContext(projection, record)
+    if knowledge.factionKnown == true then
+        faction.factionID = knowledge.factionID or faction.factionID
+        faction.factionName = knowledge.factionName or faction.factionName
+    end
+    local roster, rosterIndex = rosterFor(
+        record, actorID, options.roster)
+    local role = roleFor(projection, options)
+    local tradeAvailable = canTradeRole(role)
 
     local semanticOptions = {
         provider = options.provider
@@ -461,9 +580,10 @@ function Conversation.BuildSpec(traderID, actorID, options)
             or projection.providerState
             or ca.providerState,
         mode = options.mode or "radio",
+        role = role,
     }
 
-    return {
+    local spec = {
         namespace = "dynamictrading.trader",
         npcID = actorID,
         npcName = name,
@@ -487,7 +607,20 @@ function Conversation.BuildSpec(traderID, actorID, options)
             factionPresentation = faction.factionPresentation,
             communityID = faction.communityID,
             conversationMode = options.mode or "radio",
+            traderRole = role,
+            capabilities = tradeAvailable
+                and { ["dynamictrading.trade"] = true } or {},
+            identityState = knowledge.state,
+            identityNameKnown = knowledge.nameKnown ~= false,
+            knownName = knowledge.knownName,
+            factionKnown = knowledge.factionKnown ~= false,
+            knowledgeRevision = knowledge.revision,
         },
+        roster = roster,
+        rosterIndex = rosterIndex,
+        role = role,
+        knowledge = knowledge,
+        knowledgeKey = knowledgeKey(knowledge),
         actorConversation = {
             id = "dynamictrading.trader",
             createService = function(view)
@@ -542,6 +675,7 @@ function Conversation.BuildSpec(traderID, actorID, options)
                     {
                         id = "trade",
                         text = "Open trading",
+                        visible = tradeAvailable,
                         response = "Let's see what we can trade.",
                         action = function()
                             local client = DTCommon and DTCommon.Client
@@ -551,11 +685,48 @@ function Conversation.BuildSpec(traderID, actorID, options)
                                 return client.OpenTrader(traderID, {
                                     mode = "trade",
                                     actorID = actorID,
+                                    npcID = actorID,
                                     provider = projection.provider
                                         or ca.provider,
                                 })
                             end
                             return false, "trade_unavailable"
+                        end,
+                        next = "root",
+                    },
+                    {
+                        id = "next_person",
+                        text = "Talk to the next person.",
+                        visible = #roster > 1,
+                        response = "Let's see who else is with us.",
+                        action = function(_, _, session)
+                            local nextIndex = rosterIndex + 1
+                            if nextIndex > #roster then nextIndex = 1 end
+                            local nextActorID = roster[nextIndex]
+                            local nextSpec, nextReason =
+                                Conversation.BuildSpec(
+                                    traderID,
+                                    nextActorID,
+                                    {
+                                        mode = options.mode,
+                                        provider = semanticOptions.provider,
+                                        providerState = semanticOptions.providerState,
+                                        roster = roster,
+                                        rosterIndex = nextIndex,
+                                    }
+                                )
+                            if not nextSpec then
+                                return false, nextReason
+                            end
+                            local view = session and session.view
+                            if not view
+                                or type(view.refreshConversationSpec)
+                                    ~= "function"
+                            then
+                                return false, "conversation_view_unavailable"
+                            end
+                            view:refreshConversationSpec(nextSpec)
+                            return true
                         end,
                         next = "root",
                     },
@@ -593,6 +764,28 @@ function Conversation.BuildSpec(traderID, actorID, options)
             },
         },
     }
+    spec.refreshPresentation = function()
+        local refreshOptions = {}
+        for key, value in pairs(options) do refreshOptions[key] = value end
+        refreshOptions.roster = roster
+        refreshOptions.rosterIndex = rosterIndex
+        local refreshed = Conversation.BuildSpec(
+            traderID,
+            actorID,
+            refreshOptions
+        )
+        if refreshed and refreshed.knowledgeKey ~= spec.knowledgeKey then
+            return refreshed
+        end
+        return nil
+    end
+    if #roster <= 1 then
+        -- Keep the single-actor contract compact and preserve the existing
+        -- root choice order.  The same authored choice is materialized only
+        -- when there is another faction member to rotate to.
+        table.remove(spec.nodes.root.choices, 2)
+    end
+    return spec
 end
 
 function Conversation.Open(traderID, actorID, options)

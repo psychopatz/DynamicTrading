@@ -18,16 +18,33 @@ local actorEntry = {
     portrait = { actorID = "actor:parity:one", face = {} },
     journey = { state = "idle" },
 }
+local guardEntry = {
+    actorID = "actor:parity:guard",
+    label = "Northstar Guard",
+    provider = "DTAbstract",
+    providerState = "abstract",
+    position = { x = 104, y = 201, z = 0 },
+    factionID = actorEntry.factionID,
+    factionName = actorEntry.factionName,
+    factionPresentation = actorEntry.factionPresentation,
+    role = "guard",
+    portrait = { actorID = "actor:parity:guard", face = {} },
+    journey = { state = "idle" },
+}
 
 package.preload[
     "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"
 ] = function()
     return {
-        ListActors = function() return { actorEntry } end,
+        ListActors = function() return { actorEntry, guardEntry } end,
         GetActor = function(id)
-            return id == actorEntry.actorID and actorEntry or nil
+            if id == actorEntry.actorID then return actorEntry end
+            if id == guardEntry.actorID then return guardEntry end
+            return nil
         end,
-        GetPortraitSpec = function() return actorEntry.portrait end,
+        GetPortraitSpec = function(actor)
+            return actor and actor.portrait or actorEntry.portrait
+        end,
     }
 end
 
@@ -51,7 +68,9 @@ local record = {
         provider = "DTAbstract",
         providerState = "abstract",
         factionID = actorEntry.factionID,
+        role = "trader",
     },
+    m = { actorEntry.actorID, guardEntry.actorID },
 }
 DTCommon = {
     Storage = { GetData = function() return { r = 1 } end },
@@ -69,11 +88,17 @@ local Presentation = T.load(
 T.truthy(Presentation.ListTraderViews,
     "shared trader view model is missing")
 local rows = Presentation.ListTraderViews(true, 1)
-T.equal(#rows, 1, "shared trader view did not list the actor binding")
+T.equal(#rows, 2, "shared trader view did not list the full actor roster")
 T.equal(rows[1].actorID, actorEntry.actorID,
     "shared trader view lost canonical actor identity")
 T.equal(rows[1].factionPresentation.glyph, "N",
     "shared trader view lost Core faction presentation")
+T.equal(rows[2].actorID, guardEntry.actorID,
+    "shared trader view lost the guard actor")
+T.equal(rows[2].role, "guard",
+    "shared trader view did not preserve the guard role")
+T.falsy(rows[2].tradeAvailable,
+    "guard presentation incorrectly exposed trade")
 T.truthy(decorator, "DTCommon did not register one shared actor decorator")
 
 local style = decorator.decorate(actorEntry, {})
@@ -81,5 +106,11 @@ T.equal(style.icon.glyph, "T",
     "trader decorator did not provide the shared trader icon")
 T.equal(style.badge.glyph, "N",
     "trader decorator did not provide the faction badge")
+
+local guardStyle = decorator.decorate(guardEntry, {})
+T.equal(guardStyle.hoverMetadata.factionRole, "guard",
+    "shared actor decorator lost the guard faction role")
+T.equal(guardStyle.badge.glyph, "N",
+    "guard decorator did not provide the shared faction badge")
 
 print("dt_shared_trader_presentation_parity_smoke: PASS")

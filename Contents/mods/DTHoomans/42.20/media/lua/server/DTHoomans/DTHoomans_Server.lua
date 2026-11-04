@@ -3,8 +3,9 @@ DTHoomans = DTHoomans or {}
 -- DTCommon calls this server-side hook for physical trade access. The
 -- merchant role, live body and distance all come from Project Hoomans; the
 -- client-side Core contact list is never an authorization source.
-function DTHoomans.ValidateTraderAccess(player, record)
-    local npcID = record and (record.p or record.l) or nil
+function DTHoomans.ValidateTraderAccess(player, record, mode, requestedNPCID)
+    local npcID = requestedNPCID
+        or record and (record.p or record.l) or nil
     local registry = PNC and PNC.Registry or nil
     local factions = PNC and PNC.Factions or nil
     local body
@@ -34,8 +35,14 @@ function DTHoomans.ValidateTraderAccess(player, record)
     end
     ok, affiliation = pcall(factions.GetNPCAffiliation, npcID)
     if not ok then affiliation = nil end
+    local accessMode = tostring(mode or "")
+    local conversationMode = accessMode == "physical"
+        or accessMode == "nearby"
+        or accessMode == "radio"
+        or accessMode == "map"
     if type(affiliation) ~= "table"
-        or tostring(affiliation.role or "") ~= "trader"
+        or (not conversationMode
+            and tostring(affiliation.role or "") ~= "trader")
     then
         return false, "merchant_role_invalid"
     end
@@ -271,6 +278,25 @@ local function countMembers(faction, record)
     return count
 end
 
+local function traderActorFor(record, requestedID)
+    local requested = tostring(requestedID or "")
+    local ca = record and record.ca or nil
+    local leader = ca and ca.actorID or record and (record.p or record.l)
+    if requested == "" then return leader end
+    if tostring(leader or "") == requested
+        or tostring(record and record.p or "") == requested
+        or tostring(record and record.l or "") == requested
+    then
+        return requested
+    end
+    local members = record and type(record.m) == "table"
+        and record.m or {}
+    for _, memberID in ipairs(members) do
+        if tostring(memberID) == requested then return requested end
+    end
+    return nil
+end
+
 local function leaderState(npcID)
     local record
     local body
@@ -443,12 +469,15 @@ local function handleConversationAccess(player, args)
     local record = traderID and Service
         and Service.GetRecord and Service.GetRecord(traderID) or nil
     local ca = record and record.ca or nil
-    local actorID = ca and ca.actorID or nil
+    local requestedID = args.actorID or args.npcID
+    local actorID = traderActorFor(record, requestedID)
     local accepted = false
     local reason
 
     if not requestID or not traderID or not record then
         reason = "invalid_conversation_request"
+    elseif requestedID and not actorID then
+        reason = "conversation_actor_invalid"
     elseif mode == "debug" then
         accepted = canUseDebug(player)
         reason = accepted and "debug_conversation_authorized"
@@ -456,7 +485,12 @@ local function handleConversationAccess(player, args)
     elseif mode == "physical" or mode == "radio"
         or mode == "nearby" or mode == "map"
     then
-        accepted, reason = DTHoomans.ValidateTraderAccess(player, record)
+        accepted, reason = DTHoomans.ValidateTraderAccess(
+            player,
+            record,
+            mode,
+            args.actorID or args.npcID
+        )
         if accepted ~= true then accepted = false end
     else
         reason = "conversation_mode_invalid"

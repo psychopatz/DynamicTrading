@@ -203,7 +203,11 @@ local function onClientCommand(module, command, player, args)
         queueDebugSpawn(player, args)
     elseif command == "RequestTrader" then
         log("INFO", "snapshot_request trader=" .. tostring(args.traderID))
-        local snapshot, reason = Service.Snapshot(args.traderID, player)
+        local snapshot, reason = Service.Snapshot(
+            args.traderID,
+            player,
+            args
+        )
         log("INFO", "snapshot_response trader=" .. tostring(args.traderID)
             .. " items=" .. tostring(snapshot and #(snapshot.items or {}) or 0)
             .. " reason=" .. tostring(reason))

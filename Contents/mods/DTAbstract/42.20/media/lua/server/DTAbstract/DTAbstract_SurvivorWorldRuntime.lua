@@ -205,6 +205,7 @@ function Runtime.ListTraderCandidates(spec)
                         groupID = group.id,
                         factionID = group.factionID,
                         communityID = group.homeCommunityID,
+                        memberActorIDs = group.memberActorIDs,
                         position = position,
                         distanceSquared = distanceSquared,
                     }

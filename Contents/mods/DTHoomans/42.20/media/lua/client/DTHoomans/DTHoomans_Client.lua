@@ -5,72 +5,22 @@ local Client = DTHoomans.Client
 Client.TraderByNPC = Client.TraderByNPC or {}
 Client.ReferralRequests = Client.ReferralRequests or {}
 
+local TraderNotification = DTCommon
+    and DTCommon.TraderNotification
+    or require "DTCommon/DTCommon_TraderNotification"
+
 local MAX_REFERRAL_REQUESTS = 64
 local MAX_CONVERSATION_REQUESTS = 64
 Client.PendingTraderConversations =
     Client.PendingTraderConversations or {}
 
-local function showTraderToast(id, traderID, message, fallbackName)
-    local toast = PsychopatzCore
-        and PsychopatzCore.ActorNotifications
-    if not toast then
-        local ok, value = pcall(
-            require,
-            "PsychopatzCore/UI/PsychopatzActorNotificationToast"
-        )
-        if ok then toast = value end
-    end
-    if not toast or type(toast.Show) ~= "function" then return false end
-
-    local view
-    local presentation = DTCommon and DTCommon.TraderPresentation
-    if presentation and type(presentation.GetTraderView) == "function" then
-        view = presentation.GetTraderView(traderID, false)
-    end
-    local factionBadge
-    if view and type(view.factionPresentation) == "table" then
-        local faction = view.factionPresentation
-        factionBadge = faction.badge or faction
-    end
-    local actions = {
-        {
-            id = "talk",
-            label = "Talk",
-            callback = function()
-                local manager = DTCommon and DTCommon.TraderManager
-                if not manager then
-                    local ok, value = pcall(
-                        require,
-                        "DTCommon/DTCommon_TraderManager"
-                    )
-                    if ok then manager = value end
-                end
-                if manager and type(manager.Request) == "function" then
-                    local ok, reason = manager.Request(
-                        "talk",
-                        traderID,
-                        { mode = "nearby", actorID = view and view.actorID }
-                    )
-                    if not ok and manager.SetNotice then
-                        manager.SetNotice(reason)
-                    end
-                    return ok
-                end
-                return false
-            end,
-        },
-    }
-    toast.Show({
+local function showTraderToast(id, traderID, message, fallbackName, actorID)
+    return TraderNotification.Show(traderID, message, {
         id = id,
-        actorID = view and view.actorID or nil,
-        name = view and view.name or fallbackName or traderID
-            or "Dynamic Trading",
-        message = message,
-        portraitSpec = view and view.portraitSpec or nil,
-        factionBadge = factionBadge,
-        actions = actions,
+        actorID = actorID,
+        name = fallbackName or traderID or "Dynamic Trading",
+        mode = "nearby",
     })
-    return true
 end
 
 local function log(level, message)
@@ -399,7 +349,8 @@ local function onServerCommand(module, command, args)
                 .. ":completed",
             args.traderID,
             "Trader caravan arrived and is ready to trade.",
-            "Trader caravan"
+            "Trader caravan",
+            args.npcID
         )
     elseif args.accepted == false then
         log("WARN", "spawn_failed reason=" .. tostring(args.reason))

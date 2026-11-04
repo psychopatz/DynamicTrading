@@ -80,6 +80,8 @@ T.equal(sent[1].command, "ConversationAccessRequest",
     "debug Talk uses server authorization")
 T.equal(sent[1].args.mode, "debug",
     "debug mode preserved")
+T.equal(sent[1].args.actorID, "actor:abstract:bridge",
+    "selected actor was not forwarded to abstract authorization")
 T.equal(opened, nil,
     "Core conversation opened before authorization")
 

@@ -29,9 +29,15 @@ DTCommon = {
                 ca = {
                     actorID = "actor:abstract:loopback",
                 },
+                m = {
+                    "actor:abstract:loopback",
+                    "actor:abstract:guard",
+                },
             }
         end,
-        ValidateTalkAccess = function()
+        ValidateTalkAccess = function(_, _, _, actorID)
+            T.equal(actorID, "actor:abstract:guard",
+                "abstract access validation lost the selected guard")
             return true, "radio_access_granted"
         end,
     },
@@ -61,6 +67,7 @@ handlers[1](
     {
         traderID = "trader:abstract:loopback",
         mode = "nearby",
+        actorID = "actor:abstract:guard",
     }
 )
 
@@ -69,7 +76,7 @@ T.equal(loopback[1], "OnServerCommand", "loopback event")
 T.equal(loopback[2], "DTAbstract", "loopback module")
 T.equal(loopback[3], "ConversationAccessResult", "loopback command")
 T.equal(loopback[4].accepted, true, "conversation access accepted")
-T.equal(loopback[4].actorID, "actor:abstract:loopback",
-    "canonical actor returned")
+T.equal(loopback[4].actorID, "actor:abstract:guard",
+    "selected canonical actor returned")
 
 T.finish("dt_abstract_server_conversation_loopback_smoke")

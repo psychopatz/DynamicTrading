@@ -24,11 +24,11 @@ local function viewAt(x, y)
         and hit.marker.hoverMetadata or {}
     local traderID = metadata.traderID
     local view
-    if traderID and Presentation.GetTraderView then
-        view = Presentation.GetTraderView(traderID, false)
-    end
-    if not view and Presentation.GetTraderViewForActor then
+    if Presentation.GetTraderViewForActor then
         view = Presentation.GetTraderViewForActor(hit.actorID, false)
+    end
+    if not view and traderID and Presentation.GetTraderView then
+        view = Presentation.GetTraderView(traderID, false)
     end
     return view, hit
 end

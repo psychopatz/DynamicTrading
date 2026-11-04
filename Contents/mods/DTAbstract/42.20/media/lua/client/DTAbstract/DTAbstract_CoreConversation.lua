@@ -85,6 +85,8 @@ function Bridge.Request(
         {
             traderID = traderID,
             mode = mode,
+            actorID = options.actorID or options.npcID,
+            npcID = options.npcID or options.actorID,
         }
     )
     if not sent then

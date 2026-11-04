@@ -145,6 +145,31 @@ local function factionFor(entry, ca)
     return nil
 end
 
+local function appendUnique(output, seen, value)
+    value = tostring(value or "")
+    if value == "" or seen[value] then return end
+    seen[value] = true
+    output[#output + 1] = value
+end
+
+local function actorIDsForRecord(row, record, ca)
+    local output = {}
+    local seen = {}
+    local leaderID = row and row.actorID or ca and ca.actorID
+    appendUnique(output, seen, leaderID)
+    if type(record and record.m) == "table" then
+        for _, memberID in ipairs(record.m) do
+            appendUnique(output, seen, memberID)
+        end
+    end
+    return output
+end
+
+local function roleAllowsTrade(role)
+    role = string.lower(tostring(role or "trader"))
+    return role == "trader" or role == "merchant"
+end
+
 local function commercialLabel(traderID, record, ca, journey)
     local label = tostring(record and record.n or traderID)
     local active = journey and (
@@ -180,59 +205,79 @@ function Presentation.ListTraderViews(force, now)
     for _, row in ipairs(Presentation.ListTraderRecords(force, now)) do
         local record = row.record or {}
         local ca = record.ca or {}
-        local boundActorID = row.actorID or ca.actorID
-        local actor = actors[tostring(boundActorID or "")]
         local client = coreClient()
-        if not actor and client and client.GetActor and boundActorID then
-            actor = client.GetActor(boundActorID)
-        end
-        local faction = factionFor(actor, ca)
-        if actor then
-            output[#output + 1] = {
-                traderID = tostring(row.traderID),
-                actorID = tostring(boundActorID),
-                provider = row.provider or ca.provider,
-                providerState = row.providerState or ca.providerState
-                    or actor.providerState,
-                name = tostring(record.n or actor.label or row.traderID),
-                label = commercialLabel(
-                    row.traderID,
-                    record,
-                    ca,
-                    actor.journey
-                ),
-                record = record,
-                commercial = ca,
-                actor = actor,
-                position = actor.position,
-                canonicalPosition = actor.canonicalPosition
-                    or actor.position,
-                journey = actor.journey,
-                route = actor.journey and actor.journey.route or nil,
-                portrait = actor.portrait,
-                portraitSpec = coreClient()
-                    and coreClient().GetPortraitSpec
-                    and coreClient().GetPortraitSpec(actor)
-                    or nil,
-                factionID = actor.factionID or ca.factionID,
-                factionName = actor.factionName or ca.factionName,
-                factionPresentation = faction,
-                communityID = actor.communityID or ca.communityID,
-                role = actor.role or ca.role or "trader",
-                seen = ca.seen == true or record.seen == true,
-                talkAvailable = ca.talkAvailable ~= false,
-                tradeAvailable = ca.tradeAvailable ~= false,
-                debug = {
-                    bodyID = actor.bodyID,
-                    sourceID = actor.sourceID,
+        for _, boundActorID in ipairs(actorIDsForRecord(
+            row, record, ca
+        )) do
+            local actor = actors[tostring(boundActorID or "")]
+            if not actor and client and client.GetActor and boundActorID then
+                actor = client.GetActor(boundActorID)
+            end
+            local faction = factionFor(actor, ca)
+            if actor then
+                local role = actor.role or ca.role or "trader"
+                local isLeader = tostring(boundActorID)
+                    == tostring(row.actorID or ca.actorID or "")
+                local name = isLeader
+                    and (record.n or actor.label or row.traderID)
+                    or (actor.label or boundActorID)
+                output[#output + 1] = {
+                    traderID = tostring(row.traderID),
+                    actorID = tostring(boundActorID),
+                    isLeader = isLeader,
                     provider = row.provider or ca.provider,
-                    providerState = row.providerState
-                        or ca.providerState or actor.providerState,
-                },
-            }
+                    providerState = row.providerState or ca.providerState
+                        or actor.providerState,
+                    name = tostring(name),
+                    label = isLeader
+                        and commercialLabel(
+                            row.traderID,
+                            record,
+                            ca,
+                            actor.journey
+                        )
+                        or tostring(name),
+                    record = record,
+                    commercial = ca,
+                    actor = actor,
+                    position = actor.position,
+                    canonicalPosition = actor.canonicalPosition
+                        or actor.position,
+                    journey = actor.journey,
+                    route = actor.journey and actor.journey.route or nil,
+                    portrait = actor.portrait,
+                    portraitSpec = client
+                        and client.GetPortraitSpec
+                        and client.GetPortraitSpec(actor)
+                        or nil,
+                    factionID = actor.factionID or ca.factionID,
+                    factionName = actor.factionName or ca.factionName,
+                    factionPresentation = faction,
+                    communityID = actor.communityID or ca.communityID,
+                    role = role,
+                    seen = ca.seen == true or record.seen == true,
+                    talkAvailable = ca.talkAvailable ~= false,
+                    tradeAvailable = isLeader
+                        and ca.tradeAvailable ~= false
+                        and roleAllowsTrade(role),
+                    debug = {
+                        bodyID = actor.bodyID,
+                        sourceID = actor.sourceID,
+                        provider = row.provider or ca.provider,
+                        providerState = row.providerState
+                            or ca.providerState or actor.providerState,
+                    },
+                }
+            end
         end
     end
     table.sort(output, function(left, right)
+        if left.traderID == right.traderID then
+            if left.isLeader ~= right.isLeader then
+                return left.isLeader
+            end
+            return left.actorID < right.actorID
+        end
         return left.traderID < right.traderID
     end)
     return output

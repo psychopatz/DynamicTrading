@@ -103,11 +103,11 @@ end
 
 -- Returns handled, allowed, reason. A matching adopter is responsible for
 -- complete physical validation (body, role, faction, distance, etc.).
-function Registry.ValidateTraderAccess(player, record, mode)
+function Registry.ValidateTraderAccess(player, record, mode, actorID)
     local adapter = Registry.FindTraderAdapter(record, "validateAccess")
     if not adapter then return false, false, "unhandled" end
     local ok, allowed, reason = pcall(
-        adapter.validateAccess, player, record, mode)
+        adapter.validateAccess, player, record, mode, actorID)
     if not ok then return true, false, tostring(allowed) end
     return true, allowed == true, reason
 end

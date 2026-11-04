@@ -263,6 +263,26 @@ function Provider.spawnTrader(spec)
         end
         return nil, record or "trader_create_failed"
     end
+    if type(Service.BindActorGroup) == "function" then
+        local bound, bindReason = Service.BindActorGroup(
+            createdID,
+            candidate.factionID,
+            candidate.actorID,
+            candidate.memberActorIDs
+        )
+        if not bound then
+            if type(Service.Remove) == "function" then
+                Service.Remove(createdID)
+            end
+            local rolledBack, rollbackReason = releaseAcquired(committed, now)
+            if not rolledBack then
+                Provider.LastRollbackError = tostring(
+                    rollbackReason or "lease_rollback_failed"
+                )
+            end
+            return nil, bindReason or "trader_group_bind_failed"
+        end
+    end
     Provider.LastRollbackError = nil
 
     return {
@@ -270,6 +290,7 @@ function Provider.spawnTrader(spec)
         actorID = candidate.actorID,
         groupID = candidate.groupID,
         factionID = candidate.factionID,
+        memberActorIDs = candidate.memberActorIDs,
         settlementID = settlementID,
         record = record,
         position = candidate.position,

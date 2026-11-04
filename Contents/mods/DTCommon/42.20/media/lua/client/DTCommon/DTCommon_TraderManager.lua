@@ -65,10 +65,15 @@ function Manager.ListTraders(force, now)
     return output
 end
 
-function Manager.FindTrader(traderID, force)
+function Manager.FindTrader(traderID, force, actorID)
     traderID = tostring(traderID or "")
+    actorID = tostring(actorID or "")
     for _, row in ipairs(Manager.ListTraders(force == true)) do
-        if tostring(row.traderID or "") == traderID then return row end
+        if tostring(row.traderID or "") == traderID
+            and (actorID == "" or tostring(row.actorID or "") == actorID)
+        then
+            return row
+        end
     end
     return nil, "trader_not_found"
 end
@@ -86,7 +91,11 @@ function Manager.Request(action, traderID, args)
     if action ~= "talk" and action ~= "trade" then
         return false, "trader_request_invalid"
     end
-    local row, reason = Manager.FindTrader(traderID, true)
+    local row, reason = Manager.FindTrader(
+        traderID,
+        true,
+        args.actorID or args.npcID
+    )
     if not row then return false, reason end
     if action == "talk" and row.talkAvailable == false then
         return false, "talk_unavailable"
@@ -257,7 +266,10 @@ local function ensureWindowType()
         local ok, reason = Manager.Action(
             id:lower(),
             button and button.traderID,
-            { player = player() }
+            {
+                player = player(),
+                actorID = button and button.actorID,
+            }
         )
         if not ok then Manager.SetNotice(reason) end
         return ok
@@ -290,8 +302,15 @@ local function ensureWindowType()
             end
             for _, button in pairs(row) do
                 button.traderID = item.traderID
+                button.actorID = item.actorID
                 button:setY(y)
                 button:setVisible(true)
+            end
+            if row.talk and type(row.talk.setEnable) == "function" then
+                row.talk:setEnable(item.talkAvailable ~= false)
+            end
+            if row.trade and type(row.trade.setEnable) == "function" then
+                row.trade:setEnable(item.tradeAvailable ~= false)
             end
             self.rows[index] = row
         end

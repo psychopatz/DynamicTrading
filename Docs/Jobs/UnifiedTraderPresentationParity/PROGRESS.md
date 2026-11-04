@@ -244,3 +244,43 @@ ProjectHoomans `39928777`; no push performed. Only user-owned fresh-save native
 acceptance remains: verify trader/guard appearance and equipment, proximity
 persistence, Talk opening/content, save/reload persistence, DTAbstract
 bodyless presentation, and DTHoomans physical materialization.
+
+## Follow-up parity remediation — actor-target transport and final runtime audit — 2026-11-05
+
+- Added fail-first coverage for the DTAbstract conversation bridge preserving
+  the selected actor ID across server authorization. Manager/map Talk on a
+  guard now opens that guard's shared conversation instead of silently
+  falling back to the caravan trader.
+- The shared Trader Manager now disables Trade for non-trader roster members
+  while retaining Talk for guards. DTHoomans' thin debug transport forwards
+  both actor and NPC target IDs to the same shared authorization contract.
+- Confirmed the generation boundary: DTCommon's authored trader/guard presets
+  create the canonical Core actors and inventories; DTHoomans forwards those
+  exact member specs to Project Hoomans' native `MobileGroupDirector`; the
+  abstract provider never imports Project Hoomans or PNC and never materializes
+  a body.
+- Confirmed the portrait boundary: Core's descriptor portrait remains a
+  bodyless UI artifact, but expands compact authored clothing slots through
+  native item metadata, so trader/guard clothing and bags are visible in
+  notifications, map hover, and conversation portraits.
+
+Validation for this remediation: DynamicTrading full suite **81/81**;
+focused actor-target/roster/notification/map regressions **6/6**;
+DTHoomans bridge harness **78/78**; ProjectHoomans focused parity set **7/7**;
+MarketSense/stock/provider/performance scoped set **9/9**, with native stock
+and MarketSense smoke scripts exiting successfully; Core changed tests pass;
+ProjectHoomans full suite **1001/1006** with the same five documented baseline
+failures; Core standalone sweep **150/157** with the same seven documented
+fixture/environment failures. Kahlua verification is clean for all changed
+production Lua (**25/25**) and `luac -p` is clean (**25/25**); `git diff
+--check` passes in all three repositories.
+
+Final source audit: one Core actor-marker renderer; one DTCommon trader
+presentation, manager, notification payload, and conversation-content path;
+no provider-owned duplicate trader marker, manager, notification widget, or
+conversation graph; DTAbstract has no runtime ProjectHoomans/PNC dependency;
+DTAbstract/DTHoomans exclusivity and DTHoomans' ProjectHoomans requirement
+remain intact. Developer-implementable P0–P7 work is complete. Remaining
+acceptance is user-owned fresh-save native verification of clothing/equipment,
+proximity persistence/dismissal, manager Talk/Next/Trade behavior, save/reload
+persistence, DTAbstract bodylessness, and DTHoomans physical materialization.

@@ -69,6 +69,20 @@ local function send(player, command, payload)
     sendModule(player, "DTAbstract", command, payload)
 end
 
+local function conversationActorID(record, requestedID)
+    local ca = record and record.ca or nil
+    local leaderID = ca and tostring(ca.actorID or "") or ""
+    requestedID = tostring(requestedID or "")
+    if requestedID == "" then
+        return leaderID ~= "" and leaderID or nil
+    end
+    if requestedID == leaderID then return requestedID end
+    for _, memberID in ipairs(record and record.m or {}) do
+        if tostring(memberID) == requestedID then return requestedID end
+    end
+    return nil
+end
+
 
 local function resolveTeleport()
     if PsychopatzCore and PsychopatzCore.Teleport then
@@ -141,14 +155,15 @@ local function authorizeConversation(player, args)
     local record = service
         and type(service.GetRecord) == "function"
         and service.GetRecord(traderID) or nil
-    local actorID = record
-        and record.ca
-        and record.ca.actorID or nil
+    local requestedActorID = args.actorID or args.npcID
+    local actorID = conversationActorID(record, requestedActorID)
     local accepted = false
     local reason
 
-    if traderID == "" or not record or not actorID then
+    if traderID == "" or not record or not conversationActorID(record) then
         reason = "trader_not_found"
+    elseif tostring(requestedActorID or "") ~= "" and not actorID then
+        reason = "conversation_actor_invalid"
     elseif mode == "debug" then
         if not canUseDebug(player) then
             reason = "not_authorized"
@@ -165,7 +180,8 @@ local function authorizeConversation(player, args)
                 service.ValidateTalkAccess(
                     player,
                     traderID,
-                    mode
+                    mode,
+                    requestedActorID
                 )
         end
     else
