@@ -453,7 +453,9 @@ local function handleConversationAccess(player, args)
         accepted = canUseDebug(player)
         reason = accepted and "debug_conversation_authorized"
             or "debug_denied"
-    elseif mode == "physical" or mode == "radio" then
+    elseif mode == "physical" or mode == "radio"
+        or mode == "nearby" or mode == "map"
+    then
         accepted, reason = DTHoomans.ValidateTraderAccess(player, record)
         if accepted ~= true then accepted = false end
     else

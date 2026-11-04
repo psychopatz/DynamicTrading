@@ -5,5 +5,6 @@ require "DTCommon/DTCommon_TraderContacts"
 require "DTCommon/DTCommon_RadioOS"
 
 require "DTCommon/DTCommon_TraderPresentation"
+require "DTCommon/DTCommon_TraderMapContext"
 require "DTCommon/DTCommon_TraderConversation"
 require "DTCommon/DTCommon_TraderDebug"

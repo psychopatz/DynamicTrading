@@ -46,6 +46,37 @@ local function notifyTraderNearby(traderID, record, actorID)
     if ActorNotifications
         and type(ActorNotifications.Show) == "function"
     then
+        local actions = {
+            {
+                id = "talk",
+                label = "Talk",
+                callback = function()
+                    local manager = DTCommon and DTCommon.TraderManager
+                    if not manager then
+                        local ok, value = pcall(
+                            require,
+                            "DTCommon/DTCommon_TraderManager"
+                        )
+                        if ok then manager = value end
+                    end
+                    if manager and type(manager.Request) == "function" then
+                        local ok, reason = manager.Request(
+                            "talk",
+                            traderID,
+                            {
+                                mode = "nearby",
+                                actorID = actorID,
+                            }
+                        )
+                        if not ok and manager.SetNotice then
+                            manager.SetNotice(reason)
+                        end
+                        return ok
+                    end
+                    return false
+                end,
+            },
+        }
         ActorNotifications.Show({
             id = "dt_nearby:" .. tostring(traderID),
             actorID = actorID,
@@ -55,6 +86,7 @@ local function notifyTraderNearby(traderID, record, actorID)
                 or CoreClient.GetPortraitSpec
                 and CoreClient.GetPortraitSpec(actor),
             factionBadge = badge,
+            actions = actions,
         })
     else
         print("[DT][NEARBY] " .. message)

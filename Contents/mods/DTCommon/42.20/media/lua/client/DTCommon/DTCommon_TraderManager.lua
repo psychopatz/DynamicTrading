@@ -77,6 +77,35 @@ local function providerFor(row)
     return Manager.Providers[tostring(row and row.provider or "")]
 end
 
+-- Ordinary player-facing actions use the same shared model and provider
+-- transport as the debug manager, but do not inherit its debug authorization
+-- gate. Provider adapters remain responsible only for the transport/action.
+function Manager.Request(action, traderID, args)
+    action = tostring(action or "")
+    args = type(args) == "table" and args or {}
+    if action ~= "talk" and action ~= "trade" then
+        return false, "trader_request_invalid"
+    end
+    local row, reason = Manager.FindTrader(traderID, true)
+    if not row then return false, reason end
+    if action == "talk" and row.talkAvailable == false then
+        return false, "talk_unavailable"
+    end
+    if action == "trade" and row.tradeAvailable == false then
+        return false, "trade_unavailable"
+    end
+    local provider = providerFor(row)
+    if not provider or type(provider.action) ~= "function" then
+        return false, "provider_adapter_unavailable"
+    end
+    local ok, result = provider.action(action, row, args)
+    if ok == true then
+        Manager.notice = tostring(action) .. " requested for "
+            .. tostring(row.name or row.traderID) .. "."
+    end
+    return ok, result
+end
+
 function Manager.Action(action, traderID, args)
     action = tostring(action or "")
     args = type(args) == "table" and args or {}

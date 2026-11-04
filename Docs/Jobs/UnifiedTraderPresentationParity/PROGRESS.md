@@ -1,5 +1,44 @@
 # Progress — Unified Trader Presentation Parity
 
+## Native parity remediation — 2026-11-04
+
+The first remediation chunk is accepted and the next mandatory chunk is the
+provider-materialization/animation audit plus full regression validation.
+
+- Fail-first regressions added for Core Kahlua-safe persistence, concrete actor
+  appearance/inventory, Core map-hover card metadata, and the DTCommon trader
+  map Talk/Trade surface.
+- Core now uses concrete base-game clothing for new actors, migrates the old
+  `Base.Tshirt`/`Base.Trousers`/`Base.Shoes` aliases, upgrades legacy generated
+  appearance payloads, and no longer calls the unavailable Kahlua `next` global.
+- Core ActorMap remains the only actor marker renderer; its hover now uses a
+  Core-owned 128px portrait card with name, faction/role badges, and
+  ABSTRACT/LIVE presence metadata.
+- DTCommon adds one trader map interaction context and one non-debug
+  `TraderManager.Request` path. DTAbstract/DTHoomans nearby/map conversation
+  modes now pass their existing server access checks into the shared
+  DTCommon conversation opener.
+- Core notifications retain bounded non-blocking queue semantics while
+  carrying canonical human clothing and optional Talk actions; nearby and
+  spawn feedback submit the shared action payload.
+
+Focused Core and Dynamic Trading regressions pass. The provider-materialization
+audit then found a real parity defect: the DTHoomans CoreProvider handoff
+created a Project Hoomans body and hydrated inventory, but skipped Hoomans'
+canonical live-body presentation sequence. The fail-first
+`pnc_core_provider_materialization_presentation_smoke.lua` regression failed
+before the repair and passes after it.
+
+The shared handoff now applies live animation setup, human visuals, physical
+inventory, equipment, the live-shell identity token, and managed-body state in
+the same order as native Project Hoomans materialization. DTAbstract remains
+bodyless. The updated Core presentation fixture now asserts the concrete,
+valid starter clothing contract.
+
+Full Core, Project Hoomans, Dynamic Trading, bridge, exclusivity,
+MarketSense/performance, Kahlua, and source-removal gates remain mandatory
+before this remediation can be marked complete.
+
 ## Current semantic Talk parity completion (P5 follow-up)
 
 - Closed the observed DTAbstract Talk no-op: the single-player server authorization response now loops back through `OnServerCommand` and reaches the existing Core bridge.
@@ -43,7 +82,7 @@ Fail-first regressions were added before migration and initially failed for the 
 - **P4 — Trader manager:** added `DTCommon.TraderManager`, one shared Debug-Hub tool, and provider adapters; removed `DTAbstract_DebugTraderWindow` and `DTHoomans_DebugTraderWindow`.
 - **P5 — Conversation parity:** added `DTCommon.TraderConversation`; DTAbstract and DTHoomans now authorize/transport and open the same trader graph/Core session. The old `DTCommon_CoreTraderConversation` module was removed.
 - **P6 — Cleanup/source audit:** verified one Core actor-marker path, one DTCommon trader decorator, one DTCommon manager, one Core notification widget/queue, and one DTCommon trader conversation content/open path. ProjectHoomans’ Core travel decorator yields to DTCommon trader styling and its legacy renderer excludes Core projections.
-- **P7 — Validation/handoff:** focused suites, Dynamic Trading full suite, bridge tests, MarketSense/performance, exclusivity, Core binding scan, Kahlua checks, and diff checks are complete. Native fresh-save acceptance is the only remaining gate.
+- **P7 — Validation/handoff:** focused suites, Dynamic Trading full suite, bridge tests, MarketSense/performance, exclusivity, Core binding scan, provider-materialization presentation regression, Kahlua checks, and diff checks are complete. Native fresh-save acceptance is the only remaining gate.
 
 ## Final source-removal audit
 
@@ -57,12 +96,14 @@ Fail-first regressions were added before migration and initially failed for the 
 
 ## Validation evidence — 2026-11-04
 
-- Dynamic Trading full smoke suite: **73/73**.
-- Dynamic Trading focused parity/bridge/MarketSense/exclusivity/performance set: **10/10**.
-- PsychopatzCore changed-path tests: **6/6**; all-file private-helper binding scan: **406/406 files, pass**.
-- ProjectHoomans Core travel-directory/map tests: **3/3**. Its full suite still stops at the preserved pre-existing `pnc_companion_commands_smoke.lua:291` assertion (`missing=safe`); this is outside the changed map path.
-- PsychopatzCore’s standalone full sweep retains unrelated baseline/environment failures in teleport, widget sizing, profiler-role composition, missing UI fixtures, image fallback, label layout, and profiler-client composition tests; all changed Core paths pass.
-- Installed PZ Kahlua verification: **21/21 changed production Lua files pass**, with zero errors or warnings at ERROR severity.
+- Dynamic Trading full smoke suite: **76/76**; native smoke suite: **4/4**.
+- Dynamic Trading focused parity/bridge/MarketSense/exclusivity/performance set: all required tests pass, including the 4k+ stock/performance and both native MarketSense/stock checks.
+- DTHoomans bridge harness: pass. Provider exclusivity and hotswap/persistence checks: pass.
+- PsychopatzCore changed-path presentation/persistence tests: **8/8**; all-file private-helper binding scan: **406/406 files, pass**.
+- ProjectHoomans provider/materialization focus: **3/3**; full sweep: **999 pass, 5 fail**, with the same five unrelated pre-existing semantic/harness expectation failures documented before this work.
+- PsychopatzCore standalone full sweep: **147 pass, 7 fail**. The seven failures are unchanged environment/UI or unrelated baseline fixtures (missing ScrollPanel/TimedActions fixtures, image fallback, profiler role/composition, widget sizing, and world-inventory teleport); all changed Core paths pass.
+- Installed PZ Kahlua verification: **18/18 changed production Lua files pass**, with zero errors at ERROR severity.
+- Source-removal audit: pass; one Core actor-marker renderer, one DTCommon trader decorator/manager/conversation path, one Core notification widget/queue, and no forbidden DTAbstract runtime dependency.
 - `git diff --check`: passed in DynamicTrading, PsychopatzCore, and ProjectHoomans.
 - Native PZ acceptance was not run from the local Lua harness and remains user-owned.
 

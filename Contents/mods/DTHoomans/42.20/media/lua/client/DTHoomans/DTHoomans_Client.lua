@@ -32,6 +32,34 @@ local function showTraderToast(id, traderID, message, fallbackName)
         local faction = view.factionPresentation
         factionBadge = faction.badge or faction
     end
+    local actions = {
+        {
+            id = "talk",
+            label = "Talk",
+            callback = function()
+                local manager = DTCommon and DTCommon.TraderManager
+                if not manager then
+                    local ok, value = pcall(
+                        require,
+                        "DTCommon/DTCommon_TraderManager"
+                    )
+                    if ok then manager = value end
+                end
+                if manager and type(manager.Request) == "function" then
+                    local ok, reason = manager.Request(
+                        "talk",
+                        traderID,
+                        { mode = "nearby", actorID = view and view.actorID }
+                    )
+                    if not ok and manager.SetNotice then
+                        manager.SetNotice(reason)
+                    end
+                    return ok
+                end
+                return false
+            end,
+        },
+    }
     toast.Show({
         id = id,
         actorID = view and view.actorID or nil,
@@ -40,6 +68,7 @@ local function showTraderToast(id, traderID, message, fallbackName)
         message = message,
         portraitSpec = view and view.portraitSpec or nil,
         factionBadge = factionBadge,
+        actions = actions,
     })
     return true
 end

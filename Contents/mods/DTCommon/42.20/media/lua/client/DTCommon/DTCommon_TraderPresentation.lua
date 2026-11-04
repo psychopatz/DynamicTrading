@@ -218,7 +218,7 @@ function Presentation.ListTraderViews(force, now)
                 factionName = actor.factionName or ca.factionName,
                 factionPresentation = faction,
                 communityID = actor.communityID or ca.communityID,
-                role = actor.role or ca.role,
+                role = actor.role or ca.role or "trader",
                 seen = ca.seen == true or record.seen == true,
                 talkAvailable = ca.talkAvailable ~= false,
                 tradeAvailable = ca.tradeAvailable ~= false,
@@ -242,6 +242,15 @@ function Presentation.GetTraderView(traderID, force, now)
     traderID = tostring(traderID or "")
     for _, row in ipairs(Presentation.ListTraderViews(force, now)) do
         if row.traderID == traderID then return row end
+    end
+    return nil, "trader_not_found"
+end
+
+function Presentation.GetTraderViewForActor(actorID, force, now)
+    actorID = tostring(actorID or "")
+    if actorID == "" then return nil, "actor_required" end
+    for _, row in ipairs(Presentation.ListTraderViews(force, now)) do
+        if row.actorID == actorID then return row end
     end
     return nil, "trader_not_found"
 end
@@ -282,8 +291,18 @@ local function decorateTrader(entry, style)
     style.subtitle = tostring(view.provider or "DynamicTrading")
     style.hoverMetadata = {
         traderID = view.traderID,
+        name = view.name,
+        displayName = view.name,
         factionID = view.factionID,
+        factionName = view.factionName,
+        factionRole = view.role or "trader",
+        role = view.role or "trader",
+        presence = view.providerState or view.provider,
+        provider = view.provider,
+        providerState = view.providerState,
         communityID = view.communityID,
+        factionBadge = style.badge,
+        actorIcon = style.icon,
     }
     return style
 end

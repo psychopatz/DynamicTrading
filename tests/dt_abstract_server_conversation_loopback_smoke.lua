@@ -60,7 +60,7 @@ handlers[1](
     player,
     {
         traderID = "trader:abstract:loopback",
-        mode = "radio",
+        mode = "nearby",
     }
 )
 

@@ -65,7 +65,9 @@ function Bridge.Request(
     if traderID == "" then
         return false, "trader_required"
     end
-    if mode ~= "radio" and mode ~= "debug" then
+    if mode ~= "radio" and mode ~= "debug"
+        and mode ~= "nearby" and mode ~= "map"
+    then
         return false, "conversation_mode_invalid"
     end
 

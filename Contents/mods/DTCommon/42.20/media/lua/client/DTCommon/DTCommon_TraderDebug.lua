@@ -189,6 +189,37 @@ local function onServerCommand(module, command, args)
     then
         local requestID = tostring(args.requestID or "unknown")
         local phase = args.pending == true and "queued" or "result"
+        local actions = {
+            {
+                id = "talk",
+                label = "Talk",
+                callback = function()
+                    local manager = DTCommon and DTCommon.TraderManager
+                    if not manager then
+                        local ok, value = pcall(
+                            require,
+                            "DTCommon/DTCommon_TraderManager"
+                        )
+                        if ok then manager = value end
+                    end
+                    if manager and type(manager.Request) == "function" then
+                        local ok, reason = manager.Request(
+                            "talk",
+                            args.traderID,
+                            {
+                                mode = "nearby",
+                                actorID = args.actorID,
+                            }
+                        )
+                        if not ok and manager.SetNotice then
+                            manager.SetNotice(reason)
+                        end
+                        return ok
+                    end
+                    return false
+                end,
+            },
+        }
         ActorNotifications.Show({
             id = "dtcommon:debug_spawn:" .. requestID .. ":" .. phase,
             actorID = args.actorID,
@@ -196,6 +227,7 @@ local function onServerCommand(module, command, args)
             message = message,
             portraitSpec = portraitSpec,
             factionBadge = factionBadge,
+            actions = actions,
         })
     else
         print("[DT][DEBUG] " .. message)

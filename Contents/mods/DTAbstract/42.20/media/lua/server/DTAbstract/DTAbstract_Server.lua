@@ -155,7 +155,7 @@ local function authorizeConversation(player, args)
         else
             accepted = true
         end
-    elseif mode == "radio" then
+    elseif mode == "radio" or mode == "nearby" or mode == "map" then
         if not service
             or type(service.ValidateTalkAccess) ~= "function"
         then
@@ -165,7 +165,7 @@ local function authorizeConversation(player, args)
                 service.ValidateTalkAccess(
                     player,
                     traderID,
-                    "radio"
+                    mode
                 )
         end
     else
