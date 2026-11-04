@@ -239,7 +239,8 @@ path, one Core notification widget, no DTAbstract runtime dependency on
 ProjectHoomans or PNC, and no provider-owned duplicate trader actor-marker,
 debug-manager, notification, or conversation-content path.
 
-Next mandatory chunk: make the coherent repository commits and leave only
-user-owned fresh-save native acceptance: verify trader/guard appearance and
-equipment, proximity persistence, Talk opening/content, save/reload persistence,
-DTAbstract bodyless presentation, and DTHoomans physical materialization.
+Commit gate complete: DynamicTrading `32ad9024`, PsychopatzCore `47abb14`, and
+ProjectHoomans `39928777`; no push performed. Only user-owned fresh-save native
+acceptance remains: verify trader/guard appearance and equipment, proximity
+persistence, Talk opening/content, save/reload persistence, DTAbstract
+bodyless presentation, and DTHoomans physical materialization.
