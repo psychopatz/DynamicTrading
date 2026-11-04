@@ -1,13 +1,11 @@
--- Dedicated DTAbstract debug service registered in the shared Core Debug Hub.
--- The real window lives in DTAbstract_DebugTraderWindow.lua; all mutations
--- remain server-authoritative.
+-- Thin DTAbstract authorization/transport adapter for the shared trader
+-- manager. The trader model and window live in DTCommon.
 
 DTAbstract = DTAbstract or {}
 DTAbstract.DebugHub = DTAbstract.DebugHub or {}
 
 local DebugHub = DTAbstract.DebugHub
-local Presentation = DTCommon.TraderPresentation
-    or require "DTCommon/DTCommon_TraderPresentation"
+local Manager = require "DTCommon/DTCommon_TraderManager"
 local CoreClient = require
     "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"
 
@@ -22,15 +20,14 @@ end
 local function canUseDebug()
     local current = player()
     if not current then return true end
-    if PsychopatzCore and PsychopatzCore.Debug
-        and type(PsychopatzCore.Debug.CanUse) == "function"
-    then
-        return PsychopatzCore.Debug.CanUse(current) == true
+    local debugSettings = PsychopatzCore and PsychopatzCore.Debug
+    if debugSettings and type(debugSettings.CanUse) == "function" then
+        return debugSettings.CanUse(current) == true
     end
     return false
 end
 
-local function sendCommand(command, args)
+local function sendAbstract(command, args)
     local current = player()
     if not current or type(sendClientCommand) ~= "function" then
         return false, "send_command_unavailable"
@@ -39,85 +36,7 @@ local function sendCommand(command, args)
     return true
 end
 
-function DebugHub.ListTraders()
-    local list = {}
-    if not DTCommon or not DTCommon.TraderService then return list end
-
-    local current = player()
-    local px = current and current.getX and tonumber(current:getX()) or nil
-    local py = current and current.getY and tonumber(current:getY()) or nil
-
-    for _, row in ipairs(Presentation.ListTraderRecords(true)) do
-        local traderID = row.traderID
-        local record = row.record
-        local ca = record and record.ca or nil
-        local provider = row.provider
-        if ca and (ca.actorID) then
-            local actorID = ca.actorID
-            local projection = CoreClient.GetActor(actorID)
-            local pos = projection and projection.position or nil
-            local distance = nil
-            if px and py and pos and pos.x and pos.y then
-                local dx = px - pos.x
-                local dy = py - pos.y
-                distance = math.sqrt(dx * dx + dy * dy)
-            end
-
-            local journey = projection and projection.journey or nil
-            local discovered = false
-            if DTAbstract.NearbyDiscovery
-                and type(DTAbstract.NearbyDiscovery.IsTraderDiscovered)
-                    == "function"
-            then
-                discovered =
-                    DTAbstract.NearbyDiscovery.IsTraderDiscovered(traderID)
-            end
-
-            list[#list + 1] = {
-                traderID = traderID,
-                displayName = record.n or traderID,
-                actorID = actorID,
-                provider = projection and projection.provider
-                    or ca.provider or "PsychopatzCore",
-                providerState = projection and projection.providerState
-                    or ca.providerState or "abstract",
-                budget = record.b or 0,
-                stockVersion = record.v or 0,
-                position = pos and {
-                    x = pos.x, y = pos.y, z = pos.z or 0,
-                } or nil,
-                portrait = projection and projection.portrait or nil,
-                distance = distance,
-                discovered = discovered,
-                homeSettlementID = ca.homeSettlementID,
-                currentSettlementID = ca.currentSettlementID,
-                originSettlementID = ca.originSettlementID,
-                destinationSettlementID = ca.destinationSettlementID,
-                journeyState = journey and journey.state
-                    or ca.journeyState or ca.lifecycleState or "idle",
-                journeyProgress = journey and journey.progress or 0,
-                journeyETA = journey and journey.eta or nil,
-            }
-        end
-    end
-
-    table.sort(list, function(a, b)
-        return tostring(a.traderID) < tostring(b.traderID)
-    end)
-    return list
-end
-
-function DebugHub.RefreshProjection()
-    local actors, actorReason = CoreClient.RequestActors()
-    local discovery, discoveryReason =
-        CoreClient.RequestDiscovery()
-    if actors or discovery then
-        return true
-    end
-    return false, actorReason or discoveryReason
-end
-
-local function requestCommonSpawn(x, y, z)
+local function sendCommonSpawn(x, y, z)
     local current = player()
     if not current or type(sendClientCommand) ~= "function" then
         return false, "send_command_unavailable"
@@ -126,213 +45,197 @@ local function requestCommonSpawn(x, y, z)
         current,
         DTCommon.MOD_ID or "DTCommon",
         "DebugSpawnTrader",
-        {
-            x = tonumber(x),
-            y = tonumber(y),
-            z = tonumber(z) or 0,
-        }
+        { x = tonumber(x), y = tonumber(y), z = tonumber(z) or 0 }
     )
     return true
 end
 
+local function locate(row)
+    if not row or not row.position then
+        return false, "trader_position_unavailable"
+    end
+    pcall(require, "ISUI/Maps/ISWorldMap")
+    if ISWorldMap and type(ISWorldMap.ShowWorldMap) == "function" then
+        ISWorldMap.ShowWorldMap(
+            0, row.position.x, row.position.y, 18.0)
+    elseif ISWorldMap_ToggleMap then
+        ISWorldMap_ToggleMap()
+    end
+    return true, row.position
+end
+
+local function providerAction(action, row, args)
+    args = type(args) == "table" and args or {}
+    if action == "refresh" then
+        local actors = CoreClient.RequestActors()
+        local discovery = CoreClient.RequestDiscovery()
+        return actors == true or discovery == true
+    elseif action == "spawn_near" then
+        local current = player()
+        if not current then return false, "player_unavailable" end
+        local x = current.getX and tonumber(current:getX()) or nil
+        local y = current.getY and tonumber(current:getY()) or nil
+        local z = current.getZ and tonumber(current:getZ()) or 0
+        if not x or not y then return false, "player_position_unavailable" end
+        return sendCommonSpawn(x + 25, y, z)
+    elseif action == "spawn_at" then
+        local current = player()
+        local x = args.x or current and current.getX and current:getX()
+        local y = args.y or current and current.getY and current:getY()
+        local z = args.z or current and current.getZ and current:getZ() or 0
+        return sendCommonSpawn(x, y, z)
+    elseif action == "force_tick" then
+        return sendAbstract("ForceTick", { now = args.now })
+    end
+
+    if not row then return false, "trader_required" end
+    if action == "talk" then
+        local Bridge = DTAbstract.CoreConversation
+            or require "DTAbstract/DTAbstract_CoreConversation"
+        return Bridge.Request(
+            row.traderID,
+            args.mode or "debug",
+            {
+                actorID = row.actorID,
+                displayName = row.name or row.displayName,
+            }
+        )
+    elseif action == "trade" then
+        if DTCommon and DTCommon.Client
+            and type(DTCommon.Client.OpenTrader) == "function"
+        then
+            return DTCommon.Client.OpenTrader(row.traderID, {
+                mode = "trade",
+                actorID = row.actorID,
+            })
+        end
+        return false, "trade_unavailable"
+    elseif action == "locate" then
+        return locate(row)
+    elseif action == "force_arrival" then
+        return sendAbstract("ForceArrival", { traderID = row.traderID })
+    elseif action == "teleport" then
+        return sendAbstract("TeleportToTrader", { traderID = row.traderID })
+    elseif action == "remove" then
+        return sendAbstract("RemoveTrader", { traderID = row.traderID })
+    elseif action == "mark_seen" then
+        if DTAbstract.NearbyDiscovery
+            and type(DTAbstract.NearbyDiscovery.MarkDiscovered)
+                == "function"
+        then
+            return DTAbstract.NearbyDiscovery.MarkDiscovered(row.traderID)
+        end
+        return false, "discovery_unavailable"
+    elseif action == "reset_seen" then
+        if DTAbstract.NearbyDiscovery
+            and type(DTAbstract.NearbyDiscovery.ResetDiscovery)
+                == "function"
+        then
+            return DTAbstract.NearbyDiscovery.ResetDiscovery(row.traderID)
+        end
+        return false, "discovery_unavailable"
+    end
+    return false, "abstract_action_unavailable"
+end
+
+Manager.RegisterProvider("DTAbstract", {
+    authorize = function()
+        return canUseDebug()
+    end,
+    action = providerAction,
+})
+
+function DebugHub.ListTraders(force)
+    return Manager.ListTraders(force == true)
+end
+
+function DebugHub.RefreshProjection()
+    local actors, actorReason = CoreClient.RequestActors()
+    local discovery, discoveryReason = CoreClient.RequestDiscovery()
+    if actors or discovery then return true end
+    return false, actorReason or discoveryReason
+end
+
 function DebugHub.SpawnNear()
-    local current = player()
-    if not current then return false, "player_unavailable" end
-    local x = current.getX and tonumber(current:getX()) or nil
-    local y = current.getY and tonumber(current:getY()) or nil
-    local z = current.getZ and tonumber(current:getZ()) or 0
-    if not x or not y then return false, "player_position_unavailable" end
-    return requestCommonSpawn(x + 25, y, z)
+    return Manager.Action("spawn_near", nil)
 end
 
 function DebugHub.SpawnAt(x, y, z)
-    return requestCommonSpawn(x, y, z)
+    return Manager.Action("spawn_at", nil, { x = x, y = y, z = z })
 end
 
 function DebugHub.ForceTick(now)
-    return sendCommand("ForceTick", { now = now })
+    return Manager.Action("force_tick", nil, { now = now })
 end
 
 function DebugHub.ForceArrival(traderID)
-    return sendCommand("ForceArrival", { traderID = traderID })
+    return Manager.Action("force_arrival", traderID)
 end
 
 function DebugHub.TeleportToTrader(traderID)
-    return sendCommand("TeleportToTrader", { traderID = traderID })
+    return Manager.Action("teleport", traderID)
 end
 
 function DebugHub.RemoveTrader(traderID)
-    return sendCommand("RemoveTrader", { traderID = traderID })
+    return Manager.Action("remove", traderID)
 end
 
 function DebugHub.OpenDebugTalk(traderID)
-    traderID = tostring(traderID or "")
-    if traderID == "" then return false, "trader_required" end
-    if not canUseDebug() then return false, "not_authorized" end
-
-    local selected
-    for _, item in ipairs(DebugHub.ListTraders()) do
-        if item.traderID == traderID then
-            selected = item
-            break
-        end
-    end
-    if not selected then return false, "trader_not_found" end
-
-    local Bridge = DTAbstract.CoreConversation
-        or require "DTAbstract/DTAbstract_CoreConversation"
-    return Bridge.Request(
-        traderID,
-        "debug",
-        {
-            actorID = selected.actorID,
-            displayName = selected.displayName,
-        }
-    )
+    return Manager.Action("talk", traderID, { mode = "debug" })
 end
 
 function DebugHub.LocateOnMap(traderID)
-    local traders = DebugHub.ListTraders()
-    for index = 1, #traders do
-        local item = traders[index]
-        if item.traderID == traderID and item.position then
-            pcall(require, "ISUI/Maps/ISWorldMap")
-            if ISWorldMap and type(ISWorldMap.ShowWorldMap) == "function" then
-                ISWorldMap.ShowWorldMap(
-                    0, item.position.x, item.position.y, 18.0)
-            elseif ISWorldMap_ToggleMap then
-                ISWorldMap_ToggleMap()
-            end
-            return true, item.position
-        end
-    end
-    return false, "trader_not_found"
+    return Manager.Action("locate", traderID)
 end
 
 function DebugHub.ResetDiscovery(traderID)
-    if DTAbstract.NearbyDiscovery
-        and type(DTAbstract.NearbyDiscovery.ResetDiscovery) == "function"
-    then
-        DTAbstract.NearbyDiscovery.ResetDiscovery(traderID)
-        return true
-    end
-    return false
+    return Manager.Action("reset_seen", traderID)
 end
 
 function DebugHub.MarkDiscovery(traderID)
-    if DTAbstract.NearbyDiscovery
-        and type(DTAbstract.NearbyDiscovery.MarkDiscovered) == "function"
-    then
-        return DTAbstract.NearbyDiscovery.MarkDiscovered(traderID)
-    end
-    return false
+    return Manager.Action("mark_seen", traderID)
 end
 
-function DebugHub.DiscoverAll(scope)
-    return CoreClient.DiscoveryAction(
-        "debug_discover_all",
-        {
-            scope = tostring(scope or "all"),
-        }
-    )
-end
-
-function DebugHub.ResetAllDiscovery()
-    return CoreClient.DiscoveryAction(
-        "debug_reset",
-        {}
-    )
-end
-
-local function resultText(args)
-    local action = tostring(args.action or "action")
-    local reason = tostring(args.reason or "")
-    local state = args.accepted == true and "OK" or "FAILED"
-    local trader = args.traderID
-        and (" trader=" .. tostring(args.traderID)) or ""
-    return state .. " " .. action .. trader
-        .. (reason ~= "" and (" (" .. reason .. ")") or "")
-end
-
-local function publishDebugFeedback(args)
-    local message = resultText(args)
-    local manager = DTAbstract.DebugTraderWindow
-    if manager and type(manager.SetResult) == "function" then
-        manager.SetResult(message, args)
-    end
-    if PsychopatzCore and PsychopatzCore.Notifications
-        and type(PsychopatzCore.Notifications.Show) == "function"
-    then
-        PsychopatzCore.Notifications.Show({
-            id = "dtabstract_debug:"
-                .. tostring(args.action or "action")
-                .. ":" .. tostring(args.traderID or "global"),
-            title = "DTAbstract Debug",
-            message = message,
-            text = message,
-        })
-    end
-end
-
-function DebugHub.OnConversationResult(result)
-    result = type(result) == "table" and result or {}
-    local feedback = {
-        accepted = result.accepted == true,
-        action = "debug_talk",
-        reason = result.reason,
-        traderID = result.traderID,
-        actorID = result.actorID,
-    }
-    DebugHub.LastResult = feedback
-    publishDebugFeedback(feedback)
-    return feedback.accepted
+function DebugHub.Open()
+    return Manager.Open()
 end
 
 local function onServerCommand(module, command, args)
     args = type(args) == "table" and args or {}
-
-    if module == (DTCommon.MOD_ID or "DTCommon")
+    if module == "DTAbstract"
+        and (command == "TraderDebugActionResult"
+            or command == "TraderSpawned")
+    then
+        DebugHub.LastResult = args
+        if command == "TraderSpawned" then
+            DebugHub.LastSpawn = args
+        end
+        Manager.SetResult(
+            tostring(args.accepted == false and "FAILED" or "OK")
+                .. " " .. tostring(args.action or command)
+                .. (args.reason and (" (" .. tostring(args.reason) .. ")")
+                    or ""),
+            args
+        )
+    elseif module == (DTCommon.MOD_ID or "DTCommon")
         and command == "TraderDebugSpawnResult"
     then
+        DebugHub.LastSpawn = args
         local feedback = {
             accepted = args.accepted == true,
-            pending = args.pending == true,
             action = args.pending == true and "spawn_queued" or "spawn",
             reason = args.reason,
             traderID = args.traderID,
             actorID = args.actorID,
-            requestID = args.requestID,
         }
-        DebugHub.LastSpawn = args
         DebugHub.LastResult = feedback
-        -- DTCommon owns projection publication after the queued spawn commits.
-        -- Do not issue a nested projection request from this server callback.
-        publishDebugFeedback(feedback)
-        return
-    end
-
-    if module ~= "DTAbstract" then return end
-
-    if command == "TraderSpawned" then
-        DebugHub.LastSpawn = args
-        if args.accepted ~= false then
-            DebugHub.RefreshProjection()
-        end
-        if DTAbstract.DebugTraderWindow
-            and DTAbstract.DebugTraderWindow.SetResult
-        then
-            DTAbstract.DebugTraderWindow.SetResult(
-                "Spawned " .. tostring(args.traderID or "trader"), args)
-        end
-        return
-    end
-
-    if command == "TraderDebugActionResult" then
-        DebugHub.LastResult = args
-        if args.accepted == true then
-            DebugHub.RefreshProjection()
-        end
-        publishDebugFeedback(args)
+        Manager.SetResult(
+            tostring(feedback.accepted and "OK" or "FAILED")
+                .. " " .. feedback.action
+                .. (feedback.reason
+                    and (" (" .. tostring(feedback.reason) .. ")") or ""),
+            feedback
+        )
     end
 end
 
@@ -342,27 +245,6 @@ if Events and Events.OnServerCommand
 then
     DebugHub._serverCommandHook = true
     Events.OnServerCommand.Add(onServerCommand)
-end
-
-local Manager = require "DTAbstract/UI/DTAbstract_DebugTraderWindow"
-
-function DebugHub.Open()
-    return Manager.Open()
-end
-
--- Register in shared PsychopatzCore Debug Hub if present.
-local CoreDebugHub = PsychopatzCore and PsychopatzCore.DebugHub
-if CoreDebugHub and type(CoreDebugHub.RegisterTool) == "function" then
-    CoreDebugHub.RegisterTool({
-        id = "dtabstract:traders",
-        source = "Dynamic Trading",
-        order = 220,
-        category = "dynamictrading",
-        title = "Abstract Trader Manager",
-        description = "Manage standalone abstract traders and journeys.",
-        available = canUseDebug,
-        action = DebugHub.Open,
-    })
 end
 
 return DebugHub

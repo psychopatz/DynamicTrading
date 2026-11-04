@@ -278,23 +278,29 @@ local settlements = WorldMap.GetSettlementMarkers(false)
 T.equal(#settlements, 1,
     "undiscovered raw settlement leaked in normal map mode")
 
-local traders = WorldMap.GetTraderMarkers(10, false)
-T.equal(#traders, 1, "canonical trader marker missing")
+local ActorMap = require
+    "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldActorMap"
+local traders = ActorMap.BuildMarkers()
+T.equal(#traders, 1, "canonical trader actor marker missing")
 local trader = traders[1]
 T.equal(trader.actorID, actorEntry.actorID,
     "trader marker actor identity changed")
 T.equal(trader.position.x, 10633,
     "trader marker ignored Core overlap-spread position")
-T.equal(trader.canonicalPosition.x, 10630,
+T.equal(trader.entry.canonicalPosition.x, 10630,
     "canonical unspread actor position missing")
-T.equal(trader.route.points[2].x, 11900,
+T.equal(trader.entry.journey.route.points[2].x, 11900,
     "Core group route missing from trader marker")
-T.equal(trader.journeyProgress, 0.5,
+T.equal(trader.entry.journey.progress, 0.5,
     "Core group journey progress missing")
 T.contains(trader.label, "Destination Camp",
-    "commercial destination label was not retained")
-T.equal(trader.positionSource, "group",
+    "shared commercial destination label was not retained")
+T.equal(trader.entry.positionSource, "group",
     "Core position source missing")
+T.equal(trader.icon.glyph, "T",
+    "shared trader icon was not applied to Core marker")
+T.equal(trader.badge.factionID, actorEntry.factionID,
+    "shared faction badge was not applied to Core marker")
 
 UIFont = { Small = {} }
 local lines = {}

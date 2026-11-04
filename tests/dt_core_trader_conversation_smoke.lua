@@ -84,7 +84,7 @@ DTCommon = {
 local Conversation = T.load(
     "DTCommon",
     "client",
-    "DTCommon/DTCommon_CoreTraderConversation.lua"
+    "DTCommon/DTCommon_TraderConversation.lua"
 )
 
 local spec, reason = Conversation.BuildSpec(
@@ -97,8 +97,8 @@ T.equal(spec.npcID, projection.actorID,
     "Core conversation keeps canonical actor identity")
 T.equal(spec.portrait.equipment.worn.Torso_Upper, "Base.Tshirt",
     "Core conversation keeps canonical clothing portrait")
-T.truthy(spec.context.abstractOnly,
-    "abstract Core conversation remains bodyless")
+T.falsy(spec.context.abstractOnly,
+    "shared Core conversation retained abstract-only policy")
 T.equal(#spec.nodes.root.choices, 5,
     "Core trader conversation exposes expected root choices")
 T.equal(spec.nodes.root.choices[2].response(),

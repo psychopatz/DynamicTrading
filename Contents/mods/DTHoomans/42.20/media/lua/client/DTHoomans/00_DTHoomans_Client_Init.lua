@@ -1,46 +1,9 @@
 if DTHoomans and DTHoomans.Enabled == false then return end
 
 require "DTHoomans/DTHoomans_Context"
-require "DTHoomans/DTHoomans_DebugTraderWindow"
+require "DTCommon/DTCommon_TraderPresentation"
+require "DTCommon/DTCommon_TraderConversation"
 require "DTHoomans/DTHoomans_Client"
 require "DTHoomans/DTHoomans_TradePresentation"
 require "DTHoomans/DTHoomans_RadioOS"
-
--- Register the trader manager in the shared PsychopatzCore Debug Hub. The
--- context menu remains only a shortcut to that hub.
-if PsychopatzCore and PsychopatzCore.Require then
-    PsychopatzCore.Require("core.debug_hub", "DTHoomans")
-else
-    require "PsychopatzCore/UI/PsychopatzDebugHubWindow"
-end
-
-local DebugHub = PsychopatzCore and PsychopatzCore.DebugHub
-local function canUseTraderDebug()
-    local coreDebug = PsychopatzCore and PsychopatzCore.Debug
-    if coreDebug and type(coreDebug.CanUse) == "function" then
-        return coreDebug.CanUse(getPlayer and getPlayer() or nil) == true
-    end
-    return PNC and PNC.Client
-        and type(PNC.Client.CanUseDebug) == "function"
-        and PNC.Client.CanUseDebug() == true
-end
-
-if DebugHub and type(DebugHub.RegisterTool) == "function" then
-    DebugHub.RegisterTool({
-        id = "dthoomans.traderManager",
-        source = "Dynamic Trading",
-        order = 230,
-        title = DTCommon.T(
-            "DTHoomans_Debug_TraderManager_Title", "Trader Manager"),
-        description = DTCommon.T(
-            "DTHoomans_Debug_TraderManager_Description",
-            "List, locate, teleport, and open spawned trader caravans."),
-        available = canUseTraderDebug,
-        action = function()
-            if DTHoomans.DebugTraderWindow then
-                return DTHoomans.DebugTraderWindow.Open()
-            end
-            return nil
-        end,
-    })
-end
+require "DTHoomans/DTHoomans_DebugAdapter"

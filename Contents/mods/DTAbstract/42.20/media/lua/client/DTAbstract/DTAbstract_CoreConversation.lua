@@ -11,8 +11,8 @@ DTAbstract.CoreConversation =
 
 local Bridge = DTAbstract.CoreConversation
 local CoreConversation = DTCommon
-    and DTCommon.CoreTraderConversation
-    or require "DTCommon/DTCommon_CoreTraderConversation"
+    and DTCommon.TraderConversation
+    or require "DTCommon/DTCommon_TraderConversation"
 
 Bridge.Pending = Bridge.Pending or {}
 

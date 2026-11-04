@@ -39,7 +39,7 @@ DTCommon = {
             }
         end,
     },
-    CoreTraderConversation = {
+    TraderConversation = {
         Open = function(traderID, actorID, options)
             opened = {
                 traderID = traderID,

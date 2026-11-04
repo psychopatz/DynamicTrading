@@ -6,9 +6,171 @@ Client.TraderByNPC = Client.TraderByNPC or {}
 Client.ReferralRequests = Client.ReferralRequests or {}
 
 local MAX_REFERRAL_REQUESTS = 64
+local MAX_CONVERSATION_REQUESTS = 64
+Client.PendingTraderConversations =
+    Client.PendingTraderConversations or {}
+
+local function showTraderToast(id, traderID, message, fallbackName)
+    local toast = PsychopatzCore
+        and PsychopatzCore.ActorNotifications
+    if not toast then
+        local ok, value = pcall(
+            require,
+            "PsychopatzCore/UI/PsychopatzActorNotificationToast"
+        )
+        if ok then toast = value end
+    end
+    if not toast or type(toast.Show) ~= "function" then return false end
+
+    local view
+    local presentation = DTCommon and DTCommon.TraderPresentation
+    if presentation and type(presentation.GetTraderView) == "function" then
+        view = presentation.GetTraderView(traderID, false)
+    end
+    local factionBadge
+    if view and type(view.factionPresentation) == "table" then
+        local faction = view.factionPresentation
+        factionBadge = faction.badge or faction
+    end
+    toast.Show({
+        id = id,
+        actorID = view and view.actorID or nil,
+        name = view and view.name or fallbackName or traderID
+            or "Dynamic Trading",
+        message = message,
+        portraitSpec = view and view.portraitSpec or nil,
+        factionBadge = factionBadge,
+    })
+    return true
+end
 
 local function log(level, message)
     print("[DT][" .. tostring(level) .. "] " .. tostring(message))
+end
+
+local function traderConversationView(traderID)
+    local presentation = DTCommon and DTCommon.TraderPresentation
+    if presentation and type(presentation.GetTraderView) == "function" then
+        return presentation.GetTraderView(traderID, false)
+    end
+    return nil
+end
+
+local function traderActorID(traderID, hintedActorID)
+    if hintedActorID and tostring(hintedActorID) ~= "" then
+        return tostring(hintedActorID)
+    end
+    local view = traderConversationView(traderID)
+    if view and view.actorID then return tostring(view.actorID) end
+    local service = DTCommon and DTCommon.TraderService
+    local record = service and service.GetRecord
+        and service.GetRecord(tostring(traderID or "")) or nil
+    local ca = record and record.ca or nil
+    return ca and ca.actorID and tostring(ca.actorID) or nil
+end
+
+function Client.RequestTraderConversation(traderID, options)
+    traderID = tostring(traderID or "")
+    options = type(options) == "table" and options or {}
+    if traderID == "" then return false, "trader_required" end
+    local current = getSpecificPlayer and getSpecificPlayer(0) or nil
+    if not current or type(sendClientCommand) ~= "function" then
+        return false, "send_command_unavailable"
+    end
+    local actorID = traderActorID(traderID, options.actorID)
+    local stamp = getTimeInMillis and getTimeInMillis() or 0
+    local requestID = "dthoomans:conversation:"
+        .. traderID .. ":" .. tostring(stamp)
+    local count = 0
+    for _ in pairs(Client.PendingTraderConversations) do count = count + 1 end
+    if count >= MAX_CONVERSATION_REQUESTS then
+        Client.PendingTraderConversations = {}
+    end
+    Client.PendingTraderConversations[requestID] = {
+        requestID = requestID,
+        traderID = traderID,
+        actorID = actorID,
+        displayName = options.displayName,
+        mode = options.mode or "physical",
+        npcID = options.npcID,
+    }
+    sendClientCommand(current, DTHoomans.MOD_ID,
+        "ConversationAccessRequest", {
+            requestID = requestID,
+            traderID = traderID,
+            actorID = actorID,
+            npcID = options.npcID,
+            mode = options.mode or "physical",
+        })
+    return true, "access_requested"
+end
+
+function Client.HandleTraderConversationResult(args)
+    args = type(args) == "table" and args or {}
+    local requestID = tostring(args.requestID or "")
+    local pending = Client.PendingTraderConversations[requestID]
+    if not pending then
+        local traderID = tostring(args.traderID or "")
+        for key, value in pairs(Client.PendingTraderConversations) do
+            if value.traderID == traderID then
+                requestID = key
+                pending = value
+                break
+            end
+        end
+    end
+    if requestID ~= "" then
+        Client.PendingTraderConversations[requestID] = nil
+    end
+    if args.accepted ~= true then
+        Client.LastConversationResult = {
+            accepted = false,
+            reason = args.reason or "conversation_access_denied",
+            traderID = args.traderID or pending and pending.traderID,
+        }
+        return false, Client.LastConversationResult.reason
+    end
+
+    local traderID = tostring(
+        args.traderID or pending and pending.traderID or "")
+    local actorID = traderActorID(
+        traderID,
+        args.actorID or pending and pending.actorID
+    )
+    if traderID == "" or not actorID then
+        return false, "core_actor_required"
+    end
+    local Conversation = DTCommon and DTCommon.TraderConversation
+    if not Conversation then
+        local ok, value = pcall(
+            require,
+            "DTCommon/DTCommon_TraderConversation"
+        )
+        if ok then Conversation = value end
+    end
+    if not Conversation or type(Conversation.Open) ~= "function" then
+        return false, "shared_conversation_unavailable"
+    end
+    local view = traderConversationView(traderID)
+    local opened, reason = Conversation.Open(
+        traderID,
+        actorID,
+        {
+            mode = args.mode or pending and pending.mode or "physical",
+            provider = "DTHoomans",
+            providerState = "materialized",
+            displayName = pending and pending.displayName
+                or view and view.name,
+        }
+    )
+    Client.LastConversationResult = {
+        accepted = opened ~= nil,
+        reason = opened and "conversation_opened" or reason,
+        traderID = traderID,
+        actorID = actorID,
+        view = opened,
+    }
+    return opened ~= nil, Client.LastConversationResult.reason
 end
 
 local function mapDebugRows(rows)
@@ -104,6 +266,15 @@ local function onServerCommand(module, command, args)
         return
     end
     args = type(args) == "table" and args or {}
+    if command == "ConversationAccessResult" then
+        local opened, reason = Client.HandleTraderConversationResult(args)
+        if opened ~= true then
+            log("WARN", "conversation_open_failed trader="
+                .. tostring(args.traderID)
+                .. " reason=" .. tostring(reason))
+        end
+        return
+    end
     if command == "TraderDebugList" then
         Client.RefreshTraderMap()
         mapDebugRows(args.traders)
@@ -112,9 +283,12 @@ local function onServerCommand(module, command, args)
             .. " pending="
             .. tostring(type(args.pending) == "table" and #args.pending or 0)
             .. " notice=" .. tostring(args.notice))
-        if DTHoomans.DebugTraderWindow then
-            DTHoomans.DebugTraderWindow.SetData(
-                args.traders, args.pending, args.notice)
+        Client.LastDebugList = args
+        if DTCommon and DTCommon.TraderManager
+            and type(DTCommon.TraderManager.SetResult) == "function"
+        then
+            DTCommon.TraderManager.SetResult(
+                tostring(args.notice or "Trader state refreshed"), args)
         end
         return
     end
@@ -123,6 +297,14 @@ local function onServerCommand(module, command, args)
             .. " accepted=" .. tostring(args.accepted)
             .. " reason=" .. tostring(args.reason)
             .. " trader=" .. tostring(args.traderID))
+        if DTCommon and DTCommon.TraderManager
+            and type(DTCommon.TraderManager.SetResult) == "function"
+        then
+            DTCommon.TraderManager.SetResult(
+                tostring(args.action or "Trader action") .. ": "
+                    .. tostring(args.reason or "completed"),
+                args)
+        end
         return
     end
     if command == "TraderReferral" then
@@ -150,6 +332,13 @@ local function onServerCommand(module, command, args)
     if command == "TraderSpawnStarted" then
         log("INFO", "spawn_started request=" .. tostring(args.requestID)
             .. " faction=" .. tostring(args.factionID))
+        showTraderToast(
+            "dthoomans:spawn:" .. tostring(args.requestID or "unknown")
+                .. ":started",
+            args.traderID,
+            "Trader caravan spawn queued.",
+            "Trader caravan"
+        )
         return
     end
     if command ~= "TraderSpawned" then return end
@@ -162,8 +351,22 @@ local function onServerCommand(module, command, args)
             .. " merchant=" .. tostring(args.npcID)
             .. " faction=" .. tostring(args.factionID)
             .. " members=" .. tostring(#(args.memberNPCIDs or {})))
+        showTraderToast(
+            "dthoomans:spawn:" .. tostring(args.traderID or "unknown")
+                .. ":completed",
+            args.traderID,
+            "Trader caravan arrived and is ready to trade.",
+            "Trader caravan"
+        )
     elseif args.accepted == false then
         log("WARN", "spawn_failed reason=" .. tostring(args.reason))
+        showTraderToast(
+            "dthoomans:spawn:failed:" .. tostring(args.reason or "unknown"),
+            args.traderID,
+            "Trader caravan spawn failed: "
+                .. tostring(args.reason or "unknown"),
+            "Trader caravan"
+        )
     end
 end
 
@@ -237,18 +440,19 @@ local function onConversationOutcome(module, command, args)
         log("WARN", "conversation_referral_invalid_merchant npc=" .. npcID)
         return
     end
-    if not DTCommon or not DTCommon.Client
-        or type(DTCommon.Client.OpenTrader) ~= "function"
+    if type(Client.RequestTraderConversation) ~= "function"
     then
-        log("WARN", "conversation_trade_unavailable trader=" .. traderID)
+        log("WARN", "conversation_trade_shared_path_unavailable trader="
+            .. traderID)
         return
     end
-    opened, reason = DTCommon.Client.OpenTrader(traderID, {
-        mode = "trade",
+    opened, reason = Client.RequestTraderConversation(traderID, {
+        mode = "physical",
         npcID = merchantNPCID,
+        displayName = args.npcName,
     })
     if opened ~= true and reason then
-        log("WARN", "conversation_trade_open_failed trader=" .. traderID
+        log("WARN", "conversation_trade_access_failed trader=" .. traderID
             .. " reason=" .. tostring(reason))
     end
 end

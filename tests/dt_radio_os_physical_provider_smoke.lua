@@ -104,15 +104,7 @@ PNC = {
             }
         end,
     },
-    Conversation = {
-        Open = function(entry, currentPlayer)
-            talked = {
-                entry = entry,
-                player = currentPlayer,
-            }
-            return { entry = entry }
-        end,
-    },
+    Conversation = {},
     Registry = {
         GetLiveZombie = function(id) return bodies[id] end,
         Get = function(id)
@@ -146,6 +138,12 @@ DTHoomans = {
             return record.n .. " Canonical"
         end,
     },
+    Client = {
+        RequestTraderConversation = function(traderID, options)
+            talked = { traderID = traderID, options = options }
+            return true, "access_requested"
+        end,
+    },
 }
 getSpecificPlayer = function() return player end
 
@@ -169,15 +167,15 @@ T.equal(opened.options.npcID, "merchant_near",
     "action carries the verified nearby merchant")
 local talkAccepted = registered.invoke(registered, "settlement_near",
     "dynamictrading:physical_talk")
-T.truthy(talkAccepted, "physical Talk opens Hoomans conversation")
-T.truthy(talked and talked.entry,
-    "physical Talk did not reach PNC.Conversation.Open")
-T.equal(talked.entry.id, "merchant_near",
-    "Talk keeps canonical Hoomans NPC identity")
-T.equal(talked.entry.zombie, bodies.merchant_near,
+T.truthy(talkAccepted, "physical Talk requests shared conversation")
+T.truthy(talked and talked.traderID,
+    "physical Talk did not reach shared conversation adapter")
+T.equal(talked.traderID, "settlement_near",
+    "Talk keeps canonical trader identity")
+T.equal(talked.options.mode, "physical",
+    "Talk carries physical provider mode")
+T.equal(talked.options.npcID, "merchant_near",
     "Talk carries the verified nearby Hoomans body")
-T.equal(talked.player, player,
-    "Talk carries the local player")
 T.falsy(legacyTalkCalled,
     "physical RadioOS Talk must not invoke legacy DT TalkService")
 T.falsy(registered.invoke(registered, "settlement_near", "bad_action"),

@@ -435,6 +435,43 @@ local function handleTraderReferral(player, args)
     return true
 end
 
+local function handleConversationAccess(player, args)
+    args = type(args) == "table" and args or {}
+    local requestID = safeID(args.requestID, 160)
+    local traderID = safeID(args.traderID)
+    local mode = tostring(args.mode or "physical")
+    local record = traderID and Service
+        and Service.GetRecord and Service.GetRecord(traderID) or nil
+    local ca = record and record.ca or nil
+    local actorID = ca and ca.actorID or nil
+    local accepted = false
+    local reason
+
+    if not requestID or not traderID or not record then
+        reason = "invalid_conversation_request"
+    elseif mode == "debug" then
+        accepted = canUseDebug(player)
+        reason = accepted and "debug_conversation_authorized"
+            or "debug_denied"
+    elseif mode == "physical" or mode == "radio" then
+        accepted, reason = DTHoomans.ValidateTraderAccess(player, record)
+        if accepted ~= true then accepted = false end
+    else
+        reason = "conversation_mode_invalid"
+    end
+
+    send(player, "ConversationAccessResult", {
+        accepted = accepted == true,
+        requestID = requestID,
+        traderID = traderID,
+        actorID = actorID,
+        npcID = record and (record.p or record.l) or nil,
+        mode = mode,
+        reason = accepted and "conversation_authorized" or reason,
+    })
+    return true
+end
+
 local function sendTraderDebugList(player, notice)
     local traders = traderDebugRows()
     local pending = DTHoomans.Caravan
@@ -665,6 +702,10 @@ local function onClientCommand(module, command, player, args)
     args = type(args) == "table" and args or {}
     if command == DTHoomans.SPAWN_COMMAND then
         handleSpawn(player, args)
+        return
+    end
+    if command == "ConversationAccessRequest" then
+        handleConversationAccess(player, args)
         return
     end
     if command == "TraderReferralRequest" then

@@ -3,7 +3,7 @@ T.addPackagePaths()
 
 local notificationsShown = {}
 PsychopatzCore = {
-    Notifications = {
+    ActorNotifications = {
         Show = function(def)
             notificationsShown[#notificationsShown + 1] = def
             return true

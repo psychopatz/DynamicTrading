@@ -53,7 +53,24 @@ PNC = {
     Semantics = { DialogueInput = { ActiveView = view } },
 }
 PsychopatzCore = { Conversation = { instance = view } }
-DTHoomans = { MOD_ID = "DTHoomans" }
+DTHoomans = {
+    MOD_ID = "DTHoomans",
+    Client = {
+        RequestTraderConversation = function(traderID, options)
+            opened = { traderID = traderID, options = options }
+            sentCommand = {
+                module = "DTHoomans",
+                command = "ConversationAccessRequest",
+                args = {
+                    traderID = traderID,
+                    mode = options.mode,
+                    npcID = options.npcID,
+                },
+            }
+            return true, "access_requested"
+        end,
+    },
+}
 getSpecificPlayer = function() return player end
 sendClientCommand = function(current, module, command, args)
     sentCommand = { player = current, module = module, command = command, args = args }
@@ -114,11 +131,14 @@ dispatch("ProjectHoomans", "ConversationOutcome", {
     npcID = "merchant_one",
     choiceID = "trade",
 })
-T.equal(sentCommand, nil, "merchant trade does not request a referral")
-T.truthy(opened, "merchant trade opens the native trading window")
-T.equal(opened.traderID, "dt_caravan_one",
+T.truthy(sentCommand, "merchant trade requests shared conversation access")
+T.equal(sentCommand.command, "ConversationAccessRequest",
+    "merchant trade uses the shared conversation bridge")
+T.equal(sentCommand.args.mode, "physical",
+    "merchant trade carries the physical provider mode")
+T.equal(sentCommand.args.traderID, "dt_caravan_one",
     "merchant trade uses the correct trader record")
-T.equal(opened.options.npcID, "merchant_one",
+T.equal(sentCommand.args.npcID, "merchant_one",
     "merchant trade keeps the merchant NPC target")
 
 T.finish("dt_guard_referral_client_smoke")

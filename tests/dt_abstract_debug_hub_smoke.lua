@@ -107,7 +107,7 @@ PsychopatzCore.DebugHub = {
         return true
     end,
 }
-PsychopatzCore.Notifications = {
+PsychopatzCore.ActorNotifications = {
     Show = function(definition)
         notices[#notices + 1] = definition
         return true
@@ -126,7 +126,7 @@ DTCommon.TraderService = {
     end,
     GetRecord = function(id) return traderStore.t[id] end,
 }
-DTCommon.CoreTraderConversation = {
+DTCommon.TraderConversation = {
     Open = function(traderID, actorID, options)
         debugTalkOpened = {
             traderID = traderID,
@@ -187,14 +187,14 @@ local DebugHub = T.load(
     "DTAbstract", "client", "DTAbstract/UI/DTAbstract_DebugHub.lua")
 T.truthy(DebugHub, "DebugHub loaded")
 
-local tool = registeredTools["dtabstract:traders"]
-T.truthy(tool, "Abstract Trader Manager registered")
+local tool = registeredTools["dtcommon.traderManager"]
+T.truthy(tool, "shared Trader Manager registered")
 T.truthy(tool.available(), "debug tool unavailable")
 
 -- Registration must open a real production manager window.
 local window = tool.action()
 T.truthy(window, "Debug Hub action did not return manager window")
-T.truthy(DTAbstract.DebugTraderWindow.instance == window,
+T.truthy(DTCommon.TraderManager.instance == window,
     "manager instance was not retained")
 T.truthy(window.refreshButton and window.spawnNearButton
     and window.spawnAtButton and window.tickButton,
@@ -276,12 +276,8 @@ T.truthy(DebugHub.LastResult
     and DebugHub.LastResult.action == "spawn",
     "shared debug result receiver did not run")
 T.contains(window.notice, "spawn", "manager did not show shared spawn result")
-T.truthy(#notices >= 1
-    and notices[#notices].title == "DTAbstract Debug",
-    "debug result was not presented through debug feedback")
-
 window:close()
-T.falsy(DTAbstract.DebugTraderWindow.instance,
+T.falsy(DTCommon.TraderManager.instance,
     "manager did not close cleanly")
 
 T.finish("dt_abstract_debug_hub_smoke")

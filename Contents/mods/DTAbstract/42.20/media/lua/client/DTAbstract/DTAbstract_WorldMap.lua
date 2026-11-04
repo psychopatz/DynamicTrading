@@ -1,8 +1,8 @@
 -- DTAbstract world-map adapter.
 --
--- PsychopatzCore owns canonical per-NPC dots, hover, selection, tracking and
--- routes. DTAbstract contributes only commercial trader decoration plus
--- settlement/group/signal discovery presentation.
+-- PsychopatzCore owns canonical per-actor dots, hover, selection, tracking
+-- and routes. DTAbstract contributes only settlement/group/signal discovery
+-- presentation; DTCommon owns trader decoration.
 
 DTAbstract = DTAbstract or {}
 DTAbstract.WorldMap = DTAbstract.WorldMap or {}
@@ -10,11 +10,8 @@ DTAbstract.WorldMap = DTAbstract.WorldMap or {}
 local WorldMap = DTAbstract.WorldMap
 local CoreClient = require
     "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"
-local ActorMap = require
-    "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldActorMap"
 local MapHost = require "PsychopatzCore/UI/Map/PsychopatzMapHost"
-local Presentation = DTCommon.TraderPresentation
-    or require "DTCommon/DTCommon_TraderPresentation"
+require "DTCommon/DTCommon_TraderPresentation"
 
 WorldMap.Enabled = WorldMap.Enabled ~= false
 WorldMap.ShowAll = WorldMap.ShowAll == true
@@ -24,7 +21,6 @@ local COLORS = {
     settlement = { r = 0.2, g = 0.65, b = 0.95, a = 1.0 },
     group = { r = 0.85, g = 0.55, b = 0.2, a = 0.9 },
     signal = { r = 0.72, g = 0.45, b = 0.95, a = 0.9 },
-    trader = { r = 0.95, g = 0.75, b = 0.15, a = 1.0 },
 }
 
 local function canUseDebug()
@@ -158,123 +154,6 @@ function WorldMap.GetSettlementMarkers(showAll)
     end
     return output
 end
-
-local function commercialLabel(traderID, record, ca, journey)
-    local Directory = DTCommon and DTCommon.SettlementDirectory
-    local label = record.n or traderID
-    local active = journey
-        and (journey.state == "en_route"
-            or journey.state == "planned"
-            or journey.state == "waiting")
-    if active and ca.destinationSettlementID then
-        local destination = Directory and Directory.Get
-            and Directory.Get(ca.destinationSettlementID) or nil
-        label = label .. " -> " .. tostring(
-            destination and destination.name
-                or ca.destinationSettlementID
-        )
-    elseif ca.currentSettlementID then
-        local current = Directory and Directory.Get
-            and Directory.Get(ca.currentSettlementID) or nil
-        label = label .. " [" .. tostring(
-            current and current.name
-                or ca.currentSettlementID
-        ) .. "]"
-    end
-    return label
-end
-
-local function traderIndex()
-    local output = {}
-    for _, row in ipairs(
-        Presentation.ListTraderRecords(false)
-    ) do
-        local record = row.record
-        local ca = record and record.ca or nil
-        if ca
-            and (row.provider == "DTAbstract"
-                or tostring(ca.returnProviderID or "") == "DTAbstract")
-            and ca.actorID
-        then
-            output[tostring(ca.actorID)] = row
-        end
-    end
-    return output
-end
-
-function WorldMap.GetTraderMarkers()
-    refresh()
-    local output = {}
-    local traders = traderIndex()
-    for _, entry in ipairs(CoreClient.ListActors(false) or {}) do
-        local row = traders[tostring(entry.actorID or "")]
-        if row and entry.position then
-            local record = row.record
-            local ca = record.ca or {}
-            output[#output + 1] = {
-                id = row.traderID,
-                traderID = row.traderID,
-                actorID = entry.actorID,
-                position = entry.position,
-                canonicalPosition = entry.canonicalPosition
-                    or entry.position,
-                label = commercialLabel(
-                    row.traderID,
-                    record,
-                    ca,
-                    entry.journey
-                ),
-                journey = entry.journey,
-                route = entry.journey and entry.journey.route or nil,
-                journeyProgress = entry.journey
-                    and entry.journey.progress or 0,
-                portrait = entry.portrait,
-                coreEntry = entry,
-                positionSource = entry.positionSource,
-            }
-        end
-    end
-    table.sort(output, function(left, right)
-        return tostring(left.id) < tostring(right.id)
-    end)
-    return output
-end
-
--- Compatibility query for existing callers. Actor dots are rendered by Core,
--- so this function is data-only and does not create a second marker system.
-function WorldMap.GetMapMarkers(_, showAll)
-    local combined = {}
-    for _, marker in ipairs(
-        WorldMap.GetDiscoveryMarkers(showAll)
-    ) do
-        combined[#combined + 1] = marker
-    end
-    for _, marker in ipairs(WorldMap.GetTraderMarkers()) do
-        combined[#combined + 1] = marker
-    end
-    return combined
-end
-
-local function decorateTrader(entry, style)
-    local row = traderIndex()[tostring(entry.actorID or "")]
-    if not row then return style end
-    local record = row.record
-    local ca = record and record.ca or {}
-    style.label = commercialLabel(
-        row.traderID,
-        record,
-        ca,
-        entry.journey
-    )
-    style.color = COLORS.trader
-    style.size = 10
-    return style
-end
-
-ActorMap.RegisterDecorator("DynamicTrading:DTAbstract", {
-    priority = 100,
-    decorate = decorateTrader,
-})
 
 function WorldMap.Render(map)
     if not WorldMap.Enabled or not map or not map.mapAPI then return end

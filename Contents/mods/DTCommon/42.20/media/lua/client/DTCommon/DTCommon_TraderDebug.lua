@@ -7,8 +7,14 @@ DTCommon.TraderDebug = DTCommon.TraderDebug or {}
 
 local Debug = DTCommon.TraderDebug
 
-if not (PsychopatzCore and PsychopatzCore.Notifications) then
-    pcall(require, "PsychopatzCore/UI/PsychopatzNotificationWindow")
+local ActorNotifications = PsychopatzCore
+    and PsychopatzCore.ActorNotifications
+if not ActorNotifications then
+    local ok, value = pcall(
+        require,
+        "PsychopatzCore/UI/PsychopatzActorNotificationToast"
+    )
+    if ok then ActorNotifications = value end
 end
 
 local function canUseDebug()
@@ -156,24 +162,40 @@ local function onServerCommand(module, command, args)
             .. tostring(args.reason or "unknown")
     end
 
-    if PsychopatzCore and PsychopatzCore.Notifications
-        and type(PsychopatzCore.Notifications.Show) == "function"
+    local view
+    local presentation = DTCommon and DTCommon.TraderPresentation
+    if presentation and type(presentation.GetTraderView) == "function"
+    then
+        view = presentation.GetTraderView(args.traderID, false)
+    end
+    local portraitSpec = view and view.portraitSpec or nil
+    local factionBadge
+    if view and type(view.factionPresentation) == "table" then
+        local faction = view.factionPresentation
+        factionBadge = faction.badge or faction
+    end
+    if not portraitSpec and args.actorID then
+        local ok, Client = pcall(
+            require,
+            "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"
+        )
+        if ok and Client and type(Client.GetPortraitSpec) == "function" then
+            portraitSpec = Client.GetPortraitSpec(args.actorID)
+        end
+    end
+
+    if ActorNotifications
+        and type(ActorNotifications.Show) == "function"
     then
         local requestID = tostring(args.requestID or "unknown")
         local phase = args.pending == true and "queued" or "result"
-        local details = {}
-        if args.actorID then
-            details[#details + 1] = "Actor: " .. tostring(args.actorID)
-        end
-        if args.provider then
-            details[#details + 1] = "Provider: " .. tostring(args.provider)
-        end
-        PsychopatzCore.Notifications.Show({
+        ActorNotifications.Show({
             id = "dtcommon:debug_spawn:" .. requestID .. ":" .. phase,
-            title = "Dynamic Trading Debug",
+            actorID = args.actorID,
+            name = view and view.name or args.traderID or "Dynamic Trading",
             message = message,
-            text = message,
-            details = details,
+            portraitSpec = portraitSpec,
+            factionBadge = factionBadge,
         })
     else
         print("[DT][DEBUG] " .. message)

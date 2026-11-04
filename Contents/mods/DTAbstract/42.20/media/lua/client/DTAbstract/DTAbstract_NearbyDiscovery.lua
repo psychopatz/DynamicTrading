@@ -9,8 +9,14 @@ DTAbstract.NearbyDiscovery = DTAbstract.NearbyDiscovery or {}
 
 local Discovery = DTAbstract.NearbyDiscovery
 
-if not (PsychopatzCore and PsychopatzCore.Notifications) then
-    pcall(require, "PsychopatzCore/UI/PsychopatzNotificationWindow")
+local ActorNotifications = PsychopatzCore
+    and PsychopatzCore.ActorNotifications
+if not ActorNotifications then
+    local ok, value = pcall(
+        require,
+        "PsychopatzCore/UI/PsychopatzActorNotificationToast"
+    )
+    if ok then ActorNotifications = value end
 end
 
 local CoreClient = require
@@ -27,20 +33,31 @@ Discovery.CONTACT_PHASE = 3
 local traderStates = {}
 local lastCheckTime = 0
 
-local function notifyTraderNearby(traderID, record)
-    local title = "Trading Caravan Nearby"
+local function notifyTraderNearby(traderID, record, actorID)
     local name = record and record.n or traderID
     local message = tostring(name) .. " is operating nearby."
+    local actor = actorID and CoreClient.GetActor(actorID) or nil
+    local view = Presentation.GetTraderView
+        and Presentation.GetTraderView(traderID, false)
+        or nil
+    local faction = view and view.factionPresentation or nil
+    local badge = faction and (faction.badge or faction) or nil
 
-    if PsychopatzCore and PsychopatzCore.Notifications
-        and type(PsychopatzCore.Notifications.Show) == "function"
+    if ActorNotifications
+        and type(ActorNotifications.Show) == "function"
     then
-        PsychopatzCore.Notifications.Show({
+        ActorNotifications.Show({
             id = "dt_nearby:" .. tostring(traderID),
-            title = title,
+            actorID = actorID,
+            name = view and view.name or name,
             message = message,
-            text = message,
+            portraitSpec = view and view.portraitSpec
+                or CoreClient.GetPortraitSpec
+                and CoreClient.GetPortraitSpec(actor),
+            factionBadge = badge,
         })
+    else
+        print("[DT][NEARBY] " .. message)
     end
 end
 

@@ -51,7 +51,7 @@ PsychopatzCore = {
             return true
         end,
     },
-    Notifications = {
+    ActorNotifications = {
         Show = function(def)
             notices[#notices + 1] = def
             return true
