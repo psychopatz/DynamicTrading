@@ -389,3 +389,11 @@ persistence, DTAbstract bodylessness, and DTHoomans physical materialization.
   save verification remains user-owned: unknown map redaction, persistent
   proximity card/Next selection, Talk/knowledge conversation content, restart
   persistence, DTAbstract bodylessness, and DTHoomans physical materialization.
+
+## Follow-up regression audit — Project Hoomans-only map/persistence — 2026-11-05
+
+- Confirmed the captured `console.txt` is not a valid Hoomans-only reproduction: it loaded DTHoomans and failed in an older deployed `PNC_Inventory_ActorBridge` copy. The checked-out bridge already uses the Kahlua-safe bounded-entry helper; redeploy/reload is required before judging that runtime error.
+- Confirmed the latest persisted Apocalypse save still contains the owned Hoomans civilian record, owner identity, generated appearance/equipment, position, and a live-body rehydration hint. Startup logs show the record being rehydrated. No persistence rewrite was justified by source or save evidence.
+- Added fail-first map performance regressions and bounded caches: Core `ActorMap` no longer calls the full projection/spread-overlap path on every map frame, and Project Hoomans no longer repeats identity knowledge/name resolution for every label during the refresh window. Cache invalidation remains tied to roster refreshes.
+- Validation: Project Hoomans focused persistence/map set **8/8**; full suite **1001/1006**, same five documented baseline failures; PsychopatzCore standalone sweep **152/159**, same seven documented fixture/environment failures; installed-PZ Kahlua compiler **2/2** changed production Lua; `git diff --check` clean in all three repositories.
+- Remaining native gate: run a genuinely Project Hoomans-only fresh-save session with the checked-out files deployed, verify map responsiveness and owned-civilian save/reload, then separately rerun DTHoomans parity acceptance.
