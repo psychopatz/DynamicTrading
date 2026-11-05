@@ -150,6 +150,11 @@ local function onServerCommand(module, command, args)
     args = type(args) == "table" and args or {}
     local traderID = tostring(args.traderID or "")
     if traderID == "" then
+        -- Queued debug-spawn acknowledgements intentionally carry only a
+        -- request ID and position. DTCommon_TraderDebug owns that surface;
+        -- do not misclassify its provider-neutral response as a trader
+        -- snapshot/trade response or emit a false warning.
+        if command == "TraderDebugSpawnResult" then return end
         log("WARN", "server_command_missing_trader command=" .. tostring(command))
         return
     end

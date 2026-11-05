@@ -10,6 +10,10 @@ DTAbstract.CoreConversation =
     DTAbstract.CoreConversation or {}
 
 local Bridge = DTAbstract.CoreConversation
+
+local function log(level, message)
+    print("[DT][" .. tostring(level) .. "] " .. tostring(message))
+end
 local CoreConversation = DTCommon
     and DTCommon.TraderConversation
     or require "DTCommon/DTCommon_TraderConversation"
@@ -93,6 +97,12 @@ function Bridge.Request(
         Bridge.Pending[traderID] = nil
         return false, reason
     end
+    log(
+        "INFO",
+        "abstract_talk_requested trader=" .. traderID
+            .. " actor=" .. tostring(options.actorID or options.npcID or "")
+            .. " mode=" .. mode
+    )
     return true, "access_requested"
 end
 
@@ -104,6 +114,15 @@ function Bridge.HandleAccessResult(args)
     end
     local pending = Bridge.Pending[traderID]
     Bridge.Pending[traderID] = nil
+
+    log(
+        "INFO",
+        "abstract_talk_access trader=" .. traderID
+            .. " actor=" .. tostring(args.actorID
+                or pending and pending.actorID or "")
+            .. " accepted=" .. tostring(args.accepted == true)
+            .. " reason=" .. tostring(args.reason or "")
+    )
 
     if args.accepted ~= true then
         return false, args.reason

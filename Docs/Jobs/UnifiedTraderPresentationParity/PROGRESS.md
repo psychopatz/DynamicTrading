@@ -328,3 +328,28 @@ persistence, DTAbstract bodylessness, and DTHoomans physical materialization.
   definition is a separate Hoomans-only caravan-referral category, not trader
   opening/content. DTAbstract still has no ProjectHoomans/PNC runtime
   dependency, and provider exclusivity remains intact.
+
+## Talk runtime error audit — 2026-11-05
+
+- Native console review showed no Talk exception or `ConversationAccessResult`
+  in the captured log. The visible `AnimatedModel ... skinningData is null`
+  entries are engine renderer warnings emitted around portrait/model creation,
+  not proof that the Talk request was authorized or rejected.
+- The captured `server_command_missing_trader command=TraderDebugSpawnResult`
+  warning was a separate false-positive: queued shared debug-spawn
+  acknowledgements intentionally contain only a request ID and position.
+  DTCommon now ignores that command in its trader snapshot/trade handler so
+  DTCommon_TraderDebug remains the sole owner of that response.
+- Core actor notifications now expose `Notifications.InvokeAction`; action
+  callback rejection and callback exceptions are returned and logged instead
+  of being swallowed by the toast's UI callback. This makes a failed Talk
+  action observable while preserving the bounded persistent card.
+- DTAbstract now logs the outgoing Talk request and the returned access result
+  with trader ID, selected actor ID, mode, acceptance, and reason. The next
+  native click therefore distinguishes transport, proximity authorization,
+  actor projection, and conversation-open failures.
+- Fail-first regressions were added for the DTCommon command filter and Core
+  notification action result/error contract. Focused DTAbstract bridge/debug,
+  DTCommon debug-client, shared notification, and Core notification tests now
+  pass; installed-PZ Kahlua verification is clean for the three newly changed
+  production Lua files.
