@@ -353,3 +353,39 @@ persistence, DTAbstract bodylessness, and DTHoomans physical materialization.
   DTCommon debug-client, shared notification, and Core notification tests now
   pass; installed-PZ Kahlua verification is clean for the three newly changed
   production Lua files.
+
+## Project Hoomans-wide knowledge/map and notification persistence audit — 2026-11-05
+
+- The audit covered Project Hoomans itself as well as DTHoomans. The reset
+  symptom was caused by DTAbstract refreshing one persistent notification with
+  the roster leader after every proximity poll; clicking Next changed the
+  visible actor but did not persist that selection. DTCommon now remembers the
+  selected actor per notification ID, validates it against the current trader
+  roster, and preserves it across refreshes and Next callbacks. Dismissal clears
+  the remembered selection.
+- Core now owns the generic map-hover knowledge gate and cache. Unknown or
+  pending actors request knowledge and do not materialize a portrait card;
+  contacted Core projections expose faction/name metadata only at the Core
+  discovery contact phase. Project Hoomans contributes one adapter for its
+  learned identity, faction presentation, request transport, and canonical
+  portrait/equipment projection, reused by ProjectHoomans and DTHoomans.
+- Removed Project Hoomans' superseded map hover portrait/card pair. Its map
+  runtime and legacy travel layer now consume the Core hover/card path, and the
+  legacy text fallback no longer leaks an unknown NPC name. Learned identity
+  overrides a stale `unknown` presentation row without waiting for a second
+  unrelated refresh.
+- Fail-first coverage added for notification selection persistence, Core
+  unknown/contacted map knowledge behavior, Core discovery redaction, the
+  Project Hoomans adapter, stale knowledge state, and unknown legacy-map
+  fallback. Focused Core/DT/ProjectHoomans tests pass; DynamicTrading full
+  suite is **82/82**; DTHoomans bridge is **78/78**; ProjectHoomans remains
+  **1001/1006** with the same five documented baseline failures; Core remains
+  **152/159** with the same seven documented baseline failures. Installed-PZ
+  Kahlua verification and `git diff --check` are clean for the changed files.
+- Source-removal audit finds one Core actor-marker renderer and hover/card
+  path, one Project Hoomans knowledge adapter, one DTCommon trader notification
+  payload/selection path, and no provider-owned duplicate trader hover card.
+  DTAbstract still has no ProjectHoomans/PNC runtime dependency. Native fresh-
+  save verification remains user-owned: unknown map redaction, persistent
+  proximity card/Next selection, Talk/knowledge conversation content, restart
+  persistence, DTAbstract bodylessness, and DTHoomans physical materialization.

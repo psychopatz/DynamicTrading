@@ -166,6 +166,22 @@ T.equal(
     "nearby trader notification must expose the dynamic roster switch"
 )
 T.truthy(
+    notificationsShown[1].actions[2].callback(),
+    "nearby trader notification next action was not accepted"
+)
+T.equal(
+    notificationsUpdated[#notificationsUpdated].definition.actorID,
+    "actor:disc:guard",
+    "next action did not select the nearby guard"
+)
+
+Discovery.CheckNearbyTraders(player, 106)
+T.equal(
+    notificationsUpdated[#notificationsUpdated].definition.actorID,
+    "actor:disc:guard",
+    "proximity refresh reset the notification to the roster leader"
+)
+T.truthy(
     Discovery.IsTraderDiscovered("trader:disc:1"),
     "Core contact discovery did not become canonical truth"
 )

@@ -34,6 +34,7 @@ local function nearbyNotification(traderID, record, actorID)
         includeNext = true,
         mode = "nearby",
         persistent = true,
+        preserveSelection = true,
     })
 end
 

@@ -8,6 +8,7 @@ DTCommon = DTCommon or {}
 DTCommon.TraderNotification = DTCommon.TraderNotification or {}
 
 local Notification = DTCommon.TraderNotification
+Notification.SelectionByID = Notification.SelectionByID or {}
 local Presentation = DTCommon.TraderPresentation
     or require "DTCommon/DTCommon_TraderPresentation"
 
@@ -82,6 +83,15 @@ local function nextRosterView(traderID, actorID)
     return roster[nextIndex]
 end
 
+local function rosterViewFor(traderID, actorID)
+    actorID = tostring(actorID or "")
+    if actorID == "" then return nil end
+    for _, row in ipairs(rosterFor(traderID)) do
+        if tostring(row.actorID or "") == actorID then return row end
+    end
+    return nil
+end
+
 local function badgeFor(view)
     local faction = view and view.factionPresentation or nil
     if type(faction) ~= "table" then return nil end
@@ -122,8 +132,21 @@ function Notification.Build(traderID, message, options)
         message = options.message
     end
     options = type(options) == "table" and options or {}
-    local view = viewFor(traderID, options.actorID)
-    local actorID = tostring(options.actorID
+    local id = tostring(options.id or options.notificationID or "")
+    if id == "" then
+        id = "dt_trader:" .. traderID .. ":leader"
+    end
+    local selectedActorID = options.actorID
+    if options.preserveSelection == true then
+        local remembered = Notification.SelectionByID[id]
+        if remembered and rosterViewFor(traderID, remembered) then
+            selectedActorID = remembered
+        elseif remembered then
+            Notification.SelectionByID[id] = nil
+        end
+    end
+    local view = viewFor(traderID, selectedActorID)
+    local actorID = tostring(selectedActorID
         or view and view.actorID or "")
     if actorID == "" then actorID = nil end
     local portraitSpec = options.portraitSpec
@@ -137,9 +160,8 @@ function Notification.Build(traderID, message, options)
         end
     end
 
-    local id = tostring(options.id or options.notificationID or "")
-    if id == "" then
-        id = "dt_trader:" .. traderID .. ":" .. tostring(actorID or "leader")
+    if options.preserveSelection == true and actorID then
+        Notification.SelectionByID[id] = actorID
     end
 
     local actions = {}
@@ -192,6 +214,8 @@ function Notification.Build(traderID, message, options)
                         nextOptions.actorID = nextActorID
                         nextOptions.message = nextMessage
                         nextOptions.includeNext = true
+                        nextOptions.preserveSelection = true
+                        Notification.SelectionByID[id] = nextActorID
                         local shown, reason = Notification.Show(
                             traderID,
                             nextMessage,
@@ -235,6 +259,7 @@ function Notification.Show(traderID, message, options)
 end
 
 function Notification.Dismiss(notificationID)
+    Notification.SelectionByID[tostring(notificationID or "")] = nil
     local toast = toastSurface()
     if not toast or type(toast.Dismiss) ~= "function" then
         return false, "actor_notification_unavailable"
