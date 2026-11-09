@@ -83,7 +83,7 @@ CoreClient = {
     Selection = { selectedActorID = nil },
     RequestActorsIfDue = function(interval)
         actorRefreshes = actorRefreshes + 1
-        T.equal(interval, 500,
+        T.equal(interval, 1000,
             "DT map actor refresh cadence changed")
         return true
     end,

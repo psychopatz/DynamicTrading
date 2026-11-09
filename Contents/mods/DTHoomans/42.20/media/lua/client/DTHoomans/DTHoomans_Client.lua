@@ -255,7 +255,9 @@ local function onServerCommand(module, command, args)
     args = type(args) == "table" and args or {}
     if command == "ConversationAccessResult" then
         local opened, reason = Client.HandleTraderConversationResult(args)
-        if opened ~= true then
+        if opened ~= true
+            and reason ~= "core_actor_projection_pending"
+        then
             log("WARN", "conversation_open_failed trader="
                 .. tostring(args.traderID)
                 .. " reason=" .. tostring(reason))

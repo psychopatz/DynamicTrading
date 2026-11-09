@@ -40,7 +40,14 @@ end
 
 function Runtime.PublishProjectionIfDirty(force)
     local dirty = World.ProjectionDirty == true
-    if force ~= true and not dirty then return false, "not_dirty" end
+    local coreSync = PsychopatzCore and PsychopatzCore.ActorProjectionSync
+        or nil
+    local coreDirty = coreSync
+        and type(coreSync.IsDirty) == "function"
+        and coreSync.IsDirty() == true
+    if force ~= true and not dirty and not coreDirty then
+        return false, "not_dirty"
+    end
 
     local projection = PsychopatzCore
         and PsychopatzCore.SurvivorWorldProjectionServer or nil
@@ -52,6 +59,9 @@ function Runtime.PublishProjectionIfDirty(force)
         World.ConsumeProjectionDirty()
     end
     projection.Publish()
+    if coreDirty and type(coreSync.ConsumeDirty) == "function" then
+        coreSync.ConsumeDirty()
+    end
     return true
 end
 

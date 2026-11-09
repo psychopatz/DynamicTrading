@@ -24,6 +24,16 @@ package.preload[
             return actorID == projection.actorID
                 and projection or nil
         end,
+        Resolve = function(actorID)
+            if actorID == projection.actorID or actorID == "npc:legacy" then
+                return projection, {
+                    canonicalActorID = projection.actorID,
+                    aliasKind = actorID == projection.actorID
+                        and "canonical" or "alias",
+                }
+            end
+            return nil, "actor_not_found"
+        end,
         GetPortraitSpec = function(entry)
             return entry == projection and portrait or nil
         end,
@@ -109,23 +119,55 @@ T.truthy(type(spec.extensionParts) == "table"
     and spec.extensionParts[1]
     and spec.extensionParts[1].partID == "llmInput",
     "shared trader conversation does not mount the Core semantic input")
-T.equal(#spec.nodes.root.choices, 6,
-    "Core trader conversation exposes expected root choices")
-T.equal(spec.nodes.root.choices[2].id, "identity",
+local landing = spec.nodes.landing
+T.truthy(landing, "Core trader conversation exposes a shared landing node")
+local function choiceByID(id)
+    for _, choice in ipairs(landing.choices or {}) do
+        if choice.id == id then return choice end
+    end
+    return nil
+end
+T.equal(#landing.choices, 7,
+    "Core trader conversation exposes expected landing choices")
+local identityChoice = choiceByID("identity")
+T.truthy(identityChoice,
     "Core trader conversation exposes a knowledge-backed identity choice")
-T.equal(spec.nodes.root.choices[2].response(),
+T.equal(identityChoice.response(),
     "I'm Core Mara.",
     "identity response uses the canonical actor name")
-T.equal(spec.nodes.root.choices[3].response(),
+T.equal(choiceByID("destination").response(),
     "I'm heading toward Rosewood Outpost.",
     "destination response uses human-facing place presentation")
-T.equal(spec.nodes.root.choices[4].response(),
+T.equal(choiceByID("origin").response(),
     "I came from March Ridge Depot.",
     "origin response uses human-facing place presentation")
-T.contains(spec.nodes.root.choices[5].response(), "BANDIT RAID",
+T.contains(choiceByID("dynamictrading.rumors").response(), "BANDIT RAID",
     "road news uses shared WorldKnowledge")
 
-spec.nodes.root.choices[1].action()
+local aliasSpec, aliasReason = Conversation.BuildSpec(
+    "trader:core",
+    "npc:legacy",
+    {}
+)
+T.truthy(aliasSpec, aliasReason)
+T.equal(aliasSpec.npcID, projection.actorID,
+    "conversation resolves legacy actor aliases to the canonical ID")
+T.equal(aliasSpec.sourceActorID, "npc:legacy",
+    "conversation preserves the source actor reference")
+
+projection.capabilities = { ["dynamictrading.trade"] = true }
+local companionSpec, companionReason = Conversation.BuildSpec(
+    "trader:core",
+    projection.actorID,
+    { role = "companion" }
+)
+T.truthy(companionSpec, companionReason)
+T.equal(companionSpec.role, "companion",
+    "conversation preserves a non-specialized actor role")
+T.truthy(companionSpec.context.capabilities["dynamictrading.trade"],
+    "conversation uses the shared actor trading capability")
+
+choiceByID("dynamictrading.trade").action()
 T.equal(tradeOpened.id, "trader:core",
     "Trade action keeps trader identity")
 T.equal(tradeOpened.options.actorID, projection.actorID,

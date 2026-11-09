@@ -429,8 +429,24 @@ TraderGeneration.RegisterProvider("DTHoomans", {
             seed = native.generation and native.generation.seed,
             actorPrefix = native.actorPrefix,
             memberCount = native.groupSize,
+            providerID = "DTHoomans",
+            presenceMode = native.presenceMode,
         })
         if not memberPlan then return false, reason end
+        local faction = PNC.Factions and type(PNC.Factions.Get) == "function"
+            and PNC.Factions.Get(spec.factionID) or nil
+        memberPlan.actorExtensions = {}
+        for key, member in ipairs(memberPlan.memberSpecs or {}) do
+            memberPlan.actorExtensions[key] = {
+                ["PsychopatzCore.SurvivorWorld"] = {
+                    factionID = tostring(spec.factionID or ""),
+                    factionName = faction and faction.name or nil,
+                    factionArchetypeID = faction and faction.archetypeID
+                        or "trader",
+                    role = member.role,
+                },
+            }
+        end
         canonical, reason = TraderGeneration.CreateCanonicalActors({
             position = {
                 x = native.x,

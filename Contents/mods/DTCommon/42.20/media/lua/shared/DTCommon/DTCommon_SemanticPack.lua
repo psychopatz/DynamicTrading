@@ -19,8 +19,7 @@ local function registerPack()
     local packSpec = {
         id = Pack.PACK_ID,
         ownerModID = "DynamicTrading",
-        version = 1,
-        capabilitiesRequired = { "dynamictrading.trade" },
+        version = 2,
 
         -- 1. Semantic Concepts
         concepts = {
@@ -270,7 +269,6 @@ local function registerPack()
             {
                 id = "dynamictrading.referral_action",
                 sourceKind = "dynamic_trading",
-                capabilityRequired = "dynamictrading.trade",
                 order = 25,
                 collect = function(ctx)
                     ctx = type(ctx) == "table" and ctx or {}
@@ -280,7 +278,6 @@ local function registerPack()
                         {
                             id = "dynamictrading.referral",
                             topic = "referral",
-                            capabilityRequired = "dynamictrading.trade",
                             sourceKind = "dynamic_trading",
                             semanticOwner = "dynamictrading.guard",
                             textKey = "UI_DT_Referral",
@@ -293,14 +290,12 @@ local function registerPack()
             {
                 id = "dynamictrading.rumors_action",
                 sourceKind = "dynamic_trading",
-                capabilityRequired = "dynamictrading.trade",
                 order = 40,
                 collect = function(ctx)
                     return {
                         {
                             id = "dynamictrading.rumors",
                             topic = "rumors",
-                            capabilityRequired = "dynamictrading.trade",
                             sourceKind = "dynamic_trading",
                             semanticOwner = "dynamictrading.trader",
                             textKey = "UI_DT_Rumors",

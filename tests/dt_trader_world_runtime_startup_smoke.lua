@@ -45,7 +45,18 @@ DTCommon = {
 }
 
 local published = 0
+local coreDirty = false
+local coreConsumed = 0
 PsychopatzCore = {
+    ActorProjectionSync = {
+        IsDirty = function() return coreDirty end,
+        ConsumeDirty = function()
+            if not coreDirty then return false end
+            coreDirty = false
+            coreConsumed = coreConsumed + 1
+            return true
+        end,
+    },
     SurvivorWorldProjectionServer = {
         Publish = function()
             published = published + 1
@@ -87,6 +98,14 @@ T.equal(published, 2,
     "dirty projection did not publish independently of hourly world cadence")
 T.falsy(DTCommon.TraderWorld.ProjectionDirty,
     "dirty projection flag was not consumed after publish")
+
+coreDirty = true
+now = 12.5
+tickHandler()
+T.equal(published, 3,
+    "Core actor dirtiness did not publish independently of DT world dirtiness")
+T.equal(coreConsumed, 1,
+    "Core actor dirtiness was not consumed after projection publish")
 
 now = 13.1
 tickHandler()

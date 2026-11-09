@@ -103,7 +103,7 @@ T.truthy(type(spec.roster) == "table" and #spec.roster == 2,
     "shared conversation exposes the complete trader roster")
 
 local nextChoice
-for _, choice in ipairs(spec.nodes.root.choices or {}) do
+for _, choice in ipairs(spec.nodes.landing.choices or {}) do
     if choice.id == "next_person" then nextChoice = choice end
 end
 T.truthy(nextChoice,

@@ -2,7 +2,17 @@ local T = require "tests/support/test"
 T.addPackagePaths()
 
 local Actors = require "PsychopatzCore/Actors/PsychopatzActors"
+local Travel = require "PsychopatzCore/Travel/PsychopatzTravel"
 local actorRegistry = Actors.NewRegistry()
+
+local travelEvents = {}
+local function onTravelEvent(event)
+    travelEvents[#travelEvents + 1] = event
+end
+local travelOwner = "dt-abstract-provider-world-smoke"
+for _, eventType in pairs(Travel.EventTypes) do
+    Travel.Subscribe(eventType, onTravelEvent, travelOwner)
+end
 
 local sentCommands = {}
 local clientCommandHandler
@@ -418,6 +428,12 @@ local started, startReason = TraderWorld.BeginJourney(
     { now = worldHours }
 )
 T.truthy(started, startReason)
+T.truthy(
+    travelEvents[#travelEvents]
+        and travelEvents[#travelEvents].type
+            == Travel.EventTypes.GROUP_STARTED,
+    "DTAbstract movement did not use the Core travel lifecycle"
+)
 
 local movingGroup = assert(
     SurvivorRuntime.FindGroupForActor(actorID)
@@ -498,6 +514,10 @@ T.equal(
     destinationID,
     "visit destination recorded"
 )
+
+for _, eventType in pairs(Travel.EventTypes) do
+    Travel.Unsubscribe(eventType, onTravelEvent)
+end
 
 local arrivedGroup = assert(
     SurvivorRuntime.FindGroupForActor(actorID)

@@ -10,6 +10,8 @@ DTAbstract.WorldMap = DTAbstract.WorldMap or {}
 local WorldMap = DTAbstract.WorldMap
 local CoreClient = require
     "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"
+local MarkerDiagnostics = require
+    "PsychopatzCore/UI/Map/PsychopatzMapMarkerDiagnostics"
 local MapHost = require "PsychopatzCore/UI/Map/PsychopatzMapHost"
 require "DTCommon/DTCommon_TraderPresentation"
 
@@ -52,7 +54,11 @@ end
 
 local function refresh()
     if CoreClient.RequestActorsIfDue then
-        CoreClient.RequestActorsIfDue(500)
+        -- Keep discovery presentation and canonical actor-map transport on
+        -- the same bounded network cadence. Rendering remains independently
+        -- cached by Core, so opening the map cannot create a 2 Hz roster
+        -- request lane on top of the shared actor renderer.
+        CoreClient.RequestActorsIfDue(1000)
     end
     if CoreClient.RequestDiscoveryIfDue then
         CoreClient.RequestDiscoveryIfDue(5000)
@@ -180,6 +186,40 @@ function WorldMap.GetSettlementMarkers(showAll)
     end
     return output
 end
+
+function WorldMap.ListDiagnostics()
+    local output = {}
+    for _, marker in ipairs(WorldMap.GetDiscoveryMarkers(true) or {}) do
+        local markerKind = tostring(marker.kind or "signal")
+        local kind = markerKind == "settlement"
+            and "settlement_site"
+            or markerKind == "group"
+                and "abstract_group"
+                or "discovery_signal"
+        output[#output + 1] = {
+            kind = kind,
+            source = "DynamicTrading:DTAbstractDiscovery",
+            id = tostring(marker.id or marker.entityID or ""),
+            entityID = marker.entityID,
+            label = marker.label,
+            discoveryKind = marker.discoveryKind,
+            phase = marker.phase,
+            phaseName = marker.phaseName,
+            position = marker.position,
+            presence = kind == "abstract_group" and "abstract" or "unknown",
+            providerMode = "DTAbstract",
+            rawDebug = marker.rawDebug == true,
+            rendered = WorldMap.Enabled == true,
+        }
+    end
+    return output
+end
+
+MarkerDiagnostics.RegisterSource("DynamicTrading:DTAbstractDiscovery", {
+    kind = "discovery_signal",
+    priority = 50,
+    list = WorldMap.ListDiagnostics,
+})
 
 function WorldMap.Render(map)
     if not WorldMap.Enabled or not map or not map.mapAPI then return end

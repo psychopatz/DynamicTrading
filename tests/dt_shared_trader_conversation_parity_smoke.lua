@@ -71,7 +71,8 @@ local physical = assert(Conversation.BuildSpec(
     "trader:physical:conversation", "actor:physical:conversation", {}))
 T.equal(abstract.namespace, physical.namespace,
     "provider-specific trader conversation namespaces remain")
-T.equal(abstract.nodes.root.choices[1].id, physical.nodes.root.choices[1].id,
+T.equal(abstract.nodes.landing.choices[1].id,
+    physical.nodes.landing.choices[1].id,
     "providers do not share the same trader content definition")
 T.falsy(abstract.context.abstractOnly,
     "shared trader content still carries abstract-only policy")

@@ -10,6 +10,8 @@ DTCommon.TraderPresets = DTCommon.TraderPresets or {}
 
 local Presets = DTCommon.TraderPresets
 
+local ACTOR_IDENTITY_EXTENSION = "PsychopatzCore.ActorIdentity"
+
 Presets.SCHEMA_VERSION = 1
 Presets.MIN_MEMBER_COUNT = 1
 Presets.MAX_MEMBER_COUNT = 24
@@ -474,6 +476,19 @@ function Presets.BuildMembers(spec)
         local member, reason = Presets.Resolve(
             presetID, index, memberSeed, actorID)
         if not member then return nil, reason end
+        member.extensions = member.extensions or {}
+        local provider = tostring(spec.providerID or spec.provider or "")
+        member.extensions[ACTOR_IDENTITY_EXTENSION] = {
+            canonicalActorID = actorID,
+            providerID = provider ~= "" and provider or nil,
+            presenceState = provider == "DTAbstract"
+                and "abstract" or nil,
+            project = true,
+            capabilities = {
+                conversation = true,
+                ["dynamictrading.trade"] = true,
+            },
+        }
         actorIDs[index] = actorID
         memberSpecs[index] = member
     end

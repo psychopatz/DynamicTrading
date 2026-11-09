@@ -19,6 +19,8 @@ local Service = DTCommon and DTCommon.TraderService
 local Directory = DTCommon and DTCommon.SettlementDirectory
 local Runtime = DTAbstract.SurvivorWorldRuntime
     or require "DTAbstract/DTAbstract_SurvivorWorldRuntime"
+local Travel = (PsychopatzCore and PsychopatzCore.Travel)
+    or require "PsychopatzCore/Travel/PsychopatzTravel"
 local PreSurvivorWorldImport = require
     "DTAbstract/DTAbstract_PreSurvivorWorldImport"
 local TraderGeneration = require
@@ -329,7 +331,11 @@ function Provider.startMovement(traderID, record, request)
     end
 
     local now = worldAge(request and request.now)
-    local origin = world:ProjectGroupPosition(group.id, now)
+    local origin = Travel.Registry.ProjectPosition(
+        world,
+        group.id,
+        now
+    )
         or group.location
     local target = {
         id = request.destinationSettlementID,
@@ -339,7 +345,7 @@ function Provider.startMovement(traderID, record, request)
         z = destinationPosition.z or 0,
     }
     local updated
-    updated, reason = world:StartGroupJourney(group.id, {
+    updated, reason = Travel.Registry.Start(world, group.id, {
         journeyID = request and request.journeyID,
         ownerMod = "DynamicTrading",
         ownerRef = traderID,
@@ -384,7 +390,7 @@ function Provider.pollMovement(_, record, request)
         or journey.state == "planned"
         or journey.state == "waiting"
     then
-        group, reason = world:AdvanceGroupJourney(group.id, now)
+        group, reason = Travel.Registry.Advance(world, group.id, now)
         if not group then return nil, reason end
         local dirty, dirtyReason = Runtime.MarkDirty(
             "dtabstract_group_journey_advanced")
@@ -422,7 +428,8 @@ function Provider.getPosition(_, record, now)
     end
     local group, reason = Runtime.FindGroupForActor(actorID)
     if not group then return nil, reason end
-    return world:ProjectGroupMemberPosition(
+    return Travel.Registry.ProjectMemberPosition(
+        world,
         group.id,
         actorID,
         actor.world,
@@ -452,7 +459,8 @@ function Provider.rebaseMovement(_, record, options)
     end
 
     local updated
-    updated, reason = world:RebaseGroupJourney(
+    updated, reason = Travel.Registry.Rebase(
+        world,
         group.id,
         {
             x = tonumber(position.x),
@@ -485,7 +493,8 @@ function Provider.releaseTrader(traderID, record, now)
             and journey.state ~= "blocked"
         then
             local cancelled, cancelReason =
-                world:CancelGroupJourney(
+                Travel.Registry.Cancel(
+                    world,
                     group.id,
                     "dt_trader_removed"
                 )

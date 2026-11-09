@@ -180,6 +180,8 @@ function Factory.Create(spec)
                 actorPrefix = plan.groupID,
                 actorIDs = plan.memberActorIDs,
                 memberCount = #(plan.memberActorIDs or {}),
+                providerID = spec.providerID or "DTAbstract",
+                presenceMode = spec.presenceMode or "abstract",
             })
             if not memberPlan then
                 lastReason = presetReason

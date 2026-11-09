@@ -8,10 +8,66 @@ DTCommon.TraderConversation = DTCommon.TraderConversation or {}
 local Conversation = DTCommon.TraderConversation
 local CoreClient = require
     "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"
+local Landing = require
+    "PsychopatzCore/Conversation/PsychopatzActorConversationLanding"
+local SemanticPack = require "DTCommon/DTCommon_SemanticPack"
+
+if SemanticPack and type(SemanticPack.Init) == "function" then
+    SemanticPack.Init()
+end
 
 Conversation.EXTERNAL_OPENER_ID = "dynamictrading.trader"
 Conversation.ProviderTransports =
     Conversation.ProviderTransports or {}
+Conversation.PendingOpens = Conversation.PendingOpens or {}
+
+local PENDING_OPEN_MAX_ATTEMPTS = 120
+local PENDING_OPEN_TICK_HOOK = false
+
+local function copyOptions(options)
+    local copy = {}
+    for key, value in pairs(type(options) == "table" and options or {}) do
+        copy[key] = value
+    end
+    return copy
+end
+
+local function processPendingOpens()
+    for key, pending in pairs(Conversation.PendingOpens) do
+        pending.attempts = (tonumber(pending.attempts) or 0) + 1
+        if pending.attempts > PENDING_OPEN_MAX_ATTEMPTS then
+            Conversation.PendingOpens[key] = nil
+        else
+            local options = copyOptions(pending.options)
+            options._pendingRetry = true
+            local opened, reason = Conversation.Open(
+                pending.traderID,
+                pending.actorID,
+                options
+            )
+            if opened ~= nil or reason ~= "core_actor_projection_pending" then
+                Conversation.PendingOpens[key] = nil
+            end
+        end
+    end
+end
+
+local function queuePendingOpen(traderID, actorID, options)
+    local key = tostring(traderID) .. "|" .. tostring(actorID)
+    Conversation.PendingOpens[key] = {
+        traderID = tostring(traderID),
+        actorID = tostring(actorID),
+        options = copyOptions(options),
+        attempts = 0,
+    }
+    if not PENDING_OPEN_TICK_HOOK
+        and Events and Events.OnTick
+        and type(Events.OnTick.Add) == "function"
+    then
+        Events.OnTick.Add(processPendingOpens)
+        PENDING_OPEN_TICK_HOOK = true
+    end
+end
 
 function Conversation.RegisterProviderTransport(providerID, transport)
     providerID = tostring(providerID or "")
@@ -30,6 +86,30 @@ local function recordFor(traderID)
     return service.GetRecord(tostring(traderID or ""))
 end
 
+local function resolveActorReference(reference)
+    if CoreClient and type(CoreClient.Resolve) == "function" then
+        return CoreClient.Resolve(reference)
+    end
+    local actor = CoreClient and type(CoreClient.GetActor) == "function"
+        and CoreClient.GetActor(reference) or nil
+    if actor then
+        return actor, {
+            canonicalActorID = actor.actorID,
+            aliasKind = "canonical",
+            sourceReference = tostring(reference or ""),
+        }
+    end
+    return nil, "actor_not_found"
+end
+
+local function sameActorReference(left, right, canonical)
+    if tostring(left or "") == tostring(right or "") then return true end
+    if not canonical then return false end
+    local resolved = resolveActorReference(left)
+    return resolved ~= nil
+        and tostring(resolved.actorID or "") == tostring(canonical)
+end
+
 local function traderForNPC(npcID)
     npcID = tostring(npcID or "")
     if npcID == "" then return nil, nil end
@@ -39,14 +119,16 @@ local function traderForNPC(npcID)
     end
     local foundID
     local foundRecord
+    local selected = resolveActorReference(npcID)
+    local canonical = selected and selected.actorID or nil
     service.ForEach(function(traderID, record)
         if foundID or type(record) ~= "table" then return end
         local ca = type(record.ca) == "table" and record.ca or {}
-        local matched = tostring(ca.actorID or "") == npcID
-            or tostring(record.p or record.l or "") == npcID
+        local matched = sameActorReference(ca.actorID, npcID, canonical)
+            or sameActorReference(record.p or record.l, npcID, canonical)
         if not matched then
             for _, memberID in ipairs(record.m or {}) do
-                if tostring(memberID) == npcID then
+                if sameActorReference(memberID, npcID, canonical) then
                     matched = true
                     break
                 end
@@ -239,6 +321,13 @@ local function canTradeRole(role)
         or role == "merchant_trader"
 end
 
+local function canTrade(projection, role)
+    local capabilities = projection and projection.capabilities
+    return type(capabilities) == "table"
+        and capabilities["dynamictrading.trade"] == true
+        or canTradeRole(role)
+end
+
 local function actorService()
     local loaded, service = pcall(
         require,
@@ -390,7 +479,7 @@ local function contextFor(
     local ca = record and record.ca or {}
     local role = roleFor(projection, options)
     local capabilities = {}
-    if canTradeRole(role) then
+    if canTrade(projection, role) then
         capabilities["dynamictrading.trade"] = true
     end
     return {
@@ -564,10 +653,27 @@ function Conversation.BuildSpec(traderID, actorID, options)
 
     local record = recordFor(traderID)
     if not record then return nil, "trader_not_found" end
-    local projection = CoreClient.GetActor(actorID)
+    local sourceActorID = actorID
+    local projection, resolution = resolveActorReference(actorID)
     if not projection then
-        return nil, "core_actor_projection_unavailable"
+        if CoreClient
+            and type(CoreClient.RequestActorsIfDue) == "function"
+        then
+            CoreClient.RequestActorsIfDue(1000)
+            return nil, "core_actor_projection_pending"
+        elseif CoreClient
+            and type(CoreClient.RequestActors) == "function"
+        then
+            CoreClient.RequestActors()
+            return nil, "core_actor_projection_pending"
+        end
+        return nil, "actor_identity_unresolved"
     end
+    actorID = tostring(
+        resolution and resolution.canonicalActorID
+            or projection.actorID
+            or actorID
+    )
     local portrait = CoreClient.GetPortraitSpec(projection)
     if not portrait then
         return nil, "core_actor_portrait_unavailable"
@@ -586,7 +692,7 @@ function Conversation.BuildSpec(traderID, actorID, options)
     local roster, rosterIndex = rosterFor(
         record, actorID, options.roster)
     local role = roleFor(projection, options)
-    local tradeAvailable = canTradeRole(role)
+    local tradeAvailable = canTrade(projection, role)
 
     local semanticOptions = {
         provider = options.provider
@@ -600,39 +706,185 @@ function Conversation.BuildSpec(traderID, actorID, options)
         role = role,
     }
 
+    local relationship = projection.relationship
+        or projection.social and projection.social.relationship
+    if type(relationship) ~= "table" then
+        relationship = { approval = 0 }
+    elseif relationship.approval == nil then
+        local relationshipCopy = {}
+        for key, value in pairs(relationship) do
+            relationshipCopy[key] = value
+        end
+        relationshipCopy.approval = 0
+        relationship = relationshipCopy
+    end
+
+    local conversationContext = {
+        actorID = actorID,
+        sourceActorID = sourceActorID,
+        traderID = traderID,
+        npcID = actorID,
+        npcName = name,
+        provider = semanticOptions.provider,
+        providerState = semanticOptions.providerState,
+        factionID = faction.factionID,
+        factionName = faction.factionName,
+        factionArchetypeID = faction.factionArchetypeID,
+        factionPresentation = faction.factionPresentation,
+        communityID = faction.communityID,
+        conversationMode = semanticOptions.mode,
+        traderRole = role,
+        capabilities = tradeAvailable
+            and { ["dynamictrading.trade"] = true } or {},
+        strictCapabilities = true,
+        relationship = relationship,
+        identityState = knowledge.state,
+        identityNameKnown = knowledge.nameKnown ~= false,
+        knownName = knowledge.knownName,
+        factionKnown = knowledge.factionKnown ~= false,
+        knowledgeRevision = knowledge.revision,
+        knowledge = knowledge,
+    }
+
+    local landing = Landing.Build({
+        context = conversationContext,
+        landingID = "landing",
+        greetingCategory = "greeting",
+        greetingFallback = "What do you need?",
+        seed = actorID,
+        actionFilter = function(action)
+            return action.sourceKind == "dynamic_trading"
+                or string.find(
+                    tostring(action.id or ""),
+                    "^dynamictrading%."
+                ) ~= nil
+        end,
+        actionChoice = function(action)
+            if action.id == "dynamictrading.trade" then
+                return {
+                    id = action.id,
+                    text = "Open trading",
+                    response = "Let's see what we can trade.",
+                    action = function()
+                        local client = DTCommon and DTCommon.Client
+                        if client
+                            and type(client.OpenTrader) == "function"
+                        then
+                            return client.OpenTrader(traderID, {
+                                mode = "trade",
+                                actorID = actorID,
+                                npcID = actorID,
+                                provider = semanticOptions.provider,
+                            })
+                        end
+                        return false, "trade_unavailable"
+                    end,
+                }
+            end
+            if action.id == "dynamictrading.referral" then
+                return {
+                    id = action.id,
+                    text = "Ask who handles trades",
+                    response = "The caravan's merchant handles the deals.",
+                }
+            end
+            if action.id == "dynamictrading.rumors" then
+                return {
+                    id = action.id,
+                    text = "Any road news?",
+                    response = function()
+                        return newsResponse(traderID)
+                    end,
+                }
+            end
+            return {
+                id = action.id,
+                text = action.fallbackText or action.label or action.id,
+                response = "I can help with that part of the caravan's work.",
+            }
+        end,
+        choices = function()
+            return {
+                {
+                    id = "identity",
+                    text = "What's your name?",
+                    response = function()
+                        return identityResponse(knowledge, name)
+                    end,
+                    order = 60,
+                },
+                {
+                    id = "next_person",
+                    text = "Talk to the next person.",
+                    visible = #roster > 1,
+                    response = "Let's see who else is with us.",
+                    action = function(_, _, session)
+                        local nextIndex = rosterIndex + 1
+                        if nextIndex > #roster then nextIndex = 1 end
+                        local nextActorID = roster[nextIndex]
+                        local nextSpec, nextReason =
+                            Conversation.BuildSpec(
+                                traderID,
+                                nextActorID,
+                                {
+                                    mode = options.mode,
+                                    provider = semanticOptions.provider,
+                                    providerState = semanticOptions.providerState,
+                                    roster = roster,
+                                    rosterIndex = nextIndex,
+                                }
+                            )
+                        if not nextSpec then
+                            return false, nextReason
+                        end
+                        local view = session and session.view
+                        if not view
+                            or type(view.refreshConversationSpec)
+                                ~= "function"
+                        then
+                            return false, "conversation_view_unavailable"
+                        end
+                        view:refreshConversationSpec(nextSpec)
+                        return true
+                    end,
+                    order = 70,
+                },
+                {
+                    id = "destination",
+                    text = "Where are you heading?",
+                    response = function()
+                        return destinationResponse(recordFor(traderID))
+                    end,
+                    order = 80,
+                },
+                {
+                    id = "origin",
+                    text = "Where did you come from?",
+                    response = function()
+                        return originResponse(recordFor(traderID))
+                    end,
+                    order = 90,
+                },
+                {
+                    id = "goodbye",
+                    text = "Goodbye.",
+                    response = "Stay safe.",
+                    close = true,
+                    order = 100,
+                },
+            }
+        end,
+    })
+
     local spec = {
         namespace = "dynamictrading.trader",
         npcID = actorID,
+        sourceActorID = sourceActorID,
         npcName = name,
         persistHistory = true,
         animateOpening = true,
         portrait = portrait,
-        context = {
-            actorID = actorID,
-            traderID = traderID,
-            npcName = name,
-            provider = options.provider
-                or projection.provider
-                or ca.provider
-                or "DynamicTrading",
-            providerState = options.providerState
-                or projection.providerState
-                or ca.providerState,
-            factionID = faction.factionID,
-            factionName = faction.factionName,
-            factionArchetypeID = faction.factionArchetypeID,
-            factionPresentation = faction.factionPresentation,
-            communityID = faction.communityID,
-            conversationMode = options.mode or "radio",
-            traderRole = role,
-            capabilities = tradeAvailable
-                and { ["dynamictrading.trade"] = true } or {},
-            identityState = knowledge.state,
-            identityNameKnown = knowledge.nameKnown ~= false,
-            knownName = knowledge.knownName,
-            factionKnown = knowledge.factionKnown ~= false,
-            knowledgeRevision = knowledge.revision,
-        },
+        context = conversationContext,
         roster = roster,
         rosterIndex = rosterIndex,
         role = role,
@@ -686,110 +938,10 @@ function Conversation.BuildSpec(traderID, actorID, options)
                 factory = semanticInputFactory,
             },
         },
-        start = "root",
-        nodes = {
-            root = {
-                npc = { text = "What do you need?" },
-                choices = {
-                    {
-                        id = "trade",
-                        text = "Open trading",
-                        visible = tradeAvailable,
-                        response = "Let's see what we can trade.",
-                        action = function()
-                            local client = DTCommon and DTCommon.Client
-                            if client
-                                and type(client.OpenTrader) == "function"
-                            then
-                                return client.OpenTrader(traderID, {
-                                    mode = "trade",
-                                    actorID = actorID,
-                                    npcID = actorID,
-                                    provider = projection.provider
-                                        or ca.provider,
-                                })
-                            end
-                            return false, "trade_unavailable"
-                        end,
-                        next = "root",
-                    },
-                    {
-                        id = "identity",
-                        text = "What's your name?",
-                        response = function()
-                            return identityResponse(knowledge, name)
-                        end,
-                        next = "root",
-                    },
-                    {
-                        id = "next_person",
-                        text = "Talk to the next person.",
-                        visible = #roster > 1,
-                        response = "Let's see who else is with us.",
-                        action = function(_, _, session)
-                            local nextIndex = rosterIndex + 1
-                            if nextIndex > #roster then nextIndex = 1 end
-                            local nextActorID = roster[nextIndex]
-                            local nextSpec, nextReason =
-                                Conversation.BuildSpec(
-                                    traderID,
-                                    nextActorID,
-                                    {
-                                        mode = options.mode,
-                                        provider = semanticOptions.provider,
-                                        providerState = semanticOptions.providerState,
-                                        roster = roster,
-                                        rosterIndex = nextIndex,
-                                    }
-                                )
-                            if not nextSpec then
-                                return false, nextReason
-                            end
-                            local view = session and session.view
-                            if not view
-                                or type(view.refreshConversationSpec)
-                                    ~= "function"
-                            then
-                                return false, "conversation_view_unavailable"
-                            end
-                            view:refreshConversationSpec(nextSpec)
-                            return true
-                        end,
-                        next = "root",
-                    },
-                    {
-                        id = "destination",
-                        text = "Where are you heading?",
-                        response = function()
-                            return destinationResponse(recordFor(traderID))
-                        end,
-                        next = "root",
-                    },
-                    {
-                        id = "origin",
-                        text = "Where did you come from?",
-                        response = function()
-                            return originResponse(recordFor(traderID))
-                        end,
-                        next = "root",
-                    },
-                    {
-                        id = "news",
-                        text = "Any road news?",
-                        response = function()
-                            return newsResponse(traderID)
-                        end,
-                        next = "root",
-                    },
-                    {
-                        id = "goodbye",
-                        text = "Goodbye.",
-                        response = "Stay safe.",
-                        close = true,
-                    },
-                },
-            },
-        },
+        start = landing.start,
+        nodes = landing.nodes,
+        semanticActions = landing.actions,
+        greetingBlock = landing.greetingBlock,
     }
     spec.refreshPresentation = function()
         local refreshOptions = {}
@@ -806,22 +958,24 @@ function Conversation.BuildSpec(traderID, actorID, options)
         end
         return nil
     end
-    if #roster <= 1 then
-        -- Keep the single-actor contract compact and preserve the existing
-        -- root choice order.  The roster switch is materialized only when
-        -- there is another faction member to rotate to.
-        table.remove(spec.nodes.root.choices, 3)
-    end
     return spec
 end
 
 function Conversation.Open(traderID, actorID, options)
+    options = type(options) == "table" and options or {}
     local spec, reason = Conversation.BuildSpec(
         traderID,
         actorID,
         options
     )
-    if not spec then return nil, reason end
+    if not spec then
+        if reason == "core_actor_projection_pending"
+            and options._pendingRetry ~= true
+        then
+            queuePendingOpen(traderID, actorID, options)
+        end
+        return nil, reason
+    end
 
     local core = PsychopatzCore and PsychopatzCore.Conversation or nil
     if not core or type(core.Open) ~= "function" then

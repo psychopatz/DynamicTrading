@@ -47,6 +47,7 @@ function Generation.CreateCanonicalActors(spec, memberPlan)
     local member
     local actor
     local reason
+    local extensions
 
     if not registry or type(registry.Create) ~= "function" then
         return nil, "actor_registry_unavailable"
@@ -65,6 +66,23 @@ function Generation.CreateCanonicalActors(spec, memberPlan)
             end
             return nil, "canonical_actor_id_collision"
         end
+        extensions = {}
+        for extensionID, extensionValue in pairs(member.extensions or {}) do
+            extensions[extensionID] = extensionValue
+        end
+        local actorExtensions = memberPlan.actorExtensions
+            and memberPlan.actorExtensions[index] or nil
+        for extensionID, extensionValue in pairs(actorExtensions or {}) do
+            if extensions[extensionID] == nil then
+                extensions[extensionID] = extensionValue
+            end
+        end
+        extensions["dynamictrading.traderPreset"] = {
+            schemaVersion = tonumber(member.schemaVersion) or 1,
+            presetID = member.presetID,
+            role = member.role,
+            visualProfile = member.visualProfile,
+        }
         actor, reason = registry:Create({
             actorId = member.actorID,
             identitySeed = member.identitySeed,
@@ -81,14 +99,7 @@ function Generation.CreateCanonicalActors(spec, memberPlan)
                     z = tonumber(position.z) or 0,
                 },
             },
-            extensions = {
-                ["dynamictrading.traderPreset"] = {
-                    schemaVersion = tonumber(member.schemaVersion) or 1,
-                    presetID = member.presetID,
-                    role = member.role,
-                    visualProfile = member.visualProfile,
-                },
-            },
+            extensions = extensions,
             source = member.source,
         })
         if not actor then

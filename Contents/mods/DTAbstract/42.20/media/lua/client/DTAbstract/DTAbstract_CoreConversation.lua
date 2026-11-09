@@ -164,9 +164,12 @@ local function onServerCommand(module, command, args)
         mode = args and args.mode or nil,
         reason = view and "conversation_opened"
             or reason,
+        pending = reason == "core_actor_projection_pending",
         view = view,
     }
-    if not view then
+    if not view
+        and reason ~= "core_actor_projection_pending"
+    then
         local manager = DTCommon and DTCommon.TraderManager
         if not manager then
             local loaded, value = pcall(
