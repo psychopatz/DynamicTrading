@@ -15,6 +15,7 @@ from semantic_harness.provider_registry import (
     ProviderRegistry,
     ProfileDescriptor,
 )
+from semantic_harness.profile_loader import ProfileSelection, compose_profile
 
 
 DT_COMMON_PROVIDER_ID = "DTCommon"
@@ -128,6 +129,20 @@ def register_dynamic_trading_profiles(
     return registry
 
 
+def compose_dynamic_trading_profile(
+    profile_id: str,
+    *,
+    available_provider_ids: tuple[str, ...] | None = None,
+) -> ProfileSelection:
+    """Resolve one DT profile through Core's generic profile loader."""
+
+    return compose_profile(
+        profile_id,
+        registrars=(register_dynamic_trading_profiles,),
+        available_provider_ids=available_provider_ids,
+    )
+
+
 def profile_provider_ids(profile_id: str) -> tuple[str, ...]:
     """Expose the stable composition without constructing a registry."""
 
@@ -154,6 +169,7 @@ __all__ = [
     "DT_COMMON_PROVIDER_ID",
     "DT_HOOMANS_PROVIDER_ID",
     "profile_provider_ids",
+    "compose_dynamic_trading_profile",
     "provider_descriptors",
     "register_dynamic_trading_profiles",
 ]

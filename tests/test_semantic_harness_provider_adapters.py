@@ -19,12 +19,34 @@ from tools.semantic_harness.provider_adapters import (  # noqa: E402
     DT_ABSTRACT_PROVIDER_ID,
     DT_COMMON_PROVIDER_ID,
     DT_HOOMANS_PROVIDER_ID,
+    compose_dynamic_trading_profile,
     profile_provider_ids,
     register_dynamic_trading_profiles,
 )
 
 
 class DynamicTradingProviderAdapterTests(unittest.TestCase):
+    def test_profile_selection_emits_core_worker_launch_metadata(self) -> None:
+        selection = compose_dynamic_trading_profile(
+            "dtabstract",
+            available_provider_ids=(
+                "PsychopatzCore",
+                DT_COMMON_PROVIDER_ID,
+                DT_ABSTRACT_PROVIDER_ID,
+            ),
+        )
+
+        self.assertEqual(
+            selection.launch_environment(),
+            {
+                "SEMANTIC_HARNESS_PROFILE": "dtabstract",
+                "SEMANTIC_HARNESS_PROVIDER_IDS": (
+                    "PsychopatzCore,DTCommon,DTAbstract"
+                ),
+                "SEMANTIC_HARNESS_MATERIALIZATION_MODE": "abstract",
+            },
+        )
+
     def test_abstract_and_physical_profiles_share_core_execution_contract(self) -> None:
         registry = register_dynamic_trading_profiles(core_registry())
 

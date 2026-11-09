@@ -9,6 +9,7 @@ from .provider_adapters import (
     DT_ABSTRACT_PROVIDER_ID,
     DT_COMMON_PROVIDER_ID,
     DT_HOOMANS_PROVIDER_ID,
+    compose_dynamic_trading_profile,
     register_dynamic_trading_profiles,
 )
 
@@ -16,5 +17,6 @@ __all__ = [
     "DT_ABSTRACT_PROVIDER_ID",
     "DT_COMMON_PROVIDER_ID",
     "DT_HOOMANS_PROVIDER_ID",
+    "compose_dynamic_trading_profile",
     "register_dynamic_trading_profiles",
 ]
