@@ -1,6 +1,7 @@
 local T = require "tests/support/test"
 T.addPackagePaths()
 
+local directoryLists = 0
 local actorRefreshes = 0
 local discoveryRefreshes = 0
 local selectedActor
@@ -205,6 +206,7 @@ local record = {
 DTCommon = {
     SettlementDirectory = {
         List = function()
+            directoryLists = directoryLists + 1
             return {
                 {
                     settlementID = "community:map:home",
@@ -430,4 +432,29 @@ T.truthy(actorRefreshes >= 1,
 T.truthy(discoveryRefreshes >= 1,
     "map never refreshed Core discovery projection")
 
+local cacheNow = 1000
+getTimestampMs = function() return cacheNow end
+WorldMap.DiscoveryMarkerCache = nil
+WorldMap.GetDiscoveryMarkers(true)
+local before = directoryLists
+for frame = 1, 120 do WorldMap.GetDiscoveryMarkers(true) end
+T.equal(directoryLists, before, "unchanged map frames recopied settlement directory")
+cacheNow = 1500
+WorldMap.GetDiscoveryMarkers(true)
+T.equal(directoryLists, before + 1, "directory cache did not expire")
+discoverySnapshot.revision = discoverySnapshot.revision + 1
+WorldMap.GetDiscoveryMarkers(true)
+T.equal(directoryLists, before + 2, "snapshot revision did not invalidate cache")
+cacheNow = 900
+WorldMap.GetDiscoveryMarkers(true)
+T.equal(directoryLists, before + 3, "clock rollback retained stale directory")
+local sharedDebug = false
+CoreClient.IsDebugPresentationEnabled = function() return sharedDebug end
+local normalMarkers = WorldMap.GetDiscoveryMarkers(true)
+for _, marker in ipairs(normalMarkers) do
+    T.falsy(marker.rawDebug, "provider showAll bypassed shared debug permission")
+end
+sharedDebug = true
+local debugMarkers = WorldMap.GetDiscoveryMarkers(false)
+T.truthy(#debugMarkers > #normalMarkers, "shared debug did not expose DTAbstract geography")
 T.finish("dt_abstract_map_smoke")

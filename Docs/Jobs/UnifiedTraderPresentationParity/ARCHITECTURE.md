@@ -9,7 +9,12 @@ Only presence differs:
 - DTAbstract: canonical Core actor and trader exist, but no visible body is materialized.
 - DTHoomans: the same shared contracts apply, but the provider may materialize a ProjectHoomans body.
 
-Presentation, identity, map, debug, notification and trader conversation content must not fork by provider.
+Presentation, identity, map, debug, notification payload, and trader conversation
+content must not fork by provider. Visibility policy may still follow presence:
+
+- DTAbstract uses compact actor notifications because no world NPC body exists.
+- DTHoomans relies on the visible, interactable NPC plus manager/log feedback and
+  does not emit a redundant trader lifecycle toast.
 
 ## Ownership
 
@@ -165,7 +170,9 @@ Required:
 
 Keep the existing modal notification window for detailed system reports.
 
-Dynamic Trading uses the compact actor toast for trader spawned/arrived/nearby/discovered feedback.
+Dynamic Trading uses the compact actor toast for DTAbstract spawned/arrived/nearby/
+discovered feedback. DTHoomans keeps the same payload contract available but
+does not show lifecycle toasts when a physical trader is present.
 
 ## Conversation architecture
 

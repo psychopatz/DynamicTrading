@@ -64,7 +64,9 @@ Implement generic compact actor toast:
 - non-blocking lifecycle;
 - responsive layout.
 
-Migrate successful trader spawn/nearby/discovered/arrival feedback.
+Migrate successful DTAbstract spawn/nearby/discovered/arrival feedback. Keep
+DTHoomans physical lifecycle feedback in the visible NPC and shared manager/log;
+do not emit a redundant actor toast.
 
 Keep modal notification for detailed reports.
 
@@ -160,7 +162,8 @@ Native DTAbstract acceptance:
 
 Native DTHoomans acceptance:
 - same shared trader-facing presentation;
-- physical body still materializes normally.
+- physical body still materializes normally;
+- no redundant lifecycle actor toast is shown.
 
 ## Stop condition
 

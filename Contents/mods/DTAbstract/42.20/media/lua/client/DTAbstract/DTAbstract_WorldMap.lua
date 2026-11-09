@@ -23,6 +23,12 @@ local COLORS = {
     signal = { r = 0.72, g = 0.45, b = 0.95, a = 0.9 },
 }
 
+local function markerTime()
+    if getTimestampMs then return tonumber(getTimestampMs()) end
+    if getTimeInMillis then return tonumber(getTimeInMillis()) end
+    return nil
+end
+
 local function canUseDebug()
     local player = getSpecificPlayer and getSpecificPlayer(0)
         or (getPlayer and getPlayer() or nil)
@@ -36,6 +42,9 @@ local function canUseDebug()
 end
 
 local function debugMode(showAll)
+    if CoreClient.IsDebugPresentationEnabled then
+        return CoreClient.IsDebugPresentationEnabled()
+    end
     return showAll == true
         or WorldMap.ShowAll == true
         or canUseDebug()
@@ -66,9 +75,20 @@ end
 
 function WorldMap.GetDiscoveryMarkers(showAll)
     refresh()
+    local snapshot = CoreClient.GetDiscoverySnapshot() or {}
+    local debugVisible = debugMode(showAll)
+    local now = markerTime()
+    local cache = WorldMap.DiscoveryMarkerCache
+    if cache and cache.snapshot == snapshot
+        and cache.revision == snapshot.revision
+        and cache.debugVisible == debugVisible
+        and now ~= nil and cache.at ~= nil
+        and now >= cache.at and now - cache.at < 500
+    then
+        return cache.markers
+    end
     local markers = {}
     local seen = {}
-    local snapshot = CoreClient.GetDiscoverySnapshot() or {}
 
     for _, entity in ipairs(snapshot.entities or {}) do
         local x = tonumber(entity.x)
@@ -101,7 +121,7 @@ function WorldMap.GetDiscoveryMarkers(showAll)
     end
 
     -- Debug can show canonical settlement geography without creating discovery.
-    if debugMode(showAll) then
+    if debugVisible then
         local Directory = DTCommon and DTCommon.SettlementDirectory
         for _, settlement in ipairs(
             Directory and Directory.List and Directory.List() or {}
@@ -140,6 +160,12 @@ function WorldMap.GetDiscoveryMarkers(showAll)
         end
         return tostring(left.id) < tostring(right.id)
     end)
+    -- Keep directory/provider copying and sorting out of the frame loop.
+    -- TTL also refreshes in-place settlement changes without a revision API.
+    WorldMap.DiscoveryMarkerCache = {
+        snapshot = snapshot, revision = snapshot.revision,
+        debugVisible = debugVisible, at = now, markers = markers,
+    }
     return markers
 end
 

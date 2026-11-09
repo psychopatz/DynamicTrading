@@ -40,6 +40,7 @@ sendClientCommand = function(current, module, command, args)
 end
 
 local notices = {}
+local managerResults = {}
 local hubTools = {}
 PsychopatzCore = {
     Debug = {
@@ -62,6 +63,14 @@ PsychopatzCore = {
 DTCommon = {
     MOD_ID = "DTCommon",
     T = function(_, fallback) return fallback end,
+    TraderManager = {
+        SetResult = function(message, args)
+            managerResults[#managerResults + 1] = {
+                message = message,
+                args = args,
+            }
+        end,
+    },
 }
 
 local Debug = T.load(
@@ -132,12 +141,14 @@ end
 T.truthy(Debug.LastSpawnResult
     and Debug.LastSpawnResult.pending == true,
     "shared debug queued result was not retained")
-T.equal(#notices, 1,
-    "shared debug queued result did not notify")
-T.contains(notices[1].message, "queued",
-    "shared debug queued notification wording missing")
-T.contains(notices[1].message, "321,654",
-    "shared debug queued notification lost position")
+T.equal(#notices, 0,
+    "shared debug queued result opened an actor notification")
+T.equal(#managerResults, 1,
+    "shared debug queued result did not reach the manager")
+T.contains(managerResults[1].message, "queued",
+    "shared debug queued manager wording missing")
+T.contains(managerResults[1].message, "321,654",
+    "shared debug queued manager result lost position")
 
 for _, callback in ipairs(serverHandlers) do
     callback("DTCommon", "TraderDebugSpawnResult", {
@@ -155,11 +166,32 @@ T.truthy(Debug.LastSpawnResult
     and Debug.LastSpawnResult.accepted == true
     and Debug.LastSpawnResult.pending == false,
     "shared debug final result was not retained")
-T.equal(#notices, 2,
+T.equal(#notices, 1,
     "shared debug final result did not use common notification surface")
-T.contains(notices[2].message, "trader:debug:1",
+T.equal(#managerResults, 2,
+    "shared debug final result did not reach the manager")
+T.contains(notices[1].message, "trader:debug:1",
     "shared debug final notification lost trader identity")
-T.contains(notices[2].message, "no visible world body",
+T.contains(notices[1].message, "no visible world body",
     "abstract debug notification did not explain bodyless spawn")
+
+for _, callback in ipairs(serverHandlers) do
+    callback("DTCommon", "TraderDebugSpawnResult", {
+        accepted = true,
+        pending = false,
+        requestID = "dt_debug_spawn:2",
+        provider = "DTHoomans",
+        traderID = "trader:physical:1",
+        actorID = "actor:physical:1",
+        position = { x = 321, y = 654, z = 0 },
+        reason = "spawned",
+    })
+end
+T.equal(#notices, 1,
+    "physical debug spawn opened an actor notification")
+T.equal(#managerResults, 3,
+    "physical debug result did not reach the manager")
+T.contains(managerResults[3].message, "trader:physical:1",
+    "physical debug manager result lost trader identity")
 
 T.finish("dt_common_trader_debug_client_smoke")

@@ -5,22 +5,16 @@ local Client = DTHoomans.Client
 Client.TraderByNPC = Client.TraderByNPC or {}
 Client.ReferralRequests = Client.ReferralRequests or {}
 
-local TraderNotification = DTCommon
-    and DTCommon.TraderNotification
-    or require "DTCommon/DTCommon_TraderNotification"
-
 local MAX_REFERRAL_REQUESTS = 64
 local MAX_CONVERSATION_REQUESTS = 64
 Client.PendingTraderConversations =
     Client.PendingTraderConversations or {}
 
-local function showTraderToast(id, traderID, message, fallbackName, actorID)
-    return TraderNotification.Show(traderID, message, {
-        id = id,
-        actorID = actorID,
-        name = fallbackName or traderID or "Dynamic Trading",
-        mode = "nearby",
-    })
+local function setManagerResult(message, args)
+    local manager = DTCommon and DTCommon.TraderManager or nil
+    if manager and type(manager.SetResult) == "function" then
+        manager.SetResult(message, args)
+    end
 end
 
 local function log(level, message)
@@ -325,13 +319,7 @@ local function onServerCommand(module, command, args)
     if command == "TraderSpawnStarted" then
         log("INFO", "spawn_started request=" .. tostring(args.requestID)
             .. " faction=" .. tostring(args.factionID))
-        showTraderToast(
-            "dthoomans:spawn:" .. tostring(args.requestID or "unknown")
-                .. ":started",
-            args.traderID,
-            "Trader caravan spawn queued.",
-            "Trader caravan"
-        )
+        setManagerResult("Trader caravan spawn queued.", args)
         return
     end
     if command ~= "TraderSpawned" then return end
@@ -344,22 +332,12 @@ local function onServerCommand(module, command, args)
             .. " merchant=" .. tostring(args.npcID)
             .. " faction=" .. tostring(args.factionID)
             .. " members=" .. tostring(#(args.memberNPCIDs or {})))
-        showTraderToast(
-            "dthoomans:spawn:" .. tostring(args.traderID or "unknown")
-                .. ":completed",
-            args.traderID,
-            "Trader caravan arrived and is ready to trade.",
-            "Trader caravan",
-            args.npcID
-        )
+        setManagerResult("Trader caravan arrived and is ready to trade.", args)
     elseif args.accepted == false then
         log("WARN", "spawn_failed reason=" .. tostring(args.reason))
-        showTraderToast(
-            "dthoomans:spawn:failed:" .. tostring(args.reason or "unknown"),
-            args.traderID,
-            "Trader caravan spawn failed: "
-                .. tostring(args.reason or "unknown"),
-            "Trader caravan"
+        setManagerResult(
+            "Trader caravan spawn failed: " .. tostring(args.reason or "unknown"),
+            args
         )
     end
 end

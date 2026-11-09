@@ -8,6 +8,9 @@ DTCommon.TraderGeneration = DTCommon.TraderGeneration or {}
 local Generation = DTCommon.TraderGeneration
 local Presets = require "DTCommon/DTCommon_TraderPresets"
 local ActorSystem = require "PsychopatzCore/Actors/PsychopatzActors"
+if Presets.RegisterCoreArchetypes then
+    Presets.RegisterCoreArchetypes()
+end
 Generation.Adapters = Generation.Adapters or {}
 Generation.MAX_ADAPTERS = 8
 Generation.PRESENCE_ABSTRACT = "abstract"
@@ -66,7 +69,8 @@ function Generation.CreateCanonicalActors(spec, memberPlan)
             actorId = member.actorID,
             identitySeed = member.identitySeed,
             identity = member.identity,
-            archetypeID = member.archetypeID or "core.survivor",
+            archetypeID = member.coreArchetypeID
+                or member.archetypeID or "core.survivor",
             ownerMod = "DynamicTrading",
             appearance = member.appearance,
             starterItems = member.startingItems,

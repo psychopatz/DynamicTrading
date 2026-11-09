@@ -4,10 +4,14 @@
 
 Make DTAbstract and DTHoomans use the same Dynamic Trading presentation, interaction, debug, map, notification, and conversation contracts.
 
-The only intended behavioral difference is presence/materialization:
+The only intended behavioral difference is presence/materialization and the
+presence-aware feedback surface:
 
-- DTAbstract: canonical Core actor/trader remains abstract and never creates a visible world NPC body.
-- DTHoomans: the same canonical actor/trader may be materialized through ProjectHoomans.
+- DTAbstract: canonical Core actor/trader remains abstract, never creates a
+  visible world NPC body, and uses the compact actor toast for contact feedback.
+- DTHoomans: the same canonical actor/trader may be materialized through
+  ProjectHoomans; the physical NPC and shared manager/log provide feedback
+  without a redundant lifecycle toast.
 
 Everything else that is trader-facing should converge on shared systems.
 
@@ -39,7 +43,8 @@ This goal is complete only when:
 3. trader map markers use the same canonical actor and faction presentation under both providers;
 4. one shared Dynamic Trading trader debug model/window/actions serves both providers;
 5. Talk uses one shared trader conversation path and opens the real shared conversation UI;
-6. one shared actor/trader toast shows a circular portrait and compact status feedback;
+6. one shared actor/trader notification payload supports compact abstract-mode
+   feedback while physical-mode lifecycle feedback remains NPC/manager based;
 7. obsolete DTAbstract presentation substitutes are removed;
 8. obsolete DTHoomans Dynamic Trading presentation duplicates are removed;
 9. provider-specific code is limited to presence/materialization and unavoidable provider transport;

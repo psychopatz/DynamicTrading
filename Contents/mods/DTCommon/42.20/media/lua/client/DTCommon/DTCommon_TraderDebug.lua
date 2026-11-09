@@ -28,6 +28,13 @@ local function canUseDebug()
     return false
 end
 
+local function setManagerResult(message, args)
+    local manager = DTCommon and DTCommon.TraderManager or nil
+    if manager and type(manager.SetResult) == "function" then
+        manager.SetResult(message, args)
+    end
+end
+
 local function playerForIndex(playerNum)
     if type(playerNum) == "number" and getSpecificPlayer then
         return getSpecificPlayer(playerNum)
@@ -160,6 +167,19 @@ local function onServerCommand(module, command, args)
     else
         message = "Trader spawn failed: "
             .. tostring(args.reason or "unknown")
+    end
+
+    setManagerResult(message, args)
+
+    -- Actor notifications describe abstract traders. A physical Hoomans
+    -- trader is already visible and interactable, so retain the debug result
+    -- in the manager/log without opening a redundant actor toast.
+    if tostring(args.provider or "") ~= "DTAbstract"
+        or args.pending == true
+        or args.accepted ~= true
+    then
+        print("[DT][DEBUG] " .. message)
+        return
     end
 
     local view

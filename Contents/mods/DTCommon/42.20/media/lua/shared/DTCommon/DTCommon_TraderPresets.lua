@@ -211,6 +211,76 @@ local DEFINITIONS = {
     },
 }
 
+function Presets.RegisterCoreArchetypes()
+    local core = PsychopatzCore
+    local actors = core and core.Actors or nil
+    local archetypes = actors and actors.Archetypes or nil
+    local presetID
+    local definition
+    local registered
+    local reason
+    local coreID
+    if not archetypes or type(archetypes.Register) ~= "function" then
+        return false, "core_archetype_registry_unavailable"
+    end
+    for presetID, definition in pairs(DEFINITIONS) do
+        coreID = "dynamictrading." .. tostring(presetID)
+        registered, reason = archetypes:Register({
+            id = coreID,
+            aliases = { presetID },
+            label = presetID,
+            sourceMod = "DynamicTrading",
+            tags = { "dynamic_trading", definition.role },
+            role = definition.role,
+            visualProfile = definition.visualProfile,
+            identity = {
+                gender = definition.gender,
+                profiles = copy(definition.identities),
+            },
+            appearance = appearanceFor(definition),
+            inventory = {
+                items = definition.items,
+                equipment = definition.equipment,
+            },
+            extensions = {
+                ["dynamictrading.preset"] = {
+                    presetID = presetID,
+                    role = definition.role,
+                    presetVersion = Presets.SCHEMA_VERSION,
+                },
+            },
+        })
+        if not registered and reason ~= "already_registered"
+            and core.LogWarn
+        then
+            core.LogWarn(
+                "Core archetype registration failed for "
+                    .. tostring(presetID) .. ": " .. tostring(reason)
+            )
+        end
+        if not registered then
+            return false, reason
+        end
+    end
+    return true, "registered"
+end
+
+local function resolveCorePlan(
+    presetID, identitySeed, actorID, identity, identityIndex
+)
+    local actors = PsychopatzCore and PsychopatzCore.Actors or nil
+    local archetypes = actors and actors.Archetypes or nil
+    if not archetypes or type(archetypes.ResolvePlan) ~= "function" then
+        return nil
+    end
+    return archetypes:ResolvePlan(presetID, {
+        actorId = actorID,
+        identitySeed = identitySeed,
+        identity = identity,
+        identityIndex = identityIndex,
+    })
+end
+
 local function chooseIdentity(definition, memberIndex)
     local identities = definition.identities or {}
     if #identities <= 0 then
@@ -238,6 +308,30 @@ end
 
 function Presets.List()
     local output = {}
+    local actors = PsychopatzCore and PsychopatzCore.Actors or nil
+    local archetypes = actors and actors.Archetypes or nil
+    local definitions
+    local extension
+    if archetypes and type(archetypes.List) == "function" then
+        definitions = archetypes:List()
+        for _, definition in ipairs(definitions) do
+            extension = definition.extensions
+                and definition.extensions["dynamictrading.preset"] or nil
+            if type(extension) == "table" and extension.presetID then
+                output[#output + 1] = {
+                    id = extension.presetID,
+                    role = definition.role or extension.role,
+                    visualProfile = definition.visualProfile,
+                }
+            end
+        end
+        if #output > 0 then
+            table.sort(output, function(left, right)
+                return tostring(left.id) < tostring(right.id)
+            end)
+            return output
+        end
+    end
     for presetID, definition in pairs(DEFINITIONS) do
         output[#output + 1] = {
             id = presetID,
@@ -259,9 +353,48 @@ function Presets.PresetIDForMember(memberIndex)
 end
 
 function Presets.Resolve(presetID, memberIndex, identitySeed, actorID)
-    local definition = DEFINITIONS[tostring(presetID or "")]
-    if not definition then return nil, "trader_preset_not_found" end
+    local requestedID = tostring(presetID or "")
+    local definition = DEFINITIONS[requestedID]
     memberIndex = math.max(1, math.floor(tonumber(memberIndex) or 1))
+    local corePlan = resolveCorePlan(
+        requestedID, identitySeed, actorID, nil, memberIndex
+    )
+    if not definition and not corePlan then
+        return nil, "trader_preset_not_found"
+    end
+
+    if corePlan then
+        local coreDefinition = corePlan.definition
+        local extension = coreDefinition.extensions
+            and coreDefinition.extensions["dynamictrading.preset"] or {}
+        local identity = corePlan.identity
+        local role = coreDefinition.role or extension.role or "trader"
+        local legacyArchetypeID = definition
+            and definition.archetypeID or "General"
+        return {
+            schemaVersion = Presets.SCHEMA_VERSION,
+            presetID = requestedID,
+            role = role,
+            actorID = tostring(actorID or ""),
+            identitySeed = identitySeed,
+            identity = identity,
+            isFemale = tostring(identity.gender or ""):lower() == "female",
+            archetypeID = legacyArchetypeID,
+            tacticalClass = "neutral",
+            visualProfile = coreDefinition.visualProfile,
+            appearance = corePlan.appearance,
+            startingItems = corePlan.starterItems,
+            inventoryAuthority = "canonical",
+            equipment = corePlan.equipment,
+            coreArchetypeID = corePlan.archetypeID,
+            source = {
+                ownerMod = "DynamicTrading",
+                presetID = requestedID,
+                presetVersion = Presets.SCHEMA_VERSION,
+            },
+        }
+    end
+
     local identityDefinition = chooseIdentity(definition, memberIndex)
     local gender = identityDefinition.gender or definition.gender
     local identity = {
@@ -285,9 +418,13 @@ function Presets.Resolve(presetID, memberIndex, identitySeed, actorID)
     appearanceDefinition.gender = gender
     appearanceDefinition.skinTexture = gender == "female"
         and "FemaleBody01" or "MaleBody02"
+    if corePlan then
+        identity = corePlan.identity
+        appearanceDefinition = nil
+    end
     local member = {
         schemaVersion = Presets.SCHEMA_VERSION,
-        presetID = tostring(presetID),
+        presetID = requestedID,
         role = definition.role,
         actorID = tostring(actorID or ""),
         identitySeed = identitySeed,
@@ -296,13 +433,17 @@ function Presets.Resolve(presetID, memberIndex, identitySeed, actorID)
         archetypeID = definition.archetypeID,
         tacticalClass = "neutral",
         visualProfile = definition.visualProfile,
-        appearance = appearanceFor(appearanceDefinition),
-        startingItems = copy(definition.items),
+        appearance = corePlan and corePlan.appearance
+            or appearanceFor(appearanceDefinition),
+        startingItems = corePlan and corePlan.starterItems
+            or copy(definition.items),
         inventoryAuthority = "canonical",
-        equipment = copy(definition.equipment),
+        equipment = corePlan and corePlan.equipment
+            or copy(definition.equipment),
+        coreArchetypeID = corePlan and corePlan.archetypeID or nil,
         source = {
             ownerMod = "DynamicTrading",
-            presetID = tostring(presetID),
+            presetID = requestedID,
             presetVersion = Presets.SCHEMA_VERSION,
         },
     }
@@ -342,6 +483,12 @@ function Presets.BuildMembers(spec)
         actorIDs = actorIDs,
         memberSpecs = memberSpecs,
     }
+end
+
+if PsychopatzCore and PsychopatzCore.Actors
+    and PsychopatzCore.Actors.Archetypes
+then
+    Presets.RegisterCoreArchetypes()
 end
 
 return Presets

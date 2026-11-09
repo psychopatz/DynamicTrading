@@ -348,18 +348,37 @@ function Policy.RecordTradeEvent(record, player, tradeDetails)
         return nil, "core_actor_unavailable"
     end
     local Social = actors.Social
-    if not Social or type(Social.RecordAuthorizedEvent) ~= "function" then
+    local Authority = actors.SocialAuthority
+    if not Social or type(Social.GetExtension) ~= "function" then
         return nil, "core_social_unavailable"
+    end
+    if not Authority
+        or type(Authority.Get) ~= "function"
+        or type(Authority.MigrateAliases) ~= "function"
+        or type(Authority.RecordAuthorizedEvent) ~= "function"
+        or type(Authority.SetExtension) ~= "function"
+    then
+        return nil, "core_social_authority_unavailable"
     end
     local keys = playerKeys(player)
     if #keys == 0 then return nil, "player_key_unavailable" end
     local primaryKey = keys[1]
 
-    local actor = actors.Get(actorID)
-    if not actor or not actor.social then return nil, "actor_social_unavailable" end
+    local actor, actorReason = Authority.Get(actorID, PsychopatzCore)
+    if not actor or not actor.social then
+        return nil, actorReason or "actor_social_unavailable"
+    end
 
-    if Social.MigrateAliases and type(Social.MigrateAliases) == "function" then
-        Social.MigrateAliases(actor.social, primaryKey, keys)
+    if #keys > 1 then
+        local migrated, migrateReason = Authority.MigrateAliases(
+            actorID,
+            primaryKey,
+            keys,
+            PsychopatzCore,
+            actor.revision
+        )
+        if not migrated then return nil, migrateReason end
+        actor = migrated
     end
 
     tradeDetails = type(tradeDetails) == "table" and tradeDetails or {}
@@ -396,22 +415,30 @@ function Policy.RecordTradeEvent(record, player, tradeDetails)
         createdAt = tradeDetails.createdAt or (getGameTime and getGameTime():getWorldAgeHours() or 0),
         tags = { trade = true, dynamic_trading = true },
     }
-    local updatedSocial, reason = Social.RecordAuthorizedEvent(actor.social, event)
-    if not updatedSocial then return nil, reason end
+    local updatedActor, reason = Authority.RecordAuthorizedEvent(
+        actorID,
+        event,
+        PsychopatzCore,
+        actor.revision
+    )
+    if not updatedActor then return nil, reason end
+    local updatedSocial = updatedActor.social
 
     -- Update commercial metadata extension in relationship
     local ext = Social.GetExtension and Social.GetExtension(updatedSocial, primaryKey, "DynamicTrading") or {}
     ext.totalTrades = (tonumber(ext.totalTrades) or 0) + 1
     ext.lastTradeValue = tonumber(tradeDetails.totalValue) or 0
     ext.commercialReliability = math.min(100, (tonumber(ext.commercialReliability) or 50) + 1)
-    if Social.SetExtension then
-        Social.SetExtension(updatedSocial, primaryKey, "DynamicTrading", ext, "server")
-    end
-
-    if actors.DefaultRegistry and type(actors.DefaultRegistry.Commit) == "function" then
-        actors.DefaultRegistry:Commit(actorID, { social = updatedSocial })
-    end
-    return updatedSocial
+    local committedActor, extensionReason = Authority.SetExtension(
+        actorID,
+        primaryKey,
+        "DynamicTrading",
+        ext,
+        PsychopatzCore,
+        updatedActor.revision
+    )
+    if not committedActor then return nil, extensionReason end
+    return committedActor.social
 end
 
 function Policy.MarkVisit(record, options)

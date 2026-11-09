@@ -9,45 +9,34 @@ Scoring scope: `production`
 
 | Metric | Value |
 |---|---:|
-| Production Health | 98.6/100 |
+| Production Health | 90.0/100 |
 | Coverage | 62.1% |
-| Confidence | 48.7% |
-| Max Refactor Pressure | 16.5/100 |
-| Production files | 28 |
-| Tests indexed | 9 |
-| Tooling files indexed | 0 |
+| Confidence | 50.5% |
+| Max Refactor Pressure | 17.5/100 |
+| Production files | 88 |
+| Tests indexed | 92 |
+| Tooling files indexed | 7 |
 | Generated files indexed | 0 |
-| Production LOC scored | 3699 |
-| Logical subsystems | 15 |
-| Production findings | 2 |
-| Test findings | 0 |
+| Production LOC scored | 19315 |
+| Logical subsystems | 3 |
+| Production findings | 12 |
+| Test findings | 2 |
 
 ## Subsystems by refactor pressure
 
 | Subsystem | Pressure | Health | Coverage | Confidence | Files | LOC | Findings | Fan-in | Fan-out |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| (composition) | 16.5 | 96.8/100 | 77.1% | 62.6% | 13 | 1228 | 1 | 0 | 14 |
-| Trader | 2.6 | 97.5/100 | 54.6% | 44.8% | 2 | 461 | 1 | 1 | 0 |
-| Caravan | 0.9 | 100.0/100 | 54.6% | 41.0% | 1 | 758 | 0 | 1 | 0 |
-| CaravanLifecycle | 0.7 | 100.0/100 | 54.6% | 41.0% | 1 | 164 | 0 | 1 | 0 |
-| Conversation | 0.7 | 100.0/100 | 54.6% | 41.0% | 1 | 164 | 0 | 1 | 0 |
-| DebugTraderWindow | 0.7 | 100.0/100 | 54.6% | 41.0% | 1 | 229 | 0 | 1 | 0 |
-| SettlementTrader | 0.7 | 100.0/100 | 54.6% | 41.0% | 1 | 218 | 0 | 1 | 0 |
-| Constants | 0.6 | 100.0/100 | 49.2% | 36.9% | 1 | 17 | 0 | 1 | 0 |
-| Context | 0.6 | 100.0/100 | 54.6% | 41.0% | 1 | 101 | 0 | 1 | 0 |
-| DebugSpawnMenu | 0.6 | 100.0/100 | 54.6% | 41.0% | 1 | 59 | 0 | 1 | 0 |
-| Storage | 0.6 | 100.0/100 | 57.7% | 43.3% | 1 | 77 | 0 | 1 | 0 |
-| TradeWindow | 0.6 | 100.0/100 | 54.6% | 41.0% | 1 | 108 | 0 | 1 | 0 |
-| TraderStock | 0.6 | 100.0/100 | 54.6% | 41.0% | 1 | 81 | 0 | 1 | 0 |
-| TraderSupport | 0.6 | 100.0/100 | 54.6% | 41.0% | 1 | 16 | 0 | 1 | 0 |
-| Translation | 0.6 | 100.0/100 | 54.6% | 41.0% | 1 | 18 | 0 | 1 | 0 |
+| DTCommon | 17.5 | 86.7/100 | 62.9% | 51.1% | 53 | 11810 | 7 | 0 | 0 |
+| DTHoomans | 7.0 | 94.6/100 | 61.6% | 50.0% | 19 | 4864 | 3 | 0 | 0 |
+| DTAbstract | 4.5 | 96.4/100 | 59.7% | 48.6% | 16 | 2641 | 2 | 0 | 0 |
 
 ## Finding counts
 
 | Scope | Rule | Severity | Count |
 |---|---|---|---:|
-| production | `CROSS_SUBSYSTEM_COUPLING` | MEDIUM | 1 |
-| production | `LARGE_FUNCTION` | MEDIUM | 1 |
+| production | `LARGE_FUNCTION` | MEDIUM | 11 |
+| production | `LARGE_MODULE` | MEDIUM | 1 |
+| test | `TEST_HARNESS_EXTRACTION_CANDIDATE` | LOW | 2 |
 
 ## Finding index
 
@@ -55,8 +44,20 @@ Query evidence with `architecture_audit finding <repo> <finding-id> --context 4`
 
 | ID | Rule | Severity | Confidence | Subsystem | Summary |
 |---|---|---|---:|---|---|
-| `ARC-2A2289843D` | `CROSS_SUBSYSTEM_COUPLING` | MEDIUM | HIGH (82%) | (composition) | Contents/mods/DTCommon/42.20/media/lua/shared/DTCommon/00_DTCommon_Init.lua directly depends on 6 foreign subsystems. |
-| `ARC-7E9A9EEB47` | `LARGE_FUNCTION` | MEDIUM | HIGH (90%) | Trader | Service.ExecuteTradeBasket spans 137 lines. |
+| `ARC-24E0A53EDF` | `LARGE_MODULE` | MEDIUM | HIGH (92%) | DTCommon | Contents/mods/DTCommon/42.20/media/lua/shared/DTCommon/DTCommon_TraderService.lua has 1056 code lines; review responsibility density. |
+| `ARC-038A8AEEC5` | `LARGE_FUNCTION` | MEDIUM | HIGH (90%) | DTCommon | Exchange.Execute spans 141 lines. |
+| `ARC-0BE0E5BA88` | `LARGE_FUNCTION` | MEDIUM | HIGH (90%) | DTCommon | ensureWindowType spans 187 lines. |
+| `ARC-1F04E0BF6E` | `LARGE_FUNCTION` | MEDIUM | HIGH (90%) | DTHoomans | Runtime.MaterializeTrader spans 136 lines. |
+| `ARC-235121A4EC` | `LARGE_FUNCTION` | MEDIUM | HIGH (90%) | DTHoomans | finalize spans 146 lines. |
+| `ARC-348D600EAB` | `LARGE_FUNCTION` | MEDIUM | HIGH (90%) | DTCommon | Conversation.BuildSpec spans 259 lines. |
+| `ARC-39A525192F` | `LARGE_FUNCTION` | MEDIUM | HIGH (90%) | DTHoomans | onExcursion spans 169 lines. |
+| `ARC-9C6FE1F52F` | `LARGE_FUNCTION` | MEDIUM | HIGH (90%) | DTCommon | registerPack spans 522 lines. |
+| `ARC-A8C4917C5E` | `LARGE_FUNCTION` | MEDIUM | HIGH (90%) | DTCommon | Factory.Create spans 146 lines. |
+| `ARC-ACEB783607` | `LARGE_FUNCTION` | MEDIUM | HIGH (90%) | DTCommon | Service.ExecuteTradeBasket spans 214 lines. |
+| `ARC-CE5CDDC4A8` | `LARGE_FUNCTION` | MEDIUM | HIGH (90%) | DTAbstract | onClientCommand spans 126 lines. |
+| `ARC-D9F88DB710` | `LARGE_FUNCTION` | MEDIUM | HIGH (90%) | DTAbstract | Import.Rebind spans 134 lines. |
+| `ARC-8AE0C9974B` | `TEST_HARNESS_EXTRACTION_CANDIDATE` | LOW | MEDIUM (72%) | DTAbstract | Repeated test setup appears across 4 tests (~36 repeated LOC). |
+| `ARC-D6C1190880` | `TEST_HARNESS_EXTRACTION_CANDIDATE` | LOW | HIGH (95%) | tests | Repeated test setup appears across 29 tests (~4896 repeated LOC). |
 
 ## Largest maintained modules
 
@@ -64,12 +65,23 @@ Generated artifacts and tooling are indexed but excluded from this table and pro
 
 | ID | File | Code LOC |
 |---|---|---:|
+| `ARC-24E0A53EDF` | `Contents/mods/DTCommon/42.20/media/lua/shared/DTCommon/DTCommon_TraderService.lua` | 1056 |
 
 ## Largest functions
 
 | ID | Function | File | Start | LOC |
 |---|---|---|---:|---:|
-| `ARC-7E9A9EEB47` | `Service.ExecuteTradeBasket` | `Contents/mods/DTCommon/42.20/media/lua/shared/DTCommon/DTCommon_TraderService.lua` | 231 | 137 |
+| `ARC-9C6FE1F52F` | `registerPack` | `Contents/mods/DTCommon/42.20/media/lua/shared/DTCommon/DTCommon_SemanticPack.lua` | 13 | 522 |
+| `ARC-348D600EAB` | `Conversation.BuildSpec` | `Contents/mods/DTCommon/42.20/media/lua/client/DTCommon/DTCommon_TraderConversation.lua` | 558 | 259 |
+| `ARC-ACEB783607` | `Service.ExecuteTradeBasket` | `Contents/mods/DTCommon/42.20/media/lua/shared/DTCommon/DTCommon_TraderService.lua` | 855 | 214 |
+| `ARC-0BE0E5BA88` | `ensureWindowType` | `Contents/mods/DTCommon/42.20/media/lua/client/DTCommon/DTCommon_TraderManager.lua` | 193 | 187 |
+| `ARC-39A525192F` | `onExcursion` | `Contents/mods/DTHoomans/42.20/media/lua/server/DTHoomans/DTHoomans_ResidentExcursion.lua` | 183 | 169 |
+| `ARC-A8C4917C5E` | `Factory.Create` | `Contents/mods/DTCommon/42.20/media/lua/server/DTCommon/DTCommon_CoreTraderCandidateFactory.lua` | 97 | 146 |
+| `ARC-235121A4EC` | `finalize` | `Contents/mods/DTHoomans/42.20/media/lua/server/DTHoomans/DTHoomans_CaravanService.lua` | 602 | 146 |
+| `ARC-038A8AEEC5` | `Exchange.Execute` | `Contents/mods/DTCommon/42.20/media/lua/shared/DTCommon/DTCommon_SettlementExchange.lua` | 62 | 141 |
+| `ARC-1F04E0BF6E` | `Runtime.MaterializeTrader` | `Contents/mods/DTHoomans/42.20/media/lua/server/DTHoomans/DTHoomans_ProviderRuntime.lua` | 175 | 136 |
+| `ARC-D9F88DB710` | `Import.Rebind` | `Contents/mods/DTAbstract/42.20/media/lua/server/DTAbstract/DTAbstract_PreSurvivorWorldImport.lua` | 47 | 134 |
+| `ARC-CE5CDDC4A8` | `onClientCommand` | `Contents/mods/DTAbstract/42.20/media/lua/server/DTAbstract/DTAbstract_Server.lua` | 206 | 126 |
 
 ## Recommended workflow
 
