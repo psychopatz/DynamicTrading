@@ -317,4 +317,30 @@ T.truthy(hasCoreInventoryItem(
     actor.actorId .. ":recovery:water"
 ), "missing-body recovery did not commit logical inventory capture")
 
+-- A fresh Hoomans startup may already have hydrated this Core actor before
+-- DynamicTrading asks DTHoomans to materialize it. That record is canonical
+-- Hoomans state, not a temporary DT projection, so the hotswap must preserve
+-- the same table across materialize/dematerialize.
+local hydratedRecord = {
+    id = actor.actorId,
+    runtime = {},
+    hydratedByCore = true,
+}
+hoomansRecords[actor.actorId] = hydratedRecord
+local materializedHydrated, hydratedMaterializeReason =
+    Runtime.MaterializeTrader("trader:handoff:runtime", { now = 12 })
+T.truthy(materializedHydrated, hydratedMaterializeReason)
+T.equal(hoomansRecords[actor.actorId], hydratedRecord,
+    "provider hotswap replaced the pre-hydrated Hoomans record")
+T.falsy(hydratedRecord.runtime.dtProviderProjection,
+    "pre-hydrated Hoomans record became a temporary DT projection")
+
+local resumedHydrated, hydratedDematerializeReason =
+    Runtime.DematerializeTrader("trader:handoff:runtime", { now = 13 })
+T.truthy(resumedHydrated, hydratedDematerializeReason)
+T.equal(hoomansRecords[actor.actorId], hydratedRecord,
+    "dematerialization removed the pre-hydrated Hoomans record")
+T.falsy(hydratedRecord.runtime.dtProviderProjection,
+    "dematerialization left temporary DT projection metadata")
+
 T.finish("dt_provider_runtime_handoff_smoke")
