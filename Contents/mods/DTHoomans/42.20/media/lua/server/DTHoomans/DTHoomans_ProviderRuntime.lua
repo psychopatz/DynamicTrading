@@ -252,6 +252,7 @@ function Runtime.MaterializeTrader(traderID, options)
     local result
     result, reason = provider.Materialize(
         switched, coreContext(), {
+            provider = "DTHoomans",
             owner = OWNER,
             authority = "server",
             now = now,
@@ -386,6 +387,7 @@ function Runtime.DematerializeTrader(traderID, options)
 
     local result, reason = provider.Dematerialize(
         current, coreContext(), {
+            provider = "DTHoomans",
             owner = OWNER,
             authority = "server",
             now = now,
