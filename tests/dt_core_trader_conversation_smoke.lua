@@ -127,14 +127,17 @@ local function choiceByID(id)
     end
     return nil
 end
-T.equal(#landing.choices, 7,
+T.equal(#landing.choices, 9,
     "Core trader conversation exposes expected landing choices")
-local identityChoice = choiceByID("identity")
-T.truthy(identityChoice,
-    "Core trader conversation exposes a knowledge-backed identity choice")
-T.equal(identityChoice.response(),
-    "I'm Core Mara.",
-    "identity response uses the canonical actor name")
+local nicknameChoice = choiceByID("core.question.identity_nickname")
+T.truthy(nicknameChoice,
+    "Core trader conversation exposes the generated nickname identity choice")
+T.equal(nicknameChoice.response(),
+    "I don't really use a nickname.",
+    "nickname response uses the Core identity knowledge state")
+local surnameChoice = choiceByID("core.question.identity_surname")
+T.truthy(surnameChoice,
+    "Core trader conversation exposes the generated surname identity choice")
 T.equal(choiceByID("destination").response(),
     "I'm heading toward Rosewood Outpost.",
     "destination response uses human-facing place presentation")

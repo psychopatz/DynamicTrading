@@ -8,6 +8,10 @@ DTCommon.TraderConversation = DTCommon.TraderConversation or {}
 local Conversation = DTCommon.TraderConversation
 local CoreClient = require
     "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"
+local SemanticFoundation = require
+    "PsychopatzCore/Semantics/PsychopatzSemanticFoundation"
+local ActorNames = require
+    "PsychopatzCore/Actors/PsychopatzActorNames"
 local Landing = require
     "PsychopatzCore/Conversation/PsychopatzActorConversationLanding"
 local SemanticPack = require "DTCommon/DTCommon_SemanticPack"
@@ -154,8 +158,21 @@ local function placeName(id)
 end
 
 local function displayName(projection, record, fallback)
+    local source = {
+        identity = projection and projection.identity
+            or record and record.identity,
+        displayName = projection and (
+            projection.displayName or projection.label or projection.name
+        ) or record and record.n,
+        identitySeed = projection and projection.identitySeed
+            or record and record.identitySeed,
+    }
+    local parts = ActorNames.ResolveParts(source, {
+        resolveNickname = true,
+    })
     return tostring(
         fallback
+            or parts.displayName
             or projection and (
                 projection.displayName
                     or projection.label
@@ -166,12 +183,29 @@ local function displayName(projection, record, fallback)
     )
 end
 
+local function identityParts(projection, record, fallback)
+    local source = {
+        identity = projection and projection.identity
+            or record and record.identity,
+        displayName = projection and (
+            projection.displayName or projection.label or projection.name
+        ) or record and record.n or fallback,
+        identitySeed = projection and projection.identitySeed
+            or record and record.identitySeed,
+    }
+    return ActorNames.ResolveParts(source, {
+        resolveNickname = true,
+    })
+end
+
 local function knowledgeKey(value)
     value = type(value) == "table" and value or {}
     return table.concat({
         tostring(value.state or ""),
         tostring(value.nameKnown == true),
         tostring(value.knownName or ""),
+        tostring(value.knownNickname or ""),
+        tostring(value.knownSurname or ""),
         tostring(value.factionKnown == true),
         tostring(value.factionID or ""),
         tostring(value.factionName or ""),
@@ -198,12 +232,36 @@ local function actorKnowledge(actorID, projection, options, record)
         )
         if ok and type(value) == "table" then knowledge = value end
     end
-    return knowledge or {
+    if knowledge then
+        local parts = knowledge.identity
+        if not parts and knowledge.state ~= "unknown"
+            and knowledge.nameKnown ~= false
+        then
+            parts = identityParts(projection, record, knowledge.knownName)
+        end
+        if parts then
+            knowledge.identity = parts
+            knowledge.knownIdentity = parts
+            knowledge.nicknameKnown = knowledge.nicknameKnown == true
+                or knowledge.knownNickname ~= nil
+            knowledge.surnameKnown = knowledge.surnameKnown == true
+                or knowledge.knownSurname ~= nil
+        end
+        return knowledge
+    end
+    local parts = identityParts(projection, record)
+    return {
         actorID = actorID,
         provider = provider,
         state = "known",
-        nameKnown = true,
-        knownName = displayName(projection, record),
+        identity = parts,
+        knownIdentity = parts,
+        nameKnown = parts.displayName ~= nil,
+        knownName = parts.displayName or displayName(projection, record),
+        nicknameKnown = false,
+        knownNickname = nil,
+        surnameKnown = false,
+        knownSurname = nil,
         factionKnown = projection and projection.factionID ~= nil,
         factionID = projection and projection.factionID,
         factionName = projection and projection.factionName,
@@ -255,6 +313,57 @@ local function identityResponse(knowledge, fallbackName)
     return "I'm " .. tostring(
         knowledge.knownName or fallbackName or "the caravan trader"
     ) .. "."
+end
+
+local function identityFacetResponse(knowledge, subject, fallbackName)
+    knowledge = type(knowledge) == "table" and knowledge or {}
+    local identity = knowledge.identity or {}
+    local value
+    if subject == "IDENTITY_NICKNAME" then
+        value = knowledge.knownNickname
+        if value then
+            return "Most people call me " .. tostring(value) .. "."
+        end
+        return "I don't really use a nickname."
+    elseif subject == "IDENTITY_SURNAME" then
+        value = knowledge.knownSurname
+        if value then
+            return "My surname is " .. tostring(value) .. "."
+        end
+        return identityResponse(knowledge, fallbackName)
+    elseif subject == "IDENTITY_FACTION" then
+        value = knowledge.factionName or identity.factionName
+        if value then
+            return "I'm with " .. tostring(value) .. "."
+        end
+        return "I don't belong to any group I can name."
+    end
+    return identityResponse(knowledge, fallbackName)
+end
+
+local function foundationIdentityChoices(context, knowledge, fallbackName)
+    local choices = {}
+    local definitions = SemanticFoundation.GetStaticSuggestions(context)
+    local supported = {
+        IDENTITY = true,
+        IDENTITY_NICKNAME = true,
+        IDENTITY_SURNAME = true,
+        IDENTITY_FACTION = true,
+    }
+    for _, definition in ipairs(definitions or {}) do
+        local subject = tostring(definition.subject or "")
+        if supported[subject] then
+            choices[#choices + 1] = {
+                id = "core." .. tostring(definition.id),
+                text = definition.labelFallback or definition.id,
+                response = function()
+                    return identityFacetResponse(knowledge, subject, fallbackName)
+                end,
+                order = tonumber(definition.order) or 60,
+            }
+        end
+    end
+    return choices
 end
 
 local function factionContext(projection, record)
@@ -451,11 +560,12 @@ end
 
 local function actorFor(projection, actorID, name)
     local social = projection and projection.social or {}
+    local identity = projection and projection.identity
+        or identityParts(projection, nil, name)
     return {
         actorId = actorID,
         id = actorID,
-        identity = projection and projection.identity
-            or { displayName = name },
+        identity = identity,
         persona = projection and projection.persona,
         social = {
             personality = projection and projection.personality
@@ -477,6 +587,10 @@ local function contextFor(
     knowledge
 )
     local faction = factionContext(projection, record)
+    local identity = knowledge and knowledge.identity
+    if not identity and (not knowledge or knowledge.nameKnown ~= false) then
+        identity = identityParts(projection, record, name)
+    end
     local ca = record and record.ca or {}
     local role = roleFor(projection, options)
     local capabilities = {}
@@ -503,6 +617,9 @@ local function contextFor(
         factionPresentation = faction.factionPresentation,
         communityID = faction.communityID,
         conversationMode = options.mode or "radio",
+        identity = identity,
+        knownNickname = knowledge and knowledge.knownNickname,
+        knownSurname = knowledge and knowledge.knownSurname,
         knowledge = knowledge,
     }
 end
@@ -684,8 +801,12 @@ function Conversation.BuildSpec(traderID, actorID, options)
     local ca = record.ca or {}
     local knowledge = actorKnowledge(actorID, projection, options, record)
     local canonicalName = displayName(projection, record, options.displayName)
+    local identity = knowledge.identity
+    if not identity and knowledge.nameKnown ~= false then
+        identity = identityParts(projection, record, canonicalName)
+    end
     local name = knowledge.nameKnown == false
-        and "Unknown survivor"
+        and "Stranger"
         or knowledge.knownName or canonicalName
     local faction = factionContext(projection, record)
     if knowledge.factionKnown == true then
@@ -745,6 +866,11 @@ function Conversation.BuildSpec(traderID, actorID, options)
         identityState = knowledge.state,
         identityNameKnown = knowledge.nameKnown ~= false,
         knownName = knowledge.knownName,
+        identity = identity,
+        knownNickname = knowledge.knownNickname,
+        knownSurname = knowledge.knownSurname,
+        nicknameKnown = knowledge.nicknameKnown == true,
+        surnameKnown = knowledge.surnameKnown == true,
         factionKnown = knowledge.factionKnown ~= false,
         knowledgeRevision = knowledge.revision,
         knowledge = knowledge,
@@ -808,16 +934,12 @@ function Conversation.BuildSpec(traderID, actorID, options)
             }
         end,
         choices = function()
-            return {
-                {
-                    id = "identity",
-                    text = "What's your name?",
-                    response = function()
-                        return identityResponse(knowledge, name)
-                    end,
-                    order = 60,
-                },
-                {
+            local choices = foundationIdentityChoices(
+                conversationContext,
+                knowledge,
+                name
+            )
+            choices[#choices + 1] = {
                     id = "next_person",
                     text = "Talk to the next person.",
                     visible = #roster > 1,
@@ -852,31 +974,31 @@ function Conversation.BuildSpec(traderID, actorID, options)
                         return true
                     end,
                     order = 70,
-                },
-                {
+                }
+            choices[#choices + 1] = {
                     id = "destination",
                     text = "Where are you heading?",
                     response = function()
                         return destinationResponse(recordFor(traderID))
                     end,
                     order = 80,
-                },
-                {
+                }
+            choices[#choices + 1] = {
                     id = "origin",
                     text = "Where did you come from?",
                     response = function()
                         return originResponse(recordFor(traderID))
                     end,
                     order = 90,
-                },
-                {
+                }
+            choices[#choices + 1] = {
                     id = "goodbye",
                     text = "Goodbye.",
                     response = "Stay safe.",
                     close = true,
                     order = 100,
-                },
-            }
+                }
+            return choices
         end,
     })
 

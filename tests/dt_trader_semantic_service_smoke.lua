@@ -3,7 +3,15 @@ T.addPackagePaths()
 
 PsychopatzCore = {}
 require "PsychopatzCore/Semantics/PsychopatzSemantic"
+local generatedRegistry = require
+    "DTCommon/Semantics/Generated/Conversation/Registry"
+DTCommon = { GeneratedSemanticRegistry = generatedRegistry }
 require "DTCommon/DTCommon_SemanticPack"
+T.truthy(generatedRegistry.PACKS and generatedRegistry.PACKS[1],
+    "Dynamic Trading semantic pack is generated into the DTCommon registry")
+T.equal(generatedRegistry.PACKS[1].id,
+    "pack.DT.trader_story",
+    "generated Dynamic Trading pack keeps its canonical ID")
 
 local projection = {
     actorID = "actor:semantic:trader",

@@ -1,0 +1,65 @@
+{
+  "schema": "pnc.conversation.shard.v1",
+  "kind": "packs",
+  "domain": "dynamic_trading",
+  "source": {
+    "owner": "DTCommon",
+    "version": "1",
+    "contentLicense": "Dynamic Trading authored semantic pack data"
+  },
+  "packs": [
+    {
+      "id": "pack.DT.trader_story",
+      "ownerModID": "DynamicTrading",
+      "version": 2,
+      "concepts": [
+        {"id": "concept.trade.open", "aliases": ["trade", "barter", "buy", "sell", "shop", "goods", "wares"], "kind": "intent", "priority": 100},
+        {"id": "concept.trade.rumors", "aliases": ["rumor", "news", "stories", "gossip", "word on the road", "road", "road news", "news on the road", "any news", "commercial news", "what's the news"], "kind": "intent", "priority": 80},
+        {"id": "concept.trade.story", "aliases": ["tell me a caravan story", "caravan story", "tell me a story", "caravan stories", "travel story"], "kind": "intent", "priority": 85},
+        {"id": "concept.trade.destination", "aliases": ["where are you heading", "where are you going", "what settlement are you going to", "where is this caravan going", "destination", "next stop"], "kind": "intent", "priority": 90},
+        {"id": "concept.trade.origin", "aliases": ["where did you come from", "where are you from", "origin", "last stop"], "kind": "intent", "priority": 90},
+        {"id": "concept.trade.settlement", "aliases": ["where is the settlement", "what settlement", "which settlement", "nearest settlement"], "kind": "intent", "priority": 85},
+        {"id": "concept.trade.trader_location", "aliases": ["where is the trader", "where is the merchant", "where can i find the trader"], "kind": "intent", "priority": 90},
+        {"id": "concept.trade.whereabouts", "aliases": ["whereabouts", "routes", "route", "direction", "which way", "what route", "where are you travelling"], "kind": "intent", "priority": 70},
+        {"id": "concept.trade.who", "aliases": ["who are you", "who is in charge", "who runs this caravan", "who handles trading", "what is your name", "what's your name", "tell me your name", "your name", "leader", "merchant", "guard"], "kind": "intent", "priority": 60},
+        {"id": "concept.social.greeting", "aliases": ["hello", "hi", "greetings", "good day", "hey", "howdy"], "kind": "social", "priority": 50},
+        {"id": "concept.social.farewell", "aliases": ["goodbye", "farewell", "see you", "bye", "take care", "safe travels"], "kind": "social", "priority": 50}
+      ],
+      "speechActs": [
+        {"id": "act.trade.request", "definition": {"id": "act.trade.request", "intent": "TRADE"}, "metadata": {"priority": 100}},
+        {"id": "act.trade.ask_rumors", "definition": {"id": "act.trade.ask_rumors", "intent": "GOSSIP"}, "metadata": {"priority": 80}},
+        {"id": "act.trade.ask_story", "definition": {"id": "act.trade.ask_story", "intent": "GOSSIP"}, "metadata": {"priority": 85}},
+        {"id": "act.trade.ask_whereabouts", "definition": {"id": "act.trade.ask_whereabouts", "intent": "QUESTION"}, "metadata": {"priority": 70}},
+        {"id": "act.trade.ask_who", "definition": {"id": "act.trade.ask_who", "intent": "QUESTION"}, "metadata": {"priority": 75}},
+        {"id": "act.trade.greeting", "definition": {"id": "act.trade.greeting", "intent": "GREETING"}, "metadata": {"priority": 50}},
+        {"id": "act.trade.farewell", "definition": {"id": "act.trade.farewell", "intent": "FAREWELL"}, "metadata": {"priority": 50}}
+      ],
+      "patterns": [
+        {"id": "pattern.trade.concept_farewell", "priority": 90, "match": [{"concept": "concept.social.farewell"}], "emit": {"intent": "FAREWELL", "speechAct": "act.trade.farewell"}},
+        {"id": "pattern.trade.concept_greeting", "priority": 90, "match": [{"concept": "concept.social.greeting"}], "emit": {"intent": "GREETING", "speechAct": "act.trade.greeting"}},
+        {"id": "pattern.trade.concept_who", "priority": 85, "match": [{"concept": "concept.trade.who"}], "emit": {"intent": "QUESTION", "speechAct": "act.trade.ask_who", "topic": "identity"}},
+        {"id": "pattern.trade.concept_trader_location", "priority": 88, "match": [{"concept": "concept.trade.trader_location"}], "emit": {"intent": "QUESTION", "speechAct": "act.trade.ask_who", "topic": "identity", "factClass": "trader_location"}},
+        {"id": "pattern.trade.concept_destination", "priority": 86, "match": [{"concept": "concept.trade.destination"}], "emit": {"intent": "QUESTION", "speechAct": "act.trade.ask_whereabouts", "topic": "whereabouts", "factClass": "destination"}},
+        {"id": "pattern.trade.concept_origin", "priority": 86, "match": [{"concept": "concept.trade.origin"}], "emit": {"intent": "QUESTION", "speechAct": "act.trade.ask_whereabouts", "topic": "whereabouts", "factClass": "origin"}},
+        {"id": "pattern.trade.concept_settlement", "priority": 86, "match": [{"concept": "concept.trade.settlement"}], "emit": {"intent": "QUESTION", "speechAct": "act.trade.ask_whereabouts", "topic": "whereabouts", "factClass": "settlement"}},
+        {"id": "pattern.trade.concept_whereabouts", "priority": 80, "match": [{"concept": "concept.trade.whereabouts"}], "emit": {"intent": "QUESTION", "speechAct": "act.trade.ask_whereabouts", "topic": "whereabouts", "factClass": "whereabouts"}},
+        {"id": "pattern.trade.concept_rumors", "priority": 75, "match": [{"concept": "concept.trade.rumors"}], "emit": {"intent": "GOSSIP", "speechAct": "act.trade.ask_rumors", "topic": "rumors", "factClass": "road_news"}},
+        {"id": "pattern.trade.concept_story", "priority": 82, "match": [{"concept": "concept.trade.story"}], "emit": {"intent": "GOSSIP", "speechAct": "act.trade.ask_story", "topic": "story", "factClass": "caravan_story"}},
+        {"id": "pattern.trade.concept_open", "priority": 95, "capabilitiesRequired": ["DT.trade"], "match": [{"concept": "concept.trade.open"}], "emit": {"intent": "TRADE", "speechAct": "act.trade.request", "topic": "trade"}},
+        {"id": "pattern.trade.open", "priority": 100, "capabilitiesRequired": ["DT.trade"], "match": [{"kind": "literal", "value": "trade"}], "emit": {"intent": "TRADE", "speechAct": "act.trade.request"}},
+        {"id": "pattern.trade.buy", "priority": 90, "capabilitiesRequired": ["DT.trade"], "match": [{"kind": "literal", "value": "buy"}], "emit": {"intent": "TRADE", "speechAct": "act.trade.request"}},
+        {"id": "pattern.trade.sell", "priority": 90, "capabilitiesRequired": ["DT.trade"], "match": [{"kind": "literal", "value": "sell"}], "emit": {"intent": "TRADE", "speechAct": "act.trade.request"}},
+        {"id": "pattern.trade.rumors", "priority": 80, "match": [{"kind": "literal", "value": "news"}], "emit": {"intent": "GOSSIP", "speechAct": "act.trade.ask_rumors", "factClass": "road_news"}},
+        {"id": "pattern.trade.greeting_hello", "priority": 50, "match": [{"kind": "literal", "value": "hello"}], "emit": {"intent": "GREETING", "speechAct": "act.trade.greeting"}},
+        {"id": "pattern.trade.greeting_hi", "priority": 50, "match": [{"kind": "literal", "value": "hi"}], "emit": {"intent": "GREETING", "speechAct": "act.trade.greeting"}},
+        {"id": "pattern.trade.farewell", "priority": 50, "match": [{"kind": "literal", "value": "bye"}], "emit": {"intent": "FAREWELL", "speechAct": "act.trade.farewell"}},
+        {"id": "pattern.trade.farewell_goodbye", "priority": 55, "match": [{"kind": "literal", "value": "goodbye"}], "emit": {"intent": "FAREWELL", "speechAct": "act.trade.farewell"}}
+      ],
+      "actionProviders": [
+        {"id": "DT.trade_action", "sourceKind": "dynamic_trading", "capabilityRequired": "DT.trade", "order": 20, "effectID": "DT.trade"},
+        {"id": "DT.referral_action", "sourceKind": "dynamic_trading", "order": 25, "effectID": "DT.referral"},
+        {"id": "DT.rumors_action", "sourceKind": "dynamic_trading", "order": 40, "effectID": "DT.rumors"}
+      ]
+    }
+  ]
+}

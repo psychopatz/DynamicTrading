@@ -48,7 +48,6 @@ DTCommon.MarketEventPresentation = T.load(
     "DTCommon/DTCommon_MarketEventPresentation.lua")
 local Adapter = T.load(
     "DTCommon", "shared", "DTCommon/DTCommon_WorldKnowledge.lua")
-
 local actorA = "npc:dt:caravan-a"
 local actorB = "npc:dt:caravan-b"
 local actorC = "npc:dt:caravan-c"

@@ -11,13 +11,17 @@ CORE_REPOSITORY = REPOSITORY.parent / "psychopatzCore"
 CORE_TOOLS = str(CORE_REPOSITORY / "tools")
 if CORE_TOOLS not in sys.path:
     sys.path.insert(0, CORE_TOOLS)
+if str(CORE_REPOSITORY) not in sys.path:
+    sys.path.insert(0, str(CORE_REPOSITORY))
+if str(REPOSITORY) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY))
 
-from semantic_harness.provider_registry import (  # noqa: E402
+from tools.semantic_harness.provider_registry import (  # noqa: E402
     SEMANTIC_EXECUTION_SCHEMA,
     core_registry,
 )
-from semantic_harness.process import LuaProcess, WorkerLaunchSpec  # noqa: E402
-from tools.semantic_harness.provider_adapters import (  # noqa: E402
+from tools.semantic_harness.process import LuaProcess, WorkerLaunchSpec  # noqa: E402
+from tools.providers.dt.provider_adapters import (  # noqa: E402
     DT_ABSTRACT_PROVIDER_ID,
     DT_COMMON_PROVIDER_ID,
     DT_HOOMANS_PROVIDER_ID,

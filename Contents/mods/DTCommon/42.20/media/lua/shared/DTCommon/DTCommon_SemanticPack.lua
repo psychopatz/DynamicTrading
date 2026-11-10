@@ -7,6 +7,10 @@
 DTCommon = DTCommon or {}
 local Pack = {}
 DTCommon.SemanticPack = Pack
+-- DTCommon's composition root loads the generated registry before this pack.
+-- Cross-adopter tests may load this module alone, in which case its static
+-- compatibility data remains available without importing DynamicTrading.
+local GeneratedRegistry = DTCommon.GeneratedSemanticRegistry
 
 Pack.PACK_ID = "pack.DT.trader_story"
 local TRADE_CAPABILITY = DTCommon.TRADE_CAPABILITY or "DT.trade"
@@ -514,6 +518,23 @@ local function registerPack()
             },
         },
     }
+
+    local generatedPack
+    if GeneratedRegistry then
+        for _, candidate in ipairs(GeneratedRegistry.PACKS or {}) do
+            if type(candidate) == "table"
+                and candidate.id == Pack.PACK_ID
+            then
+                generatedPack = candidate
+                break
+            end
+        end
+    end
+    if generatedPack then
+        packSpec.concepts = generatedPack.concepts or {}
+        packSpec.speechActs = generatedPack.speechActs or {}
+        packSpec.patterns = generatedPack.patterns or {}
+    end
 
     -- Core's IR contract keeps intent and speechAct aligned. The pack still
     -- registers Dynamic Trading-specific speech-act IDs as metadata above,

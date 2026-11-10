@@ -1,0 +1,21 @@
+{
+  "schema": "semantic.provider_manifest.v1",
+  "providerID": "DTCommon",
+  "profiles": ["dtabstract", "dthoomans", "combined"],
+  "providerIDsByProfile": {"dtabstract": ["DTCommon", "DTAbstract"], "dthoomans": ["DTCommon", "DTHoomans"], "combined": ["DTCommon", "DTAbstract"]},
+  "materializationByProfile": {"dtabstract": "abstract", "dthoomans": "physical", "combined": "physical"},
+  "executionProviderByProfile": {"dtabstract": "DTAbstract", "dthoomans": "DTHoomans", "combined": "DTCommon"},
+  "displayName": "DT",
+  "providerIDs": ["DTCommon", "DTAbstract", "DTHoomans"],
+  "luaModulePaths": ["${repository}/tools/providers/dt/lua/?.lua"],
+  "luaModules": ["provider/DTAbstract", "provider/DTHoomans"],
+  "luaModulesByProvider": {
+    "DTAbstract": "provider/DTAbstract",
+    "DTHoomans": "provider/DTHoomans",
+    "DTCommon": "provider/DTAbstract"
+  },
+  "pythonProvider": "tools.providers.dt.provider_adapters:register_dynamic_trading_profiles",
+  "conversationSources": [
+    "tools/providers/dt/codebuilder/sources/conversation/packs/dynamic_trading.json"
+  ]
+}

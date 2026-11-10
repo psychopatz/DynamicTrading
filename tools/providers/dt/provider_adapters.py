@@ -10,14 +10,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from semantic_harness.provider_registry import (
+from tools.semantic_harness.provider_registry import (
     CORE_PROVIDER_ID,
     SEMANTIC_EXECUTION_CALLBACKS,
     ProviderDescriptor,
     ProviderRegistry,
     ProfileDescriptor,
 )
-from semantic_harness.profile_loader import ProfileSelection, compose_profile
+from tools.semantic_harness.profile_loader import ProfileSelection, compose_profile
 
 
 DT_COMMON_PROVIDER_ID = "DTCommon"
@@ -52,7 +52,7 @@ def provider_descriptors(
     descriptors = [
         ProviderDescriptor(
             provider_id=DT_COMMON_PROVIDER_ID,
-            display_name="Dynamic Trading shared provider",
+            display_name="DT",
             repository_kind="dynamic_trading",
             requires=(CORE_PROVIDER_ID,),
             capabilities=_TRADING_CAPABILITIES,
@@ -64,7 +64,7 @@ def provider_descriptors(
         descriptors.append(
             ProviderDescriptor(
                 provider_id=DT_ABSTRACT_PROVIDER_ID,
-                display_name="Dynamic Trading abstract provider",
+                display_name="DTAbstract",
                 repository_kind="dynamic_trading",
                 requires=(CORE_PROVIDER_ID, DT_COMMON_PROVIDER_ID),
                 capabilities=_TRADING_CAPABILITIES + ("trading.remote",),
@@ -76,7 +76,7 @@ def provider_descriptors(
         descriptors.append(
             ProviderDescriptor(
                 provider_id=DT_HOOMANS_PROVIDER_ID,
-                display_name="Dynamic Trading Hoomans provider",
+                display_name="DTHoomans",
                 repository_kind="dynamic_trading",
                 requires=(CORE_PROVIDER_ID, DT_COMMON_PROVIDER_ID),
                 capabilities=_TRADING_CAPABILITIES + ("trading.physical",),
@@ -191,7 +191,7 @@ def provider_worker_launch_values(
     root = Path(repository).expanduser().resolve()
     return {
         "provider_module_paths": (
-            str(root / "tools/semantic_harness/lua/?.lua"),
+            str(root / "tools/providers/dt/lua/?.lua"),
         ),
         "provider_modules": (module,),
         "execution_provider_id": provider_id,

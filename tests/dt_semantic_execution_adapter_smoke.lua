@@ -1,9 +1,9 @@
 local T = require "tests/support/test"
 
-package.path = (os.getenv("PZ_TEST_CORE_REPOSITORY")
-    or "../psychopatzCore")
-    .. "/tools/semantic_harness/lua/?.lua;"
-    .. (os.getenv("PZ_TEST_REPOSITORY") or ".")
+package.path = (os.getenv("PZ_TEST_REPOSITORY")
+    or ".")
+    .. "/tools/providers/dt/lua/?.lua;"
+    .. (os.getenv("PZ_TEST_CORE_REPOSITORY") or "../psychopatzCore")
     .. "/tools/semantic_harness/lua/?.lua;"
     .. package.path
 

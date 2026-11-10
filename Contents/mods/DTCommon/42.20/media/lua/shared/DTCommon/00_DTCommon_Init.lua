@@ -34,6 +34,8 @@ require "DTCommon/DTCommon_TraderWorld"
 require "DTCommon/DTCommon_SettlementExchange"
 require "DTCommon/DTCommon_WorldKnowledge"
 require "DTCommon/DTCommon_PlacePresentation"
+DTCommon.GeneratedSemanticRegistry = require
+    "DTCommon/Semantics/Generated/Conversation/Registry"
 require "DTCommon/DTCommon_SemanticPack"
 require "DTCommon/DTCommon_TradeAudit"
 require "DTCommon/DTCommon_TradeAuditPrice"
