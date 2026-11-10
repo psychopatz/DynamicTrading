@@ -9,6 +9,7 @@ DTCommon = DTCommon or {}
 DTCommon.TraderPresets = DTCommon.TraderPresets or {}
 
 local Presets = DTCommon.TraderPresets
+local CORE_NAMESPACE = DTCommon.NAMESPACE or "DT"
 
 local ACTOR_IDENTITY_EXTENSION = "PsychopatzCore.ActorIdentity"
 
@@ -226,7 +227,7 @@ function Presets.RegisterCoreArchetypes()
         return false, "core_archetype_registry_unavailable"
     end
     for presetID, definition in pairs(DEFINITIONS) do
-        coreID = "dynamictrading." .. tostring(presetID)
+        coreID = CORE_NAMESPACE .. "." .. tostring(presetID)
         registered, reason = archetypes:Register({
             id = coreID,
             aliases = { presetID },
@@ -245,7 +246,7 @@ function Presets.RegisterCoreArchetypes()
                 equipment = definition.equipment,
             },
             extensions = {
-                ["dynamictrading.preset"] = {
+                [DTCommon.PRESET_EXTENSION or "DT.preset"] = {
                     presetID = presetID,
                     role = definition.role,
                     presetVersion = Presets.SCHEMA_VERSION,
@@ -318,7 +319,9 @@ function Presets.List()
         definitions = archetypes:List()
         for _, definition in ipairs(definitions) do
             extension = definition.extensions
-                and definition.extensions["dynamictrading.preset"] or nil
+                and definition.extensions[
+                    DTCommon.PRESET_EXTENSION or "DT.preset"
+                ] or nil
             if type(extension) == "table" and extension.presetID then
                 output[#output + 1] = {
                     id = extension.presetID,
@@ -368,7 +371,9 @@ function Presets.Resolve(presetID, memberIndex, identitySeed, actorID)
     if corePlan then
         local coreDefinition = corePlan.definition
         local extension = coreDefinition.extensions
-            and coreDefinition.extensions["dynamictrading.preset"] or {}
+            and coreDefinition.extensions[
+                DTCommon.PRESET_EXTENSION or "DT.preset"
+            ] or {}
         local identity = corePlan.identity
         local role = coreDefinition.role or extension.role or "trader"
         local legacyArchetypeID = definition
@@ -486,7 +491,7 @@ function Presets.BuildMembers(spec)
             project = true,
             capabilities = {
                 conversation = true,
-                ["dynamictrading.trade"] = true,
+                [DTCommon.TRADE_CAPABILITY or "DT.trade"] = true,
             },
         }
         actorIDs[index] = actorID

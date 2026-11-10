@@ -2,6 +2,19 @@ DTCommon = DTCommon or {}
 
 DTCommon.VERSION = 1
 DTCommon.MOD_ID = "DTCommon"
+-- Short, reserved Dynamic Trading namespace for cross-module identifiers.
+-- Keep the namespace in the shared contract so adopters never need to repeat
+-- the former `dynamictrading.*` strings or guess the canonical profile ID.
+DTCommon.NAMESPACE = "DT"
+DTCommon.TRADER_PROFILE_ID = "DT.trader"
+DTCommon.TRADER_PROFILE_SOURCE = "DynamicTrading"
+DTCommon.TRADER_NAMESPACE = "DT.trader"
+DTCommon.TRADE_CAPABILITY = "DT.trade"
+DTCommon.TRADE_ACTION_ID = "DT.trade"
+DTCommon.REFERRAL_ACTION_ID = "DT.referral"
+DTCommon.RUMORS_ACTION_ID = "DT.rumors"
+DTCommon.PRESET_EXTENSION = "DT.preset"
+DTCommon.TRADER_PRESET_EXTENSION = "DT.traderPreset"
 DTCommon.MODDATA_KEY = "DTCommon.Traders"
 DTCommon.MARKET_MODDATA_KEY = "DTCommon.SettlementMarkets"
 DTCommon.EVENT_MODDATA_KEY = "DTCommon.MarketEvents"

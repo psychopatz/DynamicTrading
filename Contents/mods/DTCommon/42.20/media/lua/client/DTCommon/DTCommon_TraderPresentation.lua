@@ -347,7 +347,7 @@ local function decorateTrader(entry, style)
     style.color = TRADER_COLOR
     style.size = math.max(10, tonumber(style.size) or 10)
     style.icon = {
-        id = "dynamictrading.trader",
+        id = DTCommon.TRADER_NAMESPACE or "DT.trader",
         glyph = "T",
         r = 1,
         g = 0.85,

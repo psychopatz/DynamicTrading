@@ -16,7 +16,8 @@ if SemanticPack and type(SemanticPack.Init) == "function" then
     SemanticPack.Init()
 end
 
-Conversation.EXTERNAL_OPENER_ID = "dynamictrading.trader"
+Conversation.EXTERNAL_OPENER_ID = DTCommon.TRADER_NAMESPACE
+    or "DT.trader"
 Conversation.ProviderTransports =
     Conversation.ProviderTransports or {}
 Conversation.PendingOpens = Conversation.PendingOpens or {}
@@ -324,7 +325,7 @@ end
 local function canTrade(projection, role)
     local capabilities = projection and projection.capabilities
     return type(capabilities) == "table"
-        and capabilities["dynamictrading.trade"] == true
+        and capabilities[DTCommon.TRADE_CAPABILITY or "DT.trade"] == true
         or canTradeRole(role)
 end
 
@@ -358,7 +359,7 @@ local function responseFor(traderID, ir, context)
         return {
             text = "Opening our trade ledger.",
             branch = "TRADE_REQUESTED",
-            action = "dynamictrading.trade",
+            action = DTCommon.TRADE_ACTION_ID or "DT.trade",
         }
     end
     if intent == "GOSSIP" then
@@ -432,7 +433,7 @@ local function policyFor(traderID)
             return {
                 schemaVersion = 1,
                 kind = "dynamictrading_trader_decision",
-                route = "dynamictrading.trader",
+                route = DTCommon.TRADER_NAMESPACE or "DT.trader",
                 branch = response.branch,
                 confidence = tonumber(ir and ir.confidence) or 0,
                 intent = ir and ir.intent,
@@ -480,7 +481,7 @@ local function contextFor(
     local role = roleFor(projection, options)
     local capabilities = {}
     if canTrade(projection, role) then
-        capabilities["dynamictrading.trade"] = true
+        capabilities[DTCommon.TRADE_CAPABILITY or "DT.trade"] = true
     end
     return {
         actorID = actorID,
@@ -557,7 +558,9 @@ local function semanticResult(
 )
     for _, part in ipairs(result and result.parts or {}) do
         local decision = part and part.decision or nil
-        if decision and decision.action == "dynamictrading.trade" then
+        if decision and decision.action
+            == (DTCommon.TRADE_ACTION_ID or "DT.trade")
+        then
             local client = DTCommon and DTCommon.Client or nil
             if client and type(client.OpenTrader) == "function" then
                 local opened, reason = client.OpenTrader(traderID, {
@@ -735,7 +738,8 @@ function Conversation.BuildSpec(traderID, actorID, options)
         conversationMode = semanticOptions.mode,
         traderRole = role,
         capabilities = tradeAvailable
-            and { ["dynamictrading.trade"] = true } or {},
+            and { [DTCommon.TRADE_CAPABILITY or "DT.trade"] = true }
+            or {},
         strictCapabilities = true,
         relationship = relationship,
         identityState = knowledge.state,
@@ -756,11 +760,11 @@ function Conversation.BuildSpec(traderID, actorID, options)
             return action.sourceKind == "dynamic_trading"
                 or string.find(
                     tostring(action.id or ""),
-                    "^dynamictrading%."
+                    "^DT%."
                 ) ~= nil
         end,
         actionChoice = function(action)
-            if action.id == "dynamictrading.trade" then
+            if action.id == (DTCommon.TRADE_ACTION_ID or "DT.trade") then
                 return {
                     id = action.id,
                     text = "Open trading",
@@ -781,14 +785,14 @@ function Conversation.BuildSpec(traderID, actorID, options)
                     end,
                 }
             end
-            if action.id == "dynamictrading.referral" then
+            if action.id == (DTCommon.REFERRAL_ACTION_ID or "DT.referral") then
                 return {
                     id = action.id,
                     text = "Ask who handles trades",
                     response = "The caravan's merchant handles the deals.",
                 }
             end
-            if action.id == "dynamictrading.rumors" then
+            if action.id == (DTCommon.RUMORS_ACTION_ID or "DT.rumors") then
                 return {
                     id = action.id,
                     text = "Any road news?",
@@ -877,7 +881,7 @@ function Conversation.BuildSpec(traderID, actorID, options)
     })
 
     local spec = {
-        namespace = "dynamictrading.trader",
+        namespace = DTCommon.TRADER_NAMESPACE or "DT.trader",
         npcID = actorID,
         sourceActorID = sourceActorID,
         npcName = name,
@@ -891,7 +895,7 @@ function Conversation.BuildSpec(traderID, actorID, options)
         knowledge = knowledge,
         knowledgeKey = knowledgeKey(knowledge),
         actorConversation = {
-            id = "dynamictrading.trader",
+            id = DTCommon.TRADER_NAMESPACE or "DT.trader",
             createService = function(view)
                 return createService(
                     view,

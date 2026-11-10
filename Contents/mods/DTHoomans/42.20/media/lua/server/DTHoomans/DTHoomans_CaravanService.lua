@@ -28,7 +28,8 @@ local PendingSpawns = pendingTable
 local MERCHANT_ROLE = "trader"
 local GUARD_ROLE = "guard"
 local LEADER_ROLE = "leader"
-local FACTION_ARCHETYPE = "trader"
+local FACTION_ARCHETYPE = DTCommon
+    and DTCommon.TRADER_PROFILE_ID or "DT.trader"
 -- A base-less trading caravan is an independent trader-plus-guards faction;
 -- there is no hidden base and no offscreen leader left behind.
 local CARAVAN_ROLE_ORDER = { MERCHANT_ROLE, GUARD_ROLE }

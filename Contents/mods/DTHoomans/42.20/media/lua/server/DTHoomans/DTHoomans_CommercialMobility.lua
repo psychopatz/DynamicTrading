@@ -65,7 +65,12 @@ function Mobility.OpportunityScore(faction, target, context)
     end
     -- A bound trader is a commercial specialist. This small bounded bonus is
     -- intentionally independent of any item registry or carried inventory.
-    if faction and faction.archetypeID == "trader" then score = score + 2 end
+    if faction and DTCommon
+        and type(DTCommon.IsTraderFaction) == "function"
+        and DTCommon.IsTraderFaction(faction)
+    then
+        score = score + 2
+    end
     if reads == 0 then return 0 end
     return clamp(score, -MAX_SCORE, MAX_SCORE)
 end

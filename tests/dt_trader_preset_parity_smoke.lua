@@ -2,7 +2,19 @@ local T = require "tests/support/test"
 
 T.addPackagePaths()
 
+require "DTCommon/DTCommon_TraderFactionProfile"
 local Presets = require "DTCommon/DTCommon_TraderPresets"
+local Profiles = require
+    "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldFactionProfiles"
+
+local traderProfile = Profiles.Get("DT.trader")
+T.truthy(traderProfile, "Dynamic Trading profile is registered in Core")
+T.equal(traderProfile.sourceMod, "DynamicTrading",
+    "trader profile ownership is explicit")
+T.equal(traderProfile.extensions.DT.providerID, "DT.trader",
+    "trader extension uses the short DT namespace")
+T.equal(traderProfile.capabilities.dynamicTrading, true,
+    "trader capability is stored in Core")
 
 local function hasItem(items, fullType)
     for _, item in ipairs(items or {}) do

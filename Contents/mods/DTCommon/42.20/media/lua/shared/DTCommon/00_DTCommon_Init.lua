@@ -8,6 +8,7 @@ end
 require "DTCommon/DTCommon_Translation"
 require "DTCommon/DTCommon_Constants"
 require "DTCommon/DTCommon_ModActivationPolicy"
+require "DTCommon/DTCommon_TraderFactionProfile"
 require "DTCommon/DTCommon_MarketSchema"
 require "DTCommon/DTCommon_Storage"
 require "DTCommon/DTCommon_TraderSupport"

@@ -64,13 +64,13 @@ local choices = {}
 for _, choice in ipairs(spec.nodes.landing.choices or {}) do
     choices[choice.id] = choice
 end
-T.falsy(choices["dynamictrading.trade"],
+T.falsy(choices["DT.trade"],
     "guards do not receive the trade action without trade capability")
-T.truthy(choices["dynamictrading.referral"],
+T.truthy(choices["DT.referral"],
     "guards receive the shared referral action")
-T.truthy(choices["dynamictrading.rumors"],
+T.truthy(choices["DT.rumors"],
     "guards receive the shared rumors action")
-T.contains(choices["dynamictrading.referral"].response, "merchant",
+T.contains(choices["DT.referral"].response, "merchant",
     "guard referral action has a visible conversation response")
 
 print("dt_guard_conversation_smoke: PASS")

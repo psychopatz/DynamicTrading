@@ -63,7 +63,9 @@ local function nearestCommunity(registry, position)
             local distance = distanceSquared(home, position)
             local faction = registry:GetFaction(community.factionID)
             local traderFaction = faction
-                and tostring(faction.archetypeID or "") == "trader"
+                and DTCommon
+                and type(DTCommon.IsTraderFaction) == "function"
+                and DTCommon.IsTraderFaction(faction) == true
             if traderFaction
                 and (preferredDistance == nil
                     or distance < preferredDistance)
@@ -197,7 +199,9 @@ function Factory.Create(spec)
                 factionName = factionName,
                 factionArchetypeID =
                     spec.factionArchetypeID
-                        or faction.archetypeID or "trader",
+                        or faction.archetypeID
+                        or (DTCommon and DTCommon.TRADER_PROFILE_ID)
+                        or "DT.trader",
                 groupID = spec.groupID,
                 groupType = tostring(spec.groupType or "CARAVAN"),
                 initialMission = tostring(spec.initialMission or "TRADE"),

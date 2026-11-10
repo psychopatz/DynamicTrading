@@ -88,7 +88,7 @@ for _, handler in ipairs(handlers) do
     })
 end
 T.truthy(opened, "authorized physical Talk did not open shared content")
-T.equal(opened.namespace, "dynamictrading.trader",
+T.equal(opened.namespace, "DT.trader",
     "physical Talk opened provider-specific content")
 T.equal(opened.context.provider, "DTHoomans",
     "physical Talk lost provider context")

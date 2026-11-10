@@ -16,6 +16,8 @@ local coreRepository = os.getenv("PZ_TEST_CORE_REPOSITORY")
 local roots = {
     DTCommon = repository .. "/Contents/mods/DTCommon/"
         .. dynamicRuntime .. "/media/lua/",
+    DTCommonCommon = repository
+        .. "/Contents/mods/DTCommon/common/media/lua/shared/",
     DTHoomans = repository .. "/Contents/mods/DTHoomans/"
         .. dynamicRuntime .. "/media/lua/",
     DTAbstract = repository .. "/Contents/mods/DTAbstract/"
@@ -38,6 +40,9 @@ end
 
 function Test.path(mod, layer, relative)
     relative = cleanRelative(relative)
+    if mod == "DTCommon" and layer == "common" then
+        return roots.DTCommonCommon .. relative
+    end
     if mod == "DTCommon" or mod == "DTHoomans" or mod == "DTAbstract" then
         return roots[mod] .. tostring(layer or "shared") .. "/" .. relative
     end
@@ -65,6 +70,7 @@ function Test.addPackagePaths(specifications)
         { "DTCommon", "client" },
         { "DTCommon", "server" },
         { "DTCommon", "shared" },
+        { "DTCommon", "common" },
         { "PsychopatzCore", "common" },
         { "PsychopatzCore", "shared" },
         { "PsychopatzCore", "client" },

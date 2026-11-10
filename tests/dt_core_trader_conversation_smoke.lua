@@ -141,7 +141,7 @@ T.equal(choiceByID("destination").response(),
 T.equal(choiceByID("origin").response(),
     "I came from March Ridge Depot.",
     "origin response uses human-facing place presentation")
-T.contains(choiceByID("dynamictrading.rumors").response(), "BANDIT RAID",
+T.contains(choiceByID("DT.rumors").response(), "BANDIT RAID",
     "road news uses shared WorldKnowledge")
 
 local aliasSpec, aliasReason = Conversation.BuildSpec(
@@ -155,7 +155,7 @@ T.equal(aliasSpec.npcID, projection.actorID,
 T.equal(aliasSpec.sourceActorID, "npc:legacy",
     "conversation preserves the source actor reference")
 
-projection.capabilities = { ["dynamictrading.trade"] = true }
+projection.capabilities = { ["DT.trade"] = true }
 local companionSpec, companionReason = Conversation.BuildSpec(
     "trader:core",
     projection.actorID,
@@ -164,10 +164,10 @@ local companionSpec, companionReason = Conversation.BuildSpec(
 T.truthy(companionSpec, companionReason)
 T.equal(companionSpec.role, "companion",
     "conversation preserves a non-specialized actor role")
-T.truthy(companionSpec.context.capabilities["dynamictrading.trade"],
+T.truthy(companionSpec.context.capabilities["DT.trade"],
     "conversation uses the shared actor trading capability")
 
-choiceByID("dynamictrading.trade").action()
+choiceByID("DT.trade").action()
 T.equal(tradeOpened.id, "trader:core",
     "Trade action keeps trader identity")
 T.equal(tradeOpened.options.actorID, projection.actorID,

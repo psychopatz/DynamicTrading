@@ -9,7 +9,7 @@ PsychopatzCore = PsychopatzCore or {}
 PsychopatzCore.Actors = Actors
 
 local Presets = T.load(
-    "DTCommon", "shared", "DTCommon/DTCommon_TraderPresets.lua")
+    "DTCommon", "common", "DTCommon/DTCommon_TraderPresets.lua")
 T.truthy(Presets.RegisterCoreArchetypes,
     "DT Core archetype registration API")
 
@@ -24,7 +24,7 @@ T.equal(guard.inventory.items[5].fullType, "Base.DoubleBarrelShotgun",
 T.equal(guard.inventory.items[6].quantity, 12,
     "guard ammunition uses shared quantity contract")
 T.equal(Actors.Archetypes:Get("dt.guard.shotgun").id,
-    "dynamictrading.dt.guard.shotgun", "DT canonical archetype ID")
+    "DT.dt.guard.shotgun", "DT canonical archetype ID")
 
 local plan = Presets.BuildMembers({
     seed = "dt-core-archetype-adapter",
@@ -39,7 +39,7 @@ T.equal(plan.memberSpecs[1].presetID, "dt.trader.caravan",
 T.equal(plan.memberSpecs[2].presetID, "dt.guard.shotgun",
     "DT generation still selects guard preset")
 T.equal(plan.memberSpecs[1].coreArchetypeID,
-    "dynamictrading.dt.trader.caravan",
+    "DT.dt.trader.caravan",
     "DT member carries the canonical Core archetype ID")
 T.equal(plan.memberSpecs[2].appearance.resolved.outfitItemSpecs[1].type,
     "Base.Hat_BalaclavaFace",
@@ -51,7 +51,7 @@ T.equal(
     "DT member carries the provider-neutral Core identity")
 T.truthy(
     plan.memberSpecs[1].extensions["PsychopatzCore.ActorIdentity"]
-        .capabilities["dynamictrading.trade"],
+        .capabilities["DT.trade"],
     "DT member carries the shared trading capability")
 
 local actorRegistry = Actors.NewRegistry()

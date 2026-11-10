@@ -78,7 +78,7 @@ T.falsy(string.find(
     1,
     true
 ), "DTCommon trader conversation must not depend on a provider")
-T.equal(registered.id, "dynamictrading.trader",
+T.equal(registered.id, "DT.trader",
     "trader opener identity changed")
 T.truthy(registered.canOpen({ id = "actor:physical" }),
     "physical trader was not eligible for the shared Talk opener")

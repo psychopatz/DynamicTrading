@@ -43,7 +43,7 @@ before this remediation can be marked complete.
 
 - Closed the observed DTAbstract Talk no-op: the single-player server authorization response now loops back through `OnServerCommand` and reaches the existing Core bridge.
 - Added the shared Core actor-conversation input host: bounded text entry, Core session history/response queue, choice restoration, pending guard, and DTCommon result/action hooks.
-- DTCommon now owns the semantic trader policy/content and the `dynamictrading.trader` opener contract. DTHoomans owns only registration with the optional Project Hoomans opener registry plus its registered physical authorization/transport adapter.
+- DTCommon now owns the semantic trader policy/content and the `DT.trader` opener contract. DTHoomans owns only registration with the optional Project Hoomans opener registry plus its registered physical authorization/transport adapter.
 - Project Hoomans’ native Talk provider now tries registered external openers before its normal Hoomans graph. Trader leaders therefore enter the same DTCommon conversation UI/content used by DTAbstract and DTHoomans; Hoomans-only guard referral/social content remains in ProjectHoomans.
 - Removed the superseded DTHoomans trade category/block and the DTCommon Hoomans trade compatibility module. DTCommon trader conversation has no PNC dependency, preserving DTAbstract isolation.
 - Removed Project Hoomans’ superseded `projecthoomans:trade` category/block/topic and localized trade graph; Project Hoomans retains only Hoomans-owned conversation families plus the DTHoomans guard-referral contract.

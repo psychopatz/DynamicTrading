@@ -8,7 +8,12 @@ DTCommon = DTCommon or {}
 local Pack = {}
 DTCommon.SemanticPack = Pack
 
-Pack.PACK_ID = "pack.dynamictrading.trader_story"
+Pack.PACK_ID = "pack.DT.trader_story"
+local TRADE_CAPABILITY = DTCommon.TRADE_CAPABILITY or "DT.trade"
+local TRADE_ACTION = DTCommon.TRADE_ACTION_ID or "DT.trade"
+local REFERRAL_ACTION = DTCommon.REFERRAL_ACTION_ID or "DT.referral"
+local RUMORS_ACTION = DTCommon.RUMORS_ACTION_ID or "DT.rumors"
+local TRADER_NAMESPACE = DTCommon.TRADER_NAMESPACE or "DT.trader"
 
 local function registerPack()
     local Semantics = PsychopatzCore and PsychopatzCore.Semantics or nil
@@ -188,24 +193,28 @@ local function registerPack()
             {
                 id = "pattern.trade.concept_open",
                 priority = 95,
+                capabilitiesRequired = { TRADE_CAPABILITY },
                 match = { { concept = "concept.trade.open" } },
                 emit = { intent = "TRADE", speechAct = "act.trade.request", topic = "trade" },
             },
             {
                 id = "pattern.trade.open",
                 priority = 100,
+                capabilitiesRequired = { TRADE_CAPABILITY },
                 match = { { kind = "literal", value = "trade" } },
                 emit = { intent = "TRADE", speechAct = "act.trade.request" },
             },
             {
                 id = "pattern.trade.buy",
                 priority = 90,
+                capabilitiesRequired = { TRADE_CAPABILITY },
                 match = { { kind = "literal", value = "buy" } },
                 emit = { intent = "TRADE", speechAct = "act.trade.request" },
             },
             {
                 id = "pattern.trade.sell",
                 priority = 90,
+                capabilitiesRequired = { TRADE_CAPABILITY },
                 match = { { kind = "literal", value = "sell" } },
                 emit = { intent = "TRADE", speechAct = "act.trade.request" },
             },
@@ -244,9 +253,9 @@ local function registerPack()
         -- 4. Action Providers
         actionProviders = {
             {
-                id = "dynamictrading.trade_action",
+                id = "DT.trade_action",
                 sourceKind = "dynamic_trading",
-                capabilityRequired = "dynamictrading.trade",
+                capabilityRequired = TRADE_CAPABILITY,
                 order = 20,
                 collect = function(ctx)
                     ctx = type(ctx) == "table" and ctx or {}
@@ -254,11 +263,11 @@ local function registerPack()
                     if role == "guard" then return {} end
                     return {
                         {
-                            id = "dynamictrading.trade",
+                            id = TRADE_ACTION,
                             topic = "trade",
-                            capabilityRequired = "dynamictrading.trade",
+                            capabilityRequired = TRADE_CAPABILITY,
                             sourceKind = "dynamic_trading",
-                            semanticOwner = "dynamictrading.trader",
+                            semanticOwner = TRADER_NAMESPACE,
                             textKey = "UI_DT_Trade",
                             fallbackText = "Trade with merchant",
                             order = 20,
@@ -267,7 +276,7 @@ local function registerPack()
                 end,
             },
             {
-                id = "dynamictrading.referral_action",
+                id = "DT.referral_action",
                 sourceKind = "dynamic_trading",
                 order = 25,
                 collect = function(ctx)
@@ -276,10 +285,10 @@ local function registerPack()
                     if role ~= "guard" then return {} end
                     return {
                         {
-                            id = "dynamictrading.referral",
+                            id = REFERRAL_ACTION,
                             topic = "referral",
                             sourceKind = "dynamic_trading",
-                            semanticOwner = "dynamictrading.guard",
+            semanticOwner = "DT.guard",
                             textKey = "UI_DT_Referral",
                             fallbackText = "Ask who handles trades",
                             order = 25,
@@ -288,16 +297,16 @@ local function registerPack()
                 end,
             },
             {
-                id = "dynamictrading.rumors_action",
+                id = "DT.rumors_action",
                 sourceKind = "dynamic_trading",
                 order = 40,
                 collect = function(ctx)
                     return {
                         {
-                            id = "dynamictrading.rumors",
+                            id = RUMORS_ACTION,
                             topic = "rumors",
                             sourceKind = "dynamic_trading",
-                            semanticOwner = "dynamictrading.trader",
+                            semanticOwner = TRADER_NAMESPACE,
                             textKey = "UI_DT_Rumors",
                             fallbackText = "Ask for news from the road",
                             order = 40,
@@ -326,7 +335,7 @@ local function registerPack()
                                 id = "choice_trade",
                                 textKey = "UI_DT_Trade",
                                 fallback = "Open trade",
-                                capabilityRequired = "dynamictrading.trade",
+                                capabilityRequired = TRADE_CAPABILITY,
                                 outcomes = {
                                     { id = "open_trade", responseKey = "DTCommon_Talk_Opening_Trade" },
                                 },
@@ -360,7 +369,7 @@ local function registerPack()
                                 id = "choice_trade",
                                 textKey = "UI_DT_Trade",
                                 fallback = "Open trade",
-                                capabilityRequired = "dynamictrading.trade",
+                                capabilityRequired = TRADE_CAPABILITY,
                                 outcomes = {
                                     { id = "open_trade", responseKey = "DTCommon_Talk_Opening_Trade" },
                                 },
@@ -384,7 +393,7 @@ local function registerPack()
                                 id = "choice_trade",
                                 textKey = "UI_DT_Trade",
                                 fallback = "Let's trade",
-                                capabilityRequired = "dynamictrading.trade",
+                                capabilityRequired = TRADE_CAPABILITY,
                                 outcomes = {
                                     { id = "open_trade", responseKey = "DTCommon_Talk_Opening_Trade" },
                                 },

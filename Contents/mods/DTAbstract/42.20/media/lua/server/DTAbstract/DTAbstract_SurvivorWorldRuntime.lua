@@ -131,7 +131,11 @@ function Runtime.Ensure(spec)
         anchor = anchor,
         communityCount = spec.communityCount or 3,
         groupCount = spec.groupCount or 3,
-        traderGroupCount = 2,
+        primaryArchetypeID = DTCommon
+            and DTCommon.TRADER_PROFILE_ID or "DT.trader",
+        primaryGroupCount = 2,
+        primaryGroupType = "CARAVAN",
+        primaryMission = "TRADE",
         source = "WORLD_POPULATION_BOOTSTRAP",
         actorRegistry = spec.actorRegistry
             or Runtime.GetActorRegistry(),
@@ -161,7 +165,9 @@ local function traderGroup(registry, group)
     local kind = string.upper(tostring(group.groupType or ""))
     if kind == "CARAVAN" or kind == "TRADER" then return true end
     local faction = registry:GetFaction(group.factionID)
-    return faction and tostring(faction.archetypeID) == "trader"
+    return faction and DTCommon
+        and type(DTCommon.IsTraderFaction) == "function"
+        and DTCommon.IsTraderFaction(faction) == true
 end
 
 function Runtime.ListTraderCandidates(spec)
