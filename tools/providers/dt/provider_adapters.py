@@ -30,11 +30,15 @@ _TRADING_EXECUTION_CALLBACKS = tuple(
     if callback != "interaction"
 )
 _TRADING_CAPABILITIES = (
+    "trading.conversation",
+    "trading.interaction",
+)
+_ABSTRACT_CAPABILITIES = (
     "semantic.conversation",
     "semantic.identity",
     "semantic.interaction",
-    "trading.conversation",
-    "trading.interaction",
+    *_TRADING_CAPABILITIES,
+    "trading.remote",
 )
 
 
@@ -67,7 +71,7 @@ def provider_descriptors(
                 display_name="DTAbstract",
                 repository_kind="dynamic_trading",
                 requires=(CORE_PROVIDER_ID, DT_COMMON_PROVIDER_ID),
-                capabilities=_TRADING_CAPABILITIES + ("trading.remote",),
+                capabilities=_ABSTRACT_CAPABILITIES,
                 materialization_modes=("abstract",),
                 execution_callbacks=_TRADING_EXECUTION_CALLBACKS,
             )

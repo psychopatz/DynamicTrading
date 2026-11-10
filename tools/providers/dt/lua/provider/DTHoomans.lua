@@ -1,7 +1,7 @@
 -- DTHoomans adapter: the same Core execution contract with physical
 -- materialization delegated to the adopter's body-capability callbacks.
 
-local Adapter = require "provider/Adapter"
+local Adapter = require "provider/DTAdapter"
 
 local Provider = {
     providerID = "DTHoomans",

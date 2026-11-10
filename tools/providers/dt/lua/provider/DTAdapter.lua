@@ -1,5 +1,9 @@
--- Thin Dynamic Trading adapter around Core's semantic execution contract.
--- The execution engine and callback dispatch remain Core-owned.
+-- Dynamic Trading's provider-local adapter.
+--
+-- The module has a provider-specific name so a composed worker can load
+-- Project Hoomans and Dynamic Trading adapters together without Lua resolving
+-- both providers' generic ``provider/Adapter`` modules to the first package
+-- path on the search path.
 
 local Adapter = {}
 
@@ -11,20 +15,17 @@ local function copyList(values)
     return result
 end
 
-function Adapter.New(SemanticExecution, spec, defaults)
+function Adapter.New(SemanticExecution, spec)
     if type(SemanticExecution) ~= "table"
         or type(SemanticExecution.new) ~= "function"
     then
         return nil, "core_execution_contract_required"
     end
     spec = type(spec) == "table" and spec or {}
-    defaults = type(defaults) == "table" and defaults or {}
-    local capabilities = spec.capabilities or defaults.capabilities
     return SemanticExecution.new({
-        providerID = spec.providerID or defaults.providerID,
-        materializationMode = spec.materializationMode
-            or defaults.materializationMode,
-        capabilities = copyList(capabilities),
+        providerID = spec.providerID,
+        materializationMode = spec.materializationMode,
+        capabilities = copyList(spec.capabilities),
         context = spec.context,
         callbacks = spec.callbacks,
     })

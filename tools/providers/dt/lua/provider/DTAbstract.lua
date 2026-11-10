@@ -1,6 +1,6 @@
 -- DTAbstract adapter: the same Core execution contract, permanently abstract.
 
-local Adapter = require "provider/Adapter"
+local Adapter = require "provider/DTAdapter"
 
 local Provider = {
     providerID = "DTAbstract",
