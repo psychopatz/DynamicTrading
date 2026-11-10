@@ -8,6 +8,8 @@ physical representation capability for the same Core execution contract.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from semantic_harness.provider_registry import (
     CORE_PROVIDER_ID,
     SEMANTIC_EXECUTION_CALLBACKS,
@@ -164,11 +166,44 @@ def profile_provider_ids(profile_id: str) -> tuple[str, ...]:
         raise ValueError(f"unknown Dynamic Trading profile: {profile_id}") from error
 
 
+def provider_worker_launch_values(
+    profile_id: str,
+    repository: str | Path,
+) -> dict[str, object]:
+    """Return neutral Core worker values for one executable DT adapter.
+
+    Core owns loading and dispatch. Dynamic Trading supplies only its module
+    path, selected adapter module, and the provider that receives generic
+    semantic operation commands.
+    """
+
+    normalized = str(profile_id).strip().lower()
+    modules = {
+        "dtabstract": ("provider/DTAbstract", DT_ABSTRACT_PROVIDER_ID),
+        "dthoomans": ("provider/DTHoomans", DT_HOOMANS_PROVIDER_ID),
+    }
+    try:
+        module, provider_id = modules[normalized]
+    except KeyError as error:
+        raise ValueError(
+            f"unknown Dynamic Trading profile: {profile_id}"
+        ) from error
+    root = Path(repository).expanduser().resolve()
+    return {
+        "provider_module_paths": (
+            str(root / "tools/semantic_harness/lua/?.lua"),
+        ),
+        "provider_modules": (module,),
+        "execution_provider_id": provider_id,
+    }
+
+
 __all__ = [
     "DT_ABSTRACT_PROVIDER_ID",
     "DT_COMMON_PROVIDER_ID",
     "DT_HOOMANS_PROVIDER_ID",
     "profile_provider_ids",
+    "provider_worker_launch_values",
     "compose_dynamic_trading_profile",
     "provider_descriptors",
     "register_dynamic_trading_profiles",

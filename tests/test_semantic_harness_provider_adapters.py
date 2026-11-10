@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import sys
 import unittest
 from pathlib import Path
@@ -15,13 +16,14 @@ from semantic_harness.provider_registry import (  # noqa: E402
     SEMANTIC_EXECUTION_SCHEMA,
     core_registry,
 )
-from semantic_harness.process import WorkerLaunchSpec  # noqa: E402
+from semantic_harness.process import LuaProcess, WorkerLaunchSpec  # noqa: E402
 from tools.semantic_harness.provider_adapters import (  # noqa: E402
     DT_ABSTRACT_PROVIDER_ID,
     DT_COMMON_PROVIDER_ID,
     DT_HOOMANS_PROVIDER_ID,
     compose_dynamic_trading_profile,
     profile_provider_ids,
+    provider_worker_launch_values,
     register_dynamic_trading_profiles,
 )
 
@@ -126,6 +128,43 @@ class DynamicTradingProviderAdapterTests(unittest.TestCase):
             ),
         )
         self.assertNotIn(DT_HOOMANS_PROVIDER_ID, resolved.provider_ids)
+
+    def test_dt_profiles_load_through_the_core_worker(self) -> None:
+        lua = shutil.which("lua")
+        if lua is None:
+            self.skipTest("lua executable is required for the worker gate")
+        for profile_id, mode, provider_id in (
+            ("dtabstract", "abstract", DT_ABSTRACT_PROVIDER_ID),
+            ("dthoomans", "physical", DT_HOOMANS_PROVIDER_ID),
+        ):
+            selection = compose_dynamic_trading_profile(profile_id)
+            spec = WorkerLaunchSpec.from_profile_selection(
+                selection,
+                **provider_worker_launch_values(profile_id, REPOSITORY),
+                lua_bin=Path(lua),
+                worker_script=CORE_REPOSITORY
+                / "tools/semantic_harness/lua/worker.lua",
+                core_repository=CORE_REPOSITORY,
+                working_directory=CORE_REPOSITORY,
+            )
+            runtime = LuaProcess(spec)
+            try:
+                hello = runtime.start()
+                self.assertEqual(hello["profile"], profile_id)
+                self.assertEqual(hello["materializationMode"], mode)
+                self.assertEqual(hello["executionProviderID"], provider_id)
+                self.assertEqual(
+                    hello["providerAdapters"][0]["providerID"],
+                    provider_id,
+                )
+                response = runtime.request(
+                    "SEMANTIC_PROVIDER",
+                    {"operation": "submitText", "text": "hello"},
+                )
+                self.assertEqual(response["providerID"], provider_id)
+                self.assertEqual(response["result"]["text"], "hello")
+            finally:
+                runtime.close()
 
 
 if __name__ == "__main__":
