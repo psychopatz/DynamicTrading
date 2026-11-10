@@ -87,22 +87,20 @@ local function coreProvider()
 end
 
 local function acquire(actor, now)
-    local adapter = coreProvider()
-    local acquired, reason = adapter.Acquire(actor, {
-        Actors = actors(),
-    }, {
+    local presence = PsychopatzCore
+        and PsychopatzCore.SurvivorWorldPresence or nil
+    if not presence then
+        presence = require
+            "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldPresence"
+    end
+    local acquired, reason = presence.EnsureAbstract(actor.actorId, {
+        actorRegistry = registry(),
+        provider = Provider.ID,
         owner = "dtcommon:trader_world",
         now = now,
     })
     if not acquired then return nil, reason end
-
-    local reg = registry()
-    if not reg then return nil, "actor_registry_unavailable" end
-    return reg:Commit(
-        actor.actorId,
-        acquired,
-        actor.revision
-    )
+    return acquired
 end
 
 local function releaseAcquired(actor, now)

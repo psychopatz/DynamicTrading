@@ -375,7 +375,10 @@ local function decorateTrader(entry, style)
         factionName = view.factionName,
         factionRole = view.role or "trader",
         role = view.role or "trader",
-        presence = view.providerState or view.provider,
+        -- Provider identity is not a presence state.  Core is authoritative;
+        -- leave the field absent if the canonical projection is not ready so
+        -- the map cannot render a provider name as UNKNOWN presence.
+        presence = view.providerState,
         provider = view.provider,
         providerState = view.providerState,
         communityID = view.communityID,
