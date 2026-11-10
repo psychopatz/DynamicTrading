@@ -402,21 +402,24 @@ local function nativeSpec(state)
     }
 end
 
--- The physical provider is the only owner of the Project Hoomans transport.
--- DTCommon still owns the public GenerateForFaction contract and supplies the
--- requested presence mode without duplicating the bodyless Core path here.
+-- The physical provider is the only owner of the Project Hoomans materializer.
+-- Core has already created the canonical group and actor roster before this
+-- adapter is called. Hoomans receives those IDs and only creates/reconciles
+-- its physical records and mobile representation.
 TraderGeneration.RegisterProvider("DTHoomans", {
     GenerateForFaction = function(spec)
         local native = {}
-        local key
-        local memberPlan
         local canonical
-        local ok
         local reason
         local generated
+        local faction
         local callOK
-        if not PNC or not PNC.MobileGroupDirector
-            or type(PNC.MobileGroupDirector.GenerateForFaction) ~= "function"
+        local ok
+        if not PNC or not PNC.Factions
+            or type(PNC.Factions.Get) ~= "function"
+            or not PNC.MobileGroupDirector
+            or type(PNC.MobileGroupDirector.MaterializeCoreGroup)
+                ~= "function"
         then
             return false, "mobile_director_unavailable"
         end
@@ -425,55 +428,56 @@ TraderGeneration.RegisterProvider("DTHoomans", {
         end
         native.presenceMode = spec.presenceMode or native.presenceMode
             or "live"
-        memberPlan, reason = TraderGeneration.BuildMemberSpecs({
-            seed = native.generation and native.generation.seed,
-            actorPrefix = native.actorPrefix,
-            memberCount = native.groupSize,
-            providerID = "DTHoomans",
-            presenceMode = native.presenceMode,
-        })
-        if not memberPlan then return false, reason end
-        local faction = PNC.Factions and type(PNC.Factions.Get) == "function"
-            and PNC.Factions.Get(spec.factionID) or nil
-        memberPlan.actorExtensions = {}
-        for key, member in ipairs(memberPlan.memberSpecs or {}) do
-            memberPlan.actorExtensions[key] = {
-                ["PsychopatzCore.SurvivorWorld"] = {
-                    factionID = tostring(spec.factionID or ""),
-                    factionName = faction and faction.name or nil,
-                    factionArchetypeID = faction and faction.archetypeID
-                        or "trader",
-                    role = member.role,
-                },
-            }
-        end
-        canonical, reason = TraderGeneration.CreateCanonicalActors({
+        faction = PNC.Factions.Get(spec.factionID)
+        if not faction then return false, "faction_not_found" end
+
+        canonical, reason = TraderGeneration.GenerateCanonicalGroup({
+            provider = "DTHoomans",
+            presenceMode = "abstract",
             position = {
                 x = native.x,
                 y = native.y,
                 z = native.z,
             },
-        }, memberPlan)
+            factionID = spec.factionID,
+            factionName = faction.name,
+            factionArchetypeID = faction.archetypeID,
+            actorPrefix = native.actorPrefix,
+            groupID = native.groupID,
+            locationID = native.siteSpec and native.siteSpec.id or nil,
+            locationKind = "temporary",
+            groupType = "CARAVAN",
+            initialMission = "TRADE",
+            memberCount = native.groupSize,
+            source = "DYNAMIC_TRADING_CARAVAN",
+            createdAt = native.generation
+                and native.generation.createdAt or nil,
+        })
         if not canonical then return false, reason end
-        native.actorIDs = canonical.actorIDs
+        native.actorIDs = canonical.memberActorIDs
+        native.groupID = canonical.groupID
         native.memberSpecs = canonical.memberSpecs
+        native.canonicalGroup = true
+
+        -- This is an addon-owned materializer boundary. The Core transaction
+        -- above is already complete; protect only the Hoomans callback so a
+        -- provider failure can roll back the commercial spawn transaction.
         callOK, ok, reason, generated = pcall(
-            PNC.MobileGroupDirector.GenerateForFaction,
+            PNC.MobileGroupDirector.MaterializeCoreGroup,
             spec.factionID,
             native
         )
         if not callOK then
-            TraderGeneration.RemoveCanonicalActors(canonical)
             return false, "mobile_generation_exception"
         end
         if not ok then
-            TraderGeneration.RemoveCanonicalActors(canonical)
             return ok, reason, generated
         end
         generated = generated or {}
         generated.canonicalCreatedActorIDs = canonical.createdActorIDs
-        generated.canonicalActorIDs = canonical.actorIDs
+        generated.canonicalActorIDs = canonical.memberActorIDs
         generated.memberSpecs = canonical.memberSpecs
+        generated.groupID = canonical.groupID
         local actors = PsychopatzCore and PsychopatzCore.Actors or nil
         if actors and actors.RuntimeStore
             and type(actors.RuntimeStore.Save) == "function"
@@ -629,7 +633,8 @@ local function finalize(state, generated)
 
     local function cleanupCanonicalActors()
         if generated and generated.canonicalCreatedActorIDs then
-            TraderGeneration.RemoveCanonicalActors({
+            TraderGeneration.RemoveCanonicalGroup({
+                groupID = generated.groupID,
                 createdActorIDs = generated.canonicalCreatedActorIDs,
             })
         end
@@ -813,7 +818,8 @@ processState = function(state)
             Service.Remove("dt_" .. tostring(state.faction.id))
         end
         if generated and generated.canonicalCreatedActorIDs then
-            TraderGeneration.RemoveCanonicalActors({
+            TraderGeneration.RemoveCanonicalGroup({
+                groupID = generated.groupID,
                 createdActorIDs = generated.canonicalCreatedActorIDs,
             })
         end

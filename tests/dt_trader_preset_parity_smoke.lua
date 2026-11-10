@@ -57,16 +57,16 @@ T.falsy(string.find(abstractSource, "PNC", 1, true),
 local physicalSource = T.read(
     "DTHoomans", "server",
     "DTHoomans/DTHoomans_CaravanService.lua")
-T.contains(physicalSource, "BuildMemberSpecs",
-    "DTHoomans consumes the shared preset planner")
-T.contains(physicalSource, "CreateCanonicalActors",
-    "DTHoomans creates the shared Core actor projection")
+T.contains(physicalSource, "GenerateCanonicalGroup",
+    "DTHoomans requests the shared Core group transaction")
+T.contains(physicalSource, "MaterializeCoreGroup",
+    "DTHoomans only materializes the Core actor projection")
 T.contains(physicalSource, "canonical.memberSpecs",
     "DTHoomans passes canonical member specs to Hoomans")
 local generationSource = T.read(
     "DTCommon", "shared", "DTCommon/DTCommon_TraderGeneration.lua")
-T.contains(generationSource, "personalInventory",
-    "shared generation transports the canonical Core inventory")
+T.contains(generationSource, "GenerateCanonicalGroup",
+    "shared generation exposes one canonical Core entry point")
 T.falsy(string.find(physicalSource, "GUARD_WEAPONS", 1, true),
     "DTHoomans has no duplicate guard loadout")
 

@@ -3,10 +3,10 @@ local T = require "tests/support/test"
 local source = T.read(
     "DTHoomans", "server",
     "DTHoomans/DTHoomans_CaravanService.lua")
-T.contains(source, "GenerateForFaction",
-    "caravan delegates NPC creation to MobileGroupDirector")
+T.contains(source, "MaterializeCoreGroup",
+    "caravan delegates physical representation to Hoomans")
 T.contains(source, "TraderGeneration.GenerateForFaction",
-    "caravan routes faction generation through the shared facade")
+    "caravan routes commercial requests through the shared facade")
 T.contains(source, "groupSize = GROUP_SIZE",
     "caravan requests a multi-NPC group")
 T.contains(source, "mobileControlMode = constants.MOBILE_CONTROL_STRATEGIC",
@@ -17,8 +17,10 @@ T.contains(source, "caravan_ready",
     "caravan completion remains observable")
 T.contains(source, "memberSpecs",
     "caravan transports the shared authored member presets")
-T.contains(source, "CreateCanonicalActors",
-    "caravan creates Core actors before native materialization")
+T.contains(source, "GenerateCanonicalGroup",
+    "caravan creates its canonical group through Core")
+T.falsy(string.find(source, "CreateCanonicalActors", 1, true),
+    "caravan does not create a parallel actor roster")
 T.falsy(string.find(source, "GUARD_WEAPONS", 1, true),
     "provider does not retain a duplicate guard loadout")
 T.falsy(string.find(source, "PNC.API.SetLoadout", 1, true),

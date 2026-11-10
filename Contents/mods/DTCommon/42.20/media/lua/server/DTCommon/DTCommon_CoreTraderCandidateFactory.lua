@@ -1,7 +1,10 @@
--- DynamicTrading-specific creation of additional canonical trader groups.
+-- DynamicTrading's trader-group request adapter.
 --
--- Core owns generic SurvivorWorld generation/commit. DTCommon owns the policy
--- that a debug trader should be a caravan attached to a canonical community.
+-- Core owns planning, identity creation, group persistence, and actor
+-- persistence. DynamicTrading supplies only trader-specific member presets and
+-- commercial intent. Project Hoomans, when present, owns rebuilding its
+-- runtime view after the same Core commit; it does not generate a second set
+-- of actors.
 
 DTCommon = DTCommon or {}
 DTCommon.CoreTraderCandidateFactory =
@@ -94,6 +97,34 @@ local function actorsUnused(plan, actorRegistry)
     return true
 end
 
+local function existingFaction(registry, factionID)
+    factionID = tostring(factionID or "")
+    if factionID == "" or not registry
+        or type(registry.GetFaction) ~= "function"
+    then
+        return nil
+    end
+    return registry:GetFaction(factionID)
+end
+
+local function commitGroup(registry, plan, actorRegistry)
+    local adapter = PNC and PNC.CoreSurvivorWorldAdapter or nil
+    if adapter and type(adapter.CommitGeneratedGroupPlan) == "function"
+        and type(adapter.CanCommitGeneratedPlans) == "function"
+        and adapter.CanCommitGeneratedPlans()
+    then
+        return adapter.CommitGeneratedGroupPlan(
+            plan,
+            "dynamic_trading_group_generation"
+        )
+    end
+    return SurvivorWorld.Bootstrap.CommitGroupPlan(
+        registry,
+        plan,
+        actorRegistry
+    )
+end
+
 function Factory.Create(spec)
     spec = type(spec) == "table" and spec or {}
     local position = point(spec.position)
@@ -111,13 +142,12 @@ function Factory.Create(spec)
         return nil, "actor_registry_unavailable"
     end
 
+    local requestedFaction = existingFaction(registry, spec.factionID)
     local home = nearestCommunity(registry, position)
-    if not home or not home.community then
-        return nil, "canonical_home_community_unavailable"
-    end
-    local community = home.community
-    local faction = home.faction
-        or registry:GetFaction(community.factionID)
+    local community = home and home.community or nil
+    local faction = requestedFaction
+        or (home and home.faction)
+        or (community and registry:GetFaction(community.factionID))
     if not faction then
         return nil, "canonical_faction_unavailable"
     end
@@ -147,23 +177,30 @@ function Factory.Create(spec)
     for attempt = 1, attempts do
         local serial = baseSerial + attempt
         local plan
+        local factionID = tostring(spec.factionID or faction.id)
+        local factionName = spec.factionName or faction.name
         plan, lastReason =
             SurvivorWorld.Generation.BuildGroupPlan({
                 worldSeed = registry:WorldSeed(),
                 sectorID = sectorID,
                 serial = serial,
                 source = tostring(
-                    spec.source or "DYNAMIC_TRADING_DEBUG"
+                    spec.source or "DYNAMIC_TRADING_GROUP"
                 ),
-                locationID = "dt_debug_site_" .. tostring(serial),
+                locationID = tostring(
+                    spec.locationID
+                        or ("dt_group_site_" .. tostring(serial))
+                ),
                 location = position,
-                locationKind = "temporary",
-                factionID = community.factionID,
-                factionName = faction.name,
+                locationKind = tostring(spec.locationKind or "temporary"),
+                factionID = factionID,
+                factionName = factionName,
                 factionArchetypeID =
-                    faction.archetypeID or "trader",
-                groupType = "CARAVAN",
-                initialMission = "TRADE",
+                    spec.factionArchetypeID
+                        or faction.archetypeID or "trader",
+                groupID = spec.groupID,
+                groupType = tostring(spec.groupType or "CARAVAN"),
+                initialMission = tostring(spec.initialMission or "TRADE"),
                 memberCount = math.max(
                     1,
                     math.floor(
@@ -174,10 +211,11 @@ function Factory.Create(spec)
                 createdAt = spec.createdAt,
             })
         if plan then
-            plan.homeCommunityID = community.id
+            plan.homeCommunityID = spec.homeCommunityID
+                or (community and community.id or nil)
             local memberPlan, presetReason = Presets.BuildMembers({
                 seed = plan.seed or spec.seed or plan.groupID,
-                actorPrefix = plan.groupID,
+                actorPrefix = spec.actorPrefix or plan.groupID,
                 actorIDs = plan.memberActorIDs,
                 memberCount = #(plan.memberActorIDs or {}),
                 providerID = spec.providerID or "DTAbstract",
@@ -191,12 +229,11 @@ function Factory.Create(spec)
                     and actorsUnused(plan, actorRegistry)
                 then
                     local group
-                    group, lastReason =
-                        SurvivorWorld.Bootstrap.CommitGroupPlan(
-                            registry,
-                            plan,
-                            actorRegistry
-                        )
+                    group, lastReason = commitGroup(
+                        registry,
+                        plan,
+                        actorRegistry
+                    )
                     if group then
                         SurvivorWorld.RuntimeStore.MarkDirty(
                             "dynamic_trading_debug_group_created"
@@ -227,10 +264,11 @@ function Factory.Create(spec)
                             actorID = plan.leaderActorID,
                             groupID = plan.groupID,
                             factionID = plan.factionID,
-                            communityID = community.id,
+                            communityID = community and community.id or nil,
                             position = position,
                             memberActorIDs = plan.memberActorIDs,
                             memberSpecs = plan.memberSpecs,
+                            createdActorIDs = plan.memberActorIDs,
                         }, "canonical_group_created"
                     end
                 else
