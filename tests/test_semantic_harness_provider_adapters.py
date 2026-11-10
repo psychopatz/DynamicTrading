@@ -15,6 +15,7 @@ from semantic_harness.provider_registry import (  # noqa: E402
     SEMANTIC_EXECUTION_SCHEMA,
     core_registry,
 )
+from semantic_harness.process import WorkerLaunchSpec  # noqa: E402
 from tools.semantic_harness.provider_adapters import (  # noqa: E402
     DT_ABSTRACT_PROVIDER_ID,
     DT_COMMON_PROVIDER_ID,
@@ -26,6 +27,26 @@ from tools.semantic_harness.provider_adapters import (  # noqa: E402
 
 
 class DynamicTradingProviderAdapterTests(unittest.TestCase):
+    def test_abstract_and_physical_selections_feed_core_launch_specs(self) -> None:
+        for profile_id, mode in (
+            ("dtabstract", "abstract"),
+            ("dthoomans", "physical"),
+        ):
+            selection = compose_dynamic_trading_profile(profile_id)
+            spec = WorkerLaunchSpec.from_profile_selection(
+                selection,
+                lua_bin=Path(sys.executable),
+                worker_script=CORE_REPOSITORY
+                / "tools/semantic_harness/lua/worker.lua",
+                core_repository=CORE_REPOSITORY,
+            )
+            self.assertEqual(spec.profile, profile_id)
+            self.assertEqual(spec.materialization_mode, mode)
+            self.assertEqual(
+                spec.neutral_environment(),
+                selection.launch_environment(),
+            )
+
     def test_profile_selection_emits_core_worker_launch_metadata(self) -> None:
         selection = compose_dynamic_trading_profile(
             "dtabstract",
