@@ -5,6 +5,6 @@ author=Psychopatz
 category=features
 version=0.1.0
 versionMin=42.20
-require=DTCommon,MarketSense
+require=PsychopatzCore,DTCommon,MarketSense
 incompatible=\DTHoomans,\ProjectHoomans
 loadModAfter=MarketSense,DTCommon

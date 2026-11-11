@@ -1,7 +1,7 @@
 {
   "schema": "semantic.provider_manifest.v2",
   "providerID": "DTCommon",
-  "displayName": "DT",
+  "displayName": "Dynamic Trading",
   "providers": [
     {
       "providerID": "DTCommon",
@@ -10,20 +10,27 @@
       "requires": ["PsychopatzCore"],
       "capabilities": ["trading.conversation", "trading.interaction"],
       "materializationModes": ["abstract", "physical"],
-      "optional": true
+      "optional": true,
+      "runtimeModules": ["DTCommon"],
+      "runtimeBootstrap": [{
+        "id": "DTCommon.shared",
+        "entrypoint": "${repository}/Contents/mods/DTCommon/${runtime:DTCommon}/media/lua/shared/DTCommon/00_DTCommon_Init.lua",
+        "modulePaths": [
+          "${repository}/Contents/mods/DTCommon/common/media/lua/shared/?.lua",
+          "${repository}/Contents/mods/DTCommon/${runtime:DTCommon}/media/lua/shared/?.lua"
+        ],
+        "required": true
+      }]
     },
     {
       "providerID": "DTAbstract",
       "displayName": "Dynamic Trading abstract",
       "repositoryKind": "dynamic_trading",
       "requires": ["PsychopatzCore", "DTCommon"],
+      "conflicts": ["DTHoomans", "ProjectHoomans"],
       "capabilities": [
-        "semantic.conversation",
-        "semantic.identity",
-        "semantic.interaction",
-        "trading.conversation",
-        "trading.interaction",
-        "trading.remote"
+        "semantic.conversation", "semantic.identity", "semantic.interaction",
+        "trading.conversation", "trading.interaction", "trading.remote"
       ],
       "routeClaims": {
         "semantic.conversation": 50,
@@ -36,18 +43,24 @@
       "materializationModes": ["abstract"],
       "optional": true,
       "luaModulePaths": ["${repository}/tools/providers/dt/lua/?.lua"],
-      "luaModule": "provider/DTAbstract"
+      "luaModule": "provider/DTAbstract",
+      "runtimeModules": ["DTAbstract"],
+      "runtimeBootstrap": [{
+        "id": "DTAbstract.shared",
+        "entrypoint": "${repository}/Contents/mods/DTAbstract/${runtime:DTAbstract}/media/lua/shared/DTAbstract/00_DTAbstract_Init.lua",
+        "modulePaths": [
+          "${repository}/Contents/mods/DTAbstract/${runtime:DTAbstract}/media/lua/shared/?.lua"
+        ],
+        "required": true
+      }]
     },
     {
       "providerID": "DTHoomans",
       "displayName": "Dynamic Trading Hoomans",
       "repositoryKind": "dynamic_trading",
-      "requires": ["PsychopatzCore", "DTCommon"],
-      "capabilities": [
-        "trading.conversation",
-        "trading.interaction",
-        "trading.physical"
-      ],
+      "requires": ["PsychopatzCore", "ProjectHoomans", "DTCommon"],
+      "conflicts": ["DTAbstract"],
+      "capabilities": ["trading.conversation", "trading.interaction", "trading.physical"],
       "routeClaims": {
         "trading.conversation": 100,
         "trading.interaction": 100,
@@ -57,14 +70,21 @@
       "optional": true,
       "luaModulePaths": ["${repository}/tools/providers/dt/lua/?.lua"],
       "luaModule": "provider/DTHoomans",
-      "runtimeModules": ["DTCommon", "DTHoomans"],
+      "runtimeModules": ["DTHoomans"],
+      "runtimeBootstrap": [{
+        "id": "DTHoomans.shared",
+        "entrypoint": "${repository}/Contents/mods/DTHoomans/${runtime:DTHoomans}/media/lua/shared/DTHoomans/00_DTHoomans_Init.lua",
+        "modulePaths": [
+          "${repository}/Contents/mods/DTHoomans/${runtime:DTHoomans}/media/lua/shared/?.lua"
+        ],
+        "required": true
+      }],
       "environment": {
         "SEMANTIC_HARNESS_DT_REPOSITORY": "${repository}",
         "PZ_TEST_DYNAMIC_TRADING_RUNTIME": "${runtime:DTCommon}"
       }
     }
   ],
-  "pythonProvider": "tools.providers.dt.provider_adapters:register_dynamic_trading_profiles",
   "conversationSources": [
     "tools/providers/dt/codebuilder/sources/conversation/packs/dynamic_trading.json"
   ]
