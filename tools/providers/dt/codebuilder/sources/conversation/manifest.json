@@ -1,0 +1,25 @@
+{
+  "schema": "pnc.conversation.manifest.v1",
+  "version": "1",
+  "defaultOwner": "DTCommon",
+  "registryOwner": "DTCommon",
+  "sourceProfiles": {
+    "conversation.source.dtcommon.247519f6f9": {
+      "name": "Dynamic Trading Common Conversation Suggestions",
+      "version": "1",
+      "owner": "DTCommon",
+      "contentLicense": "Dynamic Trading authored content"
+    }
+  },
+  "shards": [
+    {
+      "domain": "trading_suggestions",
+      "kind": "ui",
+      "order": 2300,
+      "path": "ui/static_suggestions.json",
+      "owner": "DTCommon",
+      "shardId": "conversation.ui.dynamic.trading.suggestions",
+      "sourceProfile": "conversation.source.dtcommon.247519f6f9"
+    }
+  ]
+}

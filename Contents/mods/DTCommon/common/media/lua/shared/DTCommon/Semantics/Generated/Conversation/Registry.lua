@@ -9,7 +9,7 @@ Registry.REGISTRY_MODULE = "DTCommon/Semantics/Generated/Conversation/Registry"
 Registry.SCHEMA = "pnc.conversation.model.v1"
 Registry.VERSION = 1
 Registry.CONTENT_FINGERPRINT = "c223241cb10e0286fe285007c9b7f5e989b2fe3b134b7952c293d3bd65b0e949"
-Registry.WHOLE_MODEL_FINGERPRINT = "aa4d28220453e514108a1abb5a4c1f7efa7ab05a524e077f681c69c8e3522234"
+Registry.WHOLE_MODEL_FINGERPRINT = "706054ca3a6942ca9aedd00fbdc713118e415ec2004bf5e04daee9781d766b22"
 Registry.PHRASE_FAMILIES = {}
 Registry.PLAYER_CHOICES = {}
 Registry.PATTERNS = {}
@@ -57,6 +57,8 @@ local function appendUI(loaded)
 end
 local loaded01 = require "DTCommon/Semantics/Generated/Conversation/Packs/DynamicTrading"
 appendPacks(loaded01)
+local loaded02 = require "DTCommon/Semantics/Generated/Conversation/UI/DynamicTradingSuggestions"
+appendUI(loaded02)
 for key, family in pairs(Registry.PHRASE_FAMILIES) do
     if type(family) == "table" and family.id then Registry.PHRASE_FAMILIES[key] = family end
 end
