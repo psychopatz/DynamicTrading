@@ -15,7 +15,7 @@ Integration.REFERRAL_CHOICE_ID = "trader_referral"
 local TEXT_SOURCE = {
     modID = "DTCommon",
     pathPattern =
-        "media/translation/{language}/Conversation/Legacy/caravan/shared/basic.json",
+        "media/translation/{language}/Conversation/Bundles/caravan/shared/basic.json",
     domain = "dthoomans.conversation.caravan.shared.basic",
 }
 

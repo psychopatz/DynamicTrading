@@ -19,7 +19,6 @@ DTCommon = {
     MOD_ID = "DTCommon",
     TraderService = {
         Snapshot = function() return {} end,
-        ExecuteTrade = function() return {} end,
         ExecuteTradeBasket = function() return {} end,
     },
     TraderProviders = {

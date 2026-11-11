@@ -34,7 +34,8 @@
 
 ## T3 — One safe basket transaction and currency settlement
 
-- Replace duplicate behavioral implementations of `ExecuteTrade` and `ExecuteTradeBasket` with one authoritative execution path (retain compatibility wrappers only when genuinely used).
+- Keep one authoritative `ExecuteTradeBasket` settlement path. Single-row
+  commands must construct the canonical basket request at the command boundary.
 - Verify PsychopatzCore inventory transfer, currency `RemoveUnits`, restore and MoneyBundle semantics before composition. Correct return-shape mismatch.
 - Prevalidate entire basket, funds/budget, stock, destination limits and item transfer capacity. Reconcile physical caravan capacity display with actual commercial stock capacity. Do not presume bags are free storage.
 - Stage reversible changes; commit once; restore in exact reverse order on failure; verify restoration. If Core lacks generic primitives, amend Core narrowly with its own tests rather than building DT-only Core clones.

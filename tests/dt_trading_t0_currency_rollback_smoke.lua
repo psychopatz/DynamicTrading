@@ -93,15 +93,17 @@ local Service = T.load(
     "shared",
     "DTCommon/DTCommon_TraderService.lua"
 )
-local ok, result = pcall(Service.ExecuteTrade, {
+local ok, result = pcall(Service.ExecuteTradeBasket, {
     getInventory = function() return {} end,
 }, {
     traderID = "trader_kestrel",
     requestID = "t0-currency-rollback",
     observedStockVersion = 7,
-    operation = "BUY",
-    fullType = "Base.Bandage",
-    quantity = 1,
+    buyRows = {{
+        fullType = "Base.Bandage",
+        quantity = 1,
+    }},
+    sellRows = {},
 })
 
 T.truthy(ok, "currency rollback does not throw after transfer failure")

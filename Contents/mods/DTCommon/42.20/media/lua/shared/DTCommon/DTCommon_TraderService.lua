@@ -644,25 +644,6 @@ local function restoreAll(physical, currencyDetails, addedCurrency,
     return complete
 end
 
--- Compatibility wrapper for the old one-row endpoint. All settlement now
--- flows through ExecuteTradeBasket so quote, access, rollback, and replay
--- rules cannot diverge between single and mixed baskets.
-function Service.ExecuteTrade(player, request)
-    request = type(request) == "table" and request or {}
-    local operation = string.upper(bounded(request.operation, 16))
-    local row = {
-        fullType = request.fullType,
-        quantity = request.quantity,
-        itemIDs = request.itemIDs,
-        itemIDQuantities = request.itemIDQuantities,
-    }
-    local basket = {}
-    for key, value in pairs(request) do basket[key] = value end
-    basket.buyRows = operation == DTCommon.OP_BUY and { row } or {}
-    basket.sellRows = operation == DTCommon.OP_SELL and { row } or {}
-    return Service.ExecuteTradeBasket(player, basket)
-end
-
 function Service.BindActor(traderID, actorID, definition)
     if not authority() then return false, "server_authority_required" end
     local record = Service.GetRecord(traderID)

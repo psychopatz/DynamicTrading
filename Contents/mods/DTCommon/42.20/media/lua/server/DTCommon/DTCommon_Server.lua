@@ -196,6 +196,21 @@ local function processDebugSpawnQueue()
     end
 end
 
+local function buildSingleTradeBasket(args)
+    local request = {}
+    for key, value in pairs(args) do request[key] = value end
+    local operation = string.upper(tostring(args.operation or ""))
+    local row = {
+        fullType = args.fullType,
+        quantity = args.quantity,
+        itemIDs = args.itemIDs,
+        itemIDQuantities = args.itemIDQuantities,
+    }
+    request.buyRows = operation == DTCommon.OP_BUY and { row } or {}
+    request.sellRows = operation == DTCommon.OP_SELL and { row } or {}
+    return request
+end
+
 local function onClientCommand(module, command, player, args)
     if module ~= DTCommon.MOD_ID then return end
     args = type(args) == "table" and args or {}
@@ -218,7 +233,10 @@ local function onClientCommand(module, command, player, args)
     elseif command == "TradeRequest" then
         log("INFO", "trade_request trader=" .. tostring(args.traderID)
             .. " request=" .. tostring(args.requestID))
-        local result = Service.ExecuteTrade(player, args)
+        local result = Service.ExecuteTradeBasket(
+            player,
+            buildSingleTradeBasket(args)
+        )
         log("INFO", "trade_response trader=" .. tostring(args.traderID)
             .. " accepted=" .. tostring(result and result.accepted)
             .. " reason=" .. tostring(result and result.reason))

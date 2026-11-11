@@ -12,7 +12,8 @@ Dynamic pricing here means **procedurally valuing the loaded item universe and c
 
 - `DTCommon_TraderStock.lua::MarketPrice` calls MarketSense but silently falls back to `10` and `SnapshotItems` calculates buy/sell only for existing merchant stock.
 - Hoomans `PNC_InventoryTransferEndpoint/_Trade.lua::priceFor` looks up player sell prices in `snapshot.items` (merchant stock) and returns `0` when missing. This explains a non-stocked `Base.Katana` showing $0 without proving MarketSense is at fault.
-- `DTCommon_TraderService.lua` implements separate `ExecuteTrade` and `ExecuteTradeBasket` with differing sell-price rules (full definition price versus half definition price).
+- The historical single-row settlement entry point was removed; both single-row
+  and mixed requests now reach the authoritative `ExecuteTradeBasket` path.
 - `PsychopatzPhysicalInventoryAdapter:removeCurrency` returns `true, details`. DTCommon stores the Boolean as `removedMoney` and later calls `restoreRemoved(removedMoney)`; this is a verified return-contract mismatch.
 - Basket server paths do not currently enforce all Hoomans client-side equipped/favorite/locked/identity/container restrictions, trade-access proof, request deduplication or instance-aware sell valuation.
 - Hoomans trade UI builds draft rows and totals client-side, while the server independently recomputes price. Grouped item IDs, partial native stacks and nested containers need explicit compatibility tests.
