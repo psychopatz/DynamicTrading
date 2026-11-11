@@ -48,7 +48,7 @@ T.contains(knowledgeAPI, "function API.DiscloseRelatedForPlayer",
 
 local required = {
     "PNC/Conversation/PNC_ConversationHistory",
-    "PNC/Conversation/Blocks/PNC_ConversationTextLoader",
+    "PNC/Conversation/Blocks/PNC_ConversationTextCatalog",
     "PNC/Conversation/ConversationAuthority/PNC_ConversationAuthority_Context",
     "PNC/Conversation/ConversationAuthority/PNC_ConversationAuthority_BuildContext",
     "PNC/Conversation/ConversationAuthority/PNC_ConversationAuthority_Validation",
