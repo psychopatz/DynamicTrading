@@ -7,6 +7,7 @@
       "providerID": "DTCommon",
       "displayName": "Dynamic Trading common contract",
       "repositoryKind": "dynamic_trading",
+      "activationIDs": ["DTCommon", "DynamicTradingCommon"],
       "requires": ["PsychopatzCore"],
       "capabilities": ["trading.conversation", "trading.interaction"],
       "materializationModes": ["abstract", "physical"],
@@ -26,6 +27,7 @@
       "providerID": "DTAbstract",
       "displayName": "Dynamic Trading abstract",
       "repositoryKind": "dynamic_trading",
+      "activationIDs": ["DTAbstract", "DynamicTrading", "DynamicTradingV2"],
       "requires": ["PsychopatzCore", "DTCommon"],
       "conflicts": ["DTHoomans", "ProjectHoomans"],
       "capabilities": [
@@ -58,6 +60,7 @@
       "providerID": "DTHoomans",
       "displayName": "Dynamic Trading Hoomans",
       "repositoryKind": "dynamic_trading",
+      "activationIDs": ["DTHoomans"],
       "requires": ["PsychopatzCore", "ProjectHoomans", "DTCommon"],
       "conflicts": ["DTAbstract"],
       "capabilities": ["trading.conversation", "trading.interaction", "trading.physical"],
