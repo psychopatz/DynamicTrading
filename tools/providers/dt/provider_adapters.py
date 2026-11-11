@@ -10,14 +10,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from tools.semantic_harness.provider_registry import (
+from tools.semantic_harness.providers.provider_registry import (
     CORE_PROVIDER_ID,
     SEMANTIC_EXECUTION_CALLBACKS,
     ProviderDescriptor,
     ProviderRegistry,
     ProfileDescriptor,
 )
-from tools.semantic_harness.profile_loader import ProfileSelection, compose_profile
+from tools.semantic_harness.providers.profile_loader import ProfileSelection, compose_profile
 
 
 DT_COMMON_PROVIDER_ID = "DTCommon"

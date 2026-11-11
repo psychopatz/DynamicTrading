@@ -16,11 +16,11 @@ if str(CORE_REPOSITORY) not in sys.path:
 if str(REPOSITORY) not in sys.path:
     sys.path.insert(0, str(REPOSITORY))
 
-from tools.semantic_harness.provider_registry import (  # noqa: E402
+from tools.semantic_harness.providers.provider_registry import (  # noqa: E402
     SEMANTIC_EXECUTION_SCHEMA,
     core_registry,
 )
-from tools.semantic_harness.process import LuaProcess, WorkerLaunchSpec  # noqa: E402
+from tools.semantic_harness.transport.process import LuaProcess, WorkerLaunchSpec  # noqa: E402
 from tools.providers.dt.provider_adapters import (  # noqa: E402
     DT_ABSTRACT_PROVIDER_ID,
     DT_COMMON_PROVIDER_ID,
