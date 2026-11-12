@@ -176,8 +176,8 @@ local function registerReferral(conversations)
         end
     end
 
-    local registry = PNC and PNC.Conversation
-        and PNC.Conversation.Registry or nil
+    local registry = PsychopatzCore and PsychopatzCore.Conversation
+        and PsychopatzCore.Conversation.Registry or nil
     if registry
         and type(registry.RegisterCategoryEligibilityProvider)
             == "function"
