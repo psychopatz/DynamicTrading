@@ -5,7 +5,7 @@
   "registryOwner": "DTCommon",
   "sourceProfiles": {
     "conversation.source.dtcommon.247519f6f9": {
-      "name": "Dynamic Trading Common Conversation Suggestions",
+      "name": "Dynamic Trading Trader Conversation",
       "version": "1",
       "owner": "DTCommon",
       "contentLicense": "Dynamic Trading authored content"
@@ -13,12 +13,12 @@
   },
   "shards": [
     {
-      "domain": "trading_suggestions",
-      "kind": "ui",
-      "order": 2300,
-      "path": "ui/static_suggestions.json",
+      "domain": "trading",
+      "kind": "psdl",
+      "order": 1810,
+      "path": "psdl/dialogue/trading.json",
       "owner": "DTCommon",
-      "shardId": "conversation.ui.dynamic.trading.suggestions",
+      "shardId": "conversation.psdl.trading",
       "sourceProfile": "conversation.source.dtcommon.247519f6f9"
     }
   ]

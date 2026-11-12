@@ -9,7 +9,7 @@ Registry.REGISTRY_MODULE = "DTCommon/Semantics/Generated/Conversation/Registry"
 Registry.SCHEMA = "pnc.conversation.model.v1"
 Registry.VERSION = 1
 Registry.CONTENT_FINGERPRINT = "5f004786fcd0b36eb18372fe179c59b7278f85fc871f04543b395c05e097a2c6"
-Registry.WHOLE_MODEL_FINGERPRINT = "cbb1ca1c6783a5c8880c278121d580ceb24efd09f5f86634ba78d79c22bd515c"
+Registry.WHOLE_MODEL_FINGERPRINT = "7ba56531963e6ae94532c57211d3138b58bf12076aa449a860ff7a1b1cc92629"
 Registry.PHRASE_FAMILIES = {}
 Registry.PLAYER_CHOICES = {}
 Registry.PATTERNS = {}
@@ -55,9 +55,9 @@ local function appendUI(loaded)
     if type(loaded) ~= "table" then return end
     for _, value in ipairs(loaded) do Registry.UI[#Registry.UI + 1] = value end
 end
-local loaded01 = require "DTCommon/Semantics/Generated/Conversation/Packs/DynamicTrading"
+local loaded01 = require "DTCommon/Semantics/Generated/Conversation/Packs/Psdl/Dialogue/Trading"
 appendPacks(loaded01)
-local loaded02 = require "DTCommon/Semantics/Generated/Conversation/UI/DynamicTradingSuggestions"
+local loaded02 = require "DTCommon/Semantics/Generated/Conversation/UI/Psdl/Dialogue/Trading"
 appendUI(loaded02)
 for key, family in pairs(Registry.PHRASE_FAMILIES) do
     if type(family) == "table" and family.id then Registry.PHRASE_FAMILIES[key] = family end

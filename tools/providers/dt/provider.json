@@ -89,6 +89,6 @@
     }
   ],
   "conversationSources": [
-    "tools/providers/dt/codebuilder/sources/conversation/packs/dynamic_trading.json"
+    "tools/providers/dt/codebuilder/sources/conversation/psdl/dialogue/trading.json"
   ]
 }
