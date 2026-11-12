@@ -2,6 +2,8 @@ DTHoomans = DTHoomans or {}
 DTHoomans.Conversation = DTHoomans.Conversation or {}
 
 local Integration = DTHoomans.Conversation
+local TextCatalog = require
+    "PsychopatzCore/Conversation/PsychopatzConversationTextCatalog"
 
 local CATEGORY_ID = "dthoomans:caravan_referral"
 local GUARD_ROLE = "guard"
@@ -12,12 +14,11 @@ local BLOCK_ID = "dthoomans:caravan_referral"
 Integration.CATEGORY_ID = CATEGORY_ID
 Integration.REFERRAL_CHOICE_ID = "trader_referral"
 
-local TEXT_SOURCE = {
+local TEXT_SOURCE = TextCatalog.Source({
     modID = "DTCommon",
-    pathPattern =
-        "media/translation/{language}/Conversation/Text/dynamic_trading/caravan/referral/guard.json",
+    target = "dynamic_trading/caravan/referral/guard",
     domain = "dthoomans.conversation.dynamic_trading.caravan.referral.guard",
-}
+})
 
 local function sameID(left, right)
     return tostring(left or "") ~= ""

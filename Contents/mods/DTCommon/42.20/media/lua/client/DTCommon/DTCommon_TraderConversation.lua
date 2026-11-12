@@ -14,10 +14,40 @@ local ActorNames = require
     "PsychopatzCore/Actors/PsychopatzActorNames"
 local Landing = require
     "PsychopatzCore/Conversation/PsychopatzActorConversationLanding"
+local TextCatalog = require
+    "PsychopatzCore/Conversation/PsychopatzConversationTextCatalog"
+local Text = require "PsychopatzCore/UI/Conversation/PsychopatzConversationText"
 local SemanticPack = require "DTCommon/DTCommon_SemanticPack"
 
 if SemanticPack and type(SemanticPack.Init) == "function" then
     SemanticPack.Init()
+end
+
+local TRADE_TEXT_SOURCE = TextCatalog.Source({
+    modID = "DTCommon",
+    target = "dynamic_trading/trade/opening",
+    domain = "dtcommon.conversation.dynamic_trading.trade.opening",
+})
+local REFERRAL_TEXT_SOURCE = TextCatalog.Source({
+    modID = "DTCommon",
+    target = "dynamic_trading/caravan/referral/guard",
+    domain = "dthoomans.conversation.dynamic_trading.caravan.referral.guard",
+})
+local SMALL_TALK_TEXT_SOURCE = TextCatalog.Source({
+    modID = "PsychopatzCore",
+    target = "social/small_talk/neutral",
+    domain = "pnc.social.small_talk.neutral",
+})
+local GOODBYE_TEXT_SOURCE = TextCatalog.Source({
+    modID = "PsychopatzCore",
+    target = "social/goodbye/closing",
+    domain = "pnc.social.goodbye.closing",
+})
+
+local function localizedText(source, key, fallback)
+    if not source then return fallback end
+    TextCatalog.EnsureSource(source, { key })
+    return Text.Resolve(TextCatalog.Payload(source, key), fallback)
 end
 
 Conversation.EXTERNAL_OPENER_ID = DTCommon.TRADER_NAMESPACE
@@ -880,7 +910,11 @@ function Conversation.BuildSpec(traderID, actorID, options)
         context = conversationContext,
         landingID = "landing",
         greetingCategory = "greeting",
-        greetingFallback = "What do you need?",
+        greetingFallback = localizedText(
+            TRADE_TEXT_SOURCE,
+            "opening.trade",
+            "What do you need?"
+        ),
         seed = actorID,
         actionFilter = function(action)
             return action.sourceKind == "dynamic_trading"
@@ -893,8 +927,16 @@ function Conversation.BuildSpec(traderID, actorID, options)
             if action.id == (DTCommon.TRADE_ACTION_ID or "DT.trade") then
                 return {
                     id = action.id,
-                    text = "Open trading",
-                    response = "Let's see what we can trade.",
+                    text = localizedText(
+                        TRADE_TEXT_SOURCE,
+                        "choice.trade",
+                        "Open trading"
+                    ),
+                    response = localizedText(
+                        TRADE_TEXT_SOURCE,
+                        "response.trade",
+                        "Let's see what we can trade."
+                    ),
                     action = function()
                         local client = DTCommon and DTCommon.Client
                         if client
@@ -914,8 +956,16 @@ function Conversation.BuildSpec(traderID, actorID, options)
             if action.id == (DTCommon.REFERRAL_ACTION_ID or "DT.referral") then
                 return {
                     id = action.id,
-                    text = "Ask who handles trades",
-                    response = "The caravan's merchant handles the deals.",
+                    text = localizedText(
+                        REFERRAL_TEXT_SOURCE,
+                        "choice.trader_referral",
+                        "Ask who handles trades"
+                    ),
+                    response = localizedText(
+                        REFERRAL_TEXT_SOURCE,
+                        "response.trader_referral",
+                        "The caravan's merchant handles the deals."
+                    ),
                 }
             end
             if action.id == (DTCommon.RUMORS_ACTION_ID or "DT.rumors") then
@@ -939,6 +989,20 @@ function Conversation.BuildSpec(traderID, actorID, options)
                 knowledge,
                 name
             )
+            choices[#choices + 1] = {
+                id = "core.small_talk.weather",
+                text = localizedText(
+                    SMALL_TALK_TEXT_SOURCE,
+                    "choice.weather",
+                    "Some weather we're having."
+                ),
+                response = localizedText(
+                    SMALL_TALK_TEXT_SOURCE,
+                    "response.weather",
+                    "At least rain covers our footsteps."
+                ),
+                order = 60,
+            }
             choices[#choices + 1] = {
                     id = "next_person",
                     text = "Talk to the next person.",
@@ -993,8 +1057,16 @@ function Conversation.BuildSpec(traderID, actorID, options)
                 }
             choices[#choices + 1] = {
                     id = "goodbye",
-                    text = "Goodbye.",
-                    response = "Stay safe.",
+                text = localizedText(
+                    GOODBYE_TEXT_SOURCE,
+                    "choice.goodbye",
+                    "That's all. Stay safe."
+                ),
+                response = localizedText(
+                    GOODBYE_TEXT_SOURCE,
+                    "response.goodbye",
+                    "You too."
+                ),
                     close = true,
                     order = 100,
                 }

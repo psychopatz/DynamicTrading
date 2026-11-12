@@ -28,6 +28,8 @@ local roots = {
         .. coreRuntime .. "/media/lua/",
     PsychopatzCoreCommon = coreRepository
         .. "/Contents/mods/PsychopatzCore/common/media/lua/shared/",
+    PsychopatzCoreCommonClient = coreRepository
+        .. "/Contents/mods/PsychopatzCore/common/media/lua/client/",
 }
 
 local function cleanRelative(path)
@@ -53,6 +55,9 @@ function Test.path(mod, layer, relative)
         if layer == "common" then
             return roots.PsychopatzCoreCommon .. relative
         end
+        if layer == "common_client" then
+            return roots.PsychopatzCoreCommonClient .. relative
+        end
         return roots.PsychopatzCore .. tostring(layer or "shared")
             .. "/" .. relative
     end
@@ -72,6 +77,7 @@ function Test.addPackagePaths(specifications)
         { "DTCommon", "shared" },
         { "DTCommon", "common" },
         { "PsychopatzCore", "common" },
+        { "PsychopatzCore", "common_client" },
         { "PsychopatzCore", "shared" },
         { "PsychopatzCore", "client" },
         { "PsychopatzCore", "server" },

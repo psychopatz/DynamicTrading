@@ -41,6 +41,15 @@ package.preload[
 end
 
 local openedSpec
+getModFileReader = function(modID, path)
+    if modID ~= "PsychopatzCore" then return nil end
+    local file = io.open(T.path("PsychopatzCore", "common_mod", path), "r")
+    if not file then return nil end
+    return {
+        readLine = function() return file:read("*l") end,
+        close = function() file:close() end,
+    }
+end
 PsychopatzCore = {
     Conversation = {
         Open = function(spec)
@@ -127,8 +136,11 @@ local function choiceByID(id)
     end
     return nil
 end
-T.equal(#landing.choices, 9,
+T.equal(#landing.choices, 10,
     "Core trader conversation exposes expected landing choices")
+T.equal(choiceByID("core.small_talk.weather").text,
+    "Some weather we're having.",
+    "Core trader conversation uses the shared small-talk catalog")
 local nicknameChoice = choiceByID("core.question.identity_nickname")
 T.truthy(nicknameChoice,
     "Core trader conversation exposes the generated nickname identity choice")
