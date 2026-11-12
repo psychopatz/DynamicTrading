@@ -50,6 +50,45 @@ local function localizedText(source, key, fallback)
     return Text.Resolve(TextCatalog.Payload(source, key), fallback)
 end
 
+local function foundationResponse(poolID, seed, fallback)
+    if SemanticFoundation
+        and type(SemanticFoundation.GetResponse) == "function"
+    then
+        local variant = SemanticFoundation.GetResponse(poolID, { seed = seed })
+        if type(variant) == "table" then
+            local translations = variant.translations
+            local text = type(translations) == "table"
+                and (translations.EN or translations.TL)
+                or variant.fallback
+            if text and tostring(text) ~= "" then return tostring(text) end
+        end
+    end
+    return fallback
+end
+
+local function foundationPhrase(templateID, style, seed, fallback)
+    if SemanticFoundation
+        and type(SemanticFoundation.GetPhrase) == "function"
+    then
+        local phrase = SemanticFoundation.GetPhrase(
+            templateID,
+            style,
+            { seed = seed }
+        )
+        if type(phrase) == "table" then
+            local translations = phrase.translations
+            local text = type(translations) == "table"
+                and (translations.EN or translations.TL)
+                or phrase.fallback
+            text = text and tostring(text) or ""
+            if text ~= "" and not string.find(text, "%%s", 1, true) then
+                return text
+            end
+        end
+    end
+    return fallback
+end
+
 Conversation.EXTERNAL_OPENER_ID = DTCommon.TRADER_NAMESPACE
     or "DT.trader"
 Conversation.ProviderTransports =
@@ -332,7 +371,12 @@ local function newsResponse(traderID)
             return tostring(statements[1])
         end
     end
-    return "I haven't heard any news lately."
+    return foundationPhrase(
+        "semantic.gossip.unknown",
+        "neutral",
+        traderID,
+        "I haven't heard any news lately."
+    )
 end
 
 local function identityResponse(knowledge, fallbackName)
@@ -549,7 +593,11 @@ local function responseFor(traderID, ir, context)
     end
     if intent == "GREETING" then
         return {
-            text = "Good to see you. What can I trade for you today?",
+            text = foundationResponse(
+                "semantic.greeting",
+                traderID,
+                "Good to see you. What can I trade for you today."
+            ),
             branch = "GREETING_RECEIVED",
         }
     end
