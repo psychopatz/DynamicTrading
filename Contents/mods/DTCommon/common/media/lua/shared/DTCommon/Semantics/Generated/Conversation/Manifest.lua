@@ -23,6 +23,23 @@ return {
             ["sourceShard"] = "psdl/dialogue/trading.json",
         },
         {
+            ["bytes"] = 32927,
+            ["domain"] = "trading",
+            ["kind"] = "PSDL",
+            ["module"] = "DTCommon/Semantics/Generated/Conversation/PSDL/Dialogue/trade_conversation_suggestions",
+            ["owner"] = "DTCommon",
+            ["recordCount"] = 1,
+            ["recordIDs"] = {
+                "trade.conversation.suggestions",
+            },
+            ["registryOwner"] = "ProjectHoomans",
+            ["shardOwner"] = "DTCommon",
+            ["sourceOwner"] = "DTCommon",
+            ["sourcePath"] = "tools/providers/dt/codebuilder/sources/conversation/psdl/dialogue/trading.json",
+            ["sourceRepository"] = "/home/psychopatz/Zomboid/Workshop/DynamicTrading",
+            ["sourceShard"] = "psdl/dialogue/trading.json",
+        },
+        {
             ["bytes"] = 7287,
             ["domain"] = "identity",
             ["kind"] = "UI",
@@ -47,5 +64,5 @@ return {
             ["sourceShard"] = "psdl/dialogue/trading.json",
         },
     },
-    ["wholeModelFingerprint"] = "5a92511cd96bda0b99a558fd298db15593209ef405503841c50245507c74c58a",
+    ["wholeModelFingerprint"] = "a338722a5323b446a2195ea8c121b803443cab96414034acd8f225a51c0709ca",
 }
