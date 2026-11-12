@@ -7,7 +7,7 @@ local CATEGORY_ID = "dthoomans:caravan_referral"
 local GUARD_ROLE = "guard"
 local MERCHANT_ROLE = "trader"
 local PROVIDER_ID = "dthoomans:caravan_roles"
-local BLOCK_ID = "dthoomans:caravan_referral_basic"
+local BLOCK_ID = "dthoomans:caravan_referral"
 
 Integration.CATEGORY_ID = CATEGORY_ID
 Integration.REFERRAL_CHOICE_ID = "trader_referral"
@@ -15,8 +15,8 @@ Integration.REFERRAL_CHOICE_ID = "trader_referral"
 local TEXT_SOURCE = {
     modID = "DTCommon",
     pathPattern =
-        "media/translation/{language}/Conversation/Bundles/caravan/shared/basic.json",
-    domain = "dthoomans.conversation.caravan.shared.basic",
+        "media/translation/{language}/Conversation/Text/dynamic_trading/caravan/referral/guard.json",
+    domain = "dthoomans.conversation.dynamic_trading.caravan.referral.guard",
 }
 
 local function sameID(left, right)
