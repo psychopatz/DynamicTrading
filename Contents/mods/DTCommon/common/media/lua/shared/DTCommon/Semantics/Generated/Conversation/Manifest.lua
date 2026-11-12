@@ -64,5 +64,5 @@ return {
             ["sourceShard"] = "psdl/dialogue/trading.json",
         },
     },
-    ["wholeModelFingerprint"] = "c5237235aae9af98ce6c4442818887273ab6ea339f6784d0c752475880c3a792",
+    ["wholeModelFingerprint"] = "2b5edcc7c8b0d44f8f63927493b41927deceb8fa92b6845454919f1d4af64749",
 }
