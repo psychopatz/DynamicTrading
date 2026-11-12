@@ -1178,7 +1178,7 @@ function Conversation.BuildSpec(traderID, actorID, options)
             {
                 partID = "llmInput",
                 title = {
-                    key = "UI_PsychopatzConversation_LLMInput",
+                    key = "UI_PsychopatzConversation_Panel_LLMInput",
                     fallback = "TYPE TO TALK",
                 },
                 factory = semanticInputFactory,
