@@ -9,7 +9,7 @@ Registry.REGISTRY_MODULE = "DTCommon/Semantics/Generated/Conversation/Registry"
 Registry.SCHEMA = "pnc.conversation.model.v1"
 Registry.VERSION = 1
 Registry.CONTENT_FINGERPRINT = "5f004786fcd0b36eb18372fe179c59b7278f85fc871f04543b395c05e097a2c6"
-Registry.WHOLE_MODEL_FINGERPRINT = "a338722a5323b446a2195ea8c121b803443cab96414034acd8f225a51c0709ca"
+Registry.WHOLE_MODEL_FINGERPRINT = "0056774a62ab92cb873e5548d7911781006d467ad376202a18d144bd38f287bc"
 Registry.PHRASE_FAMILIES = {}
 Registry.PLAYER_CHOICES = {}
 Registry.PATTERNS = {}
@@ -64,12 +64,9 @@ local function appendUI(loaded)
     if type(loaded) ~= "table" then return end
     for _, value in ipairs(loaded) do Registry.UI[#Registry.UI + 1] = value end
 end
-local loaded01 = require "DTCommon/Semantics/Generated/Conversation/Packs/Psdl/Dialogue/Trading"
-appendPacks(loaded01)
-local loaded02 = require "DTCommon/Semantics/Generated/Conversation/PSDL/Dialogue/trade_conversation_suggestions"
-appendPSDL(loaded02)
-local loaded03 = require "DTCommon/Semantics/Generated/Conversation/UI/Psdl/Dialogue/Trading"
-appendUI(loaded03)
+appendPacks(require "DTCommon/Semantics/Generated/Conversation/Packs/Psdl/Dialogue/Trading")
+appendPSDL(require "DTCommon/Semantics/Generated/Conversation/PSDL/Dialogue/trade_conversation_suggestions")
+appendUI(require "DTCommon/Semantics/Generated/Conversation/UI/Psdl/Dialogue/Trading")
 for key, family in pairs(Registry.PHRASE_FAMILIES) do
     if type(family) == "table" and family.id then Registry.PHRASE_FAMILIES[key] = family end
 end
