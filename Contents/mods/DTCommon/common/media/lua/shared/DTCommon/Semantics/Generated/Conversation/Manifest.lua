@@ -15,7 +15,7 @@ return {
             ["recordIDs"] = {
                 "pack.DT.trader_story",
             },
-    ["registryOwner"] = "DTCommon",
+            ["registryOwner"] = "ProjectHoomans",
             ["shardOwner"] = "DTCommon",
             ["sourceOwner"] = "DTCommon",
             ["sourcePath"] = "tools/providers/dt/codebuilder/sources/conversation/psdl/dialogue/trading.json",
@@ -39,7 +39,7 @@ return {
                 "question.story",
                 "action.trade",
             },
-    ["registryOwner"] = "DTCommon",
+            ["registryOwner"] = "ProjectHoomans",
             ["shardOwner"] = "DTCommon",
             ["sourceOwner"] = "DTCommon",
             ["sourcePath"] = "tools/providers/dt/codebuilder/sources/conversation/psdl/dialogue/trading.json",
@@ -47,5 +47,5 @@ return {
             ["sourceShard"] = "psdl/dialogue/trading.json",
         },
     },
-    ["wholeModelFingerprint"] = "7ba56531963e6ae94532c57211d3138b58bf12076aa449a860ff7a1b1cc92629",
+    ["wholeModelFingerprint"] = "5a92511cd96bda0b99a558fd298db15593209ef405503841c50245507c74c58a",
 }
