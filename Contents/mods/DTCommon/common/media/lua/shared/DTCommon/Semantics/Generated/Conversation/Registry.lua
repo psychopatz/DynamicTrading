@@ -9,7 +9,7 @@ Registry.REGISTRY_MODULE = "DTCommon/Semantics/Generated/Conversation/Registry"
 Registry.SCHEMA = "pnc.conversation.model.v1"
 Registry.VERSION = 1
 Registry.CONTENT_FINGERPRINT = "0c0dd14df241eb4b742a95ede0729f2131a3ac66d66cb1497ea50aff9d9e9e39"
-Registry.WHOLE_MODEL_FINGERPRINT = "b5e099b14d9c4e6855d0962d47f17e996925c6e459a54b3a2cf9f04db00682eb"
+Registry.WHOLE_MODEL_FINGERPRINT = "e45f890bf0ca07241a587899c44e5da9b0d266fe661e77d513ff689c9cf4d3cd"
 Registry.PHRASE_FAMILIES = {}
 Registry.PLAYER_CHOICES = {}
 Registry.PATTERNS = {}
@@ -19,6 +19,7 @@ Registry.BEHAVIORS = {}
 Registry.BEATS = {}
 Registry.PACKS = {}
 Registry.PSDL_PLANS = {}
+Registry.PSDL_RESPONSE_TEMPLATES = {}
 Registry.UI = {}
 local function appendContent(loaded)
     if type(loaded) ~= "table" then return end
@@ -57,6 +58,12 @@ local function appendPSDL(loaded)
     for _, value in ipairs(loaded) do
         if type(value) == "table" and value.id then
             Registry.PSDL_PLANS[tostring(value.id)] = value
+            local payload = value.payload
+            local metadata = type(payload) == "table" and payload.metadata or nil
+            local templateID = type(metadata) == "table" and metadata.responseTemplateID or nil
+            if type(templateID) == "string" and templateID ~= "" then
+                Registry.PSDL_RESPONSE_TEMPLATES[templateID] = true
+            end
         end
     end
 end
@@ -65,7 +72,7 @@ local function appendUI(loaded)
     for _, value in ipairs(loaded) do Registry.UI[#Registry.UI + 1] = value end
 end
 appendPacks(require "DTCommon/Semantics/Generated/Conversation/Packs/Psdl/Dialogue/Trading")
-appendPSDL(require "DTCommon/Semantics/Generated/Conversation/PSDL/Dialogue/trade_conversation_suggestions")
+appendPSDL(require "DTCommon/Semantics/Generated/Conversation/PSDL/Dialogue/Trading/Catalog")
 appendUI(require "DTCommon/Semantics/Generated/Conversation/UI/Psdl/Dialogue/Trading")
 for key, family in pairs(Registry.PHRASE_FAMILIES) do
     if type(family) == "table" and family.id then Registry.PHRASE_FAMILIES[key] = family end

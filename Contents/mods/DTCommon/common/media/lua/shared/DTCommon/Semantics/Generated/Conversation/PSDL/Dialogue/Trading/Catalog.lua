@@ -2,13 +2,199 @@
 return {
     {
         ["domain"] = "trading",
+        ["id"] = "trade.conversation.opening",
+        ["kind"] = "dialogue",
+        ["lineage"] = {
+            ["sourceId"] = "trade.conversation.opening",
+            ["sourcePath"] = "psdl/dialogue/trading.json#records[1]",
+        },
+        ["module"] = "PNC/Semantics/Generated/Conversation/PSDL/Dialogue/Trading/Catalog",
+        ["owner"] = "DTCommon",
+        ["participants"] = {
+            ["addressee"] = {
+                "participant",
+            },
+            ["speaker"] = {
+                "participant",
+            },
+        },
+        ["payload"] = {
+            ["metadata"] = {
+                ["migration"] = "DTCommon-owned PSDL trade opening wording; trader conversation remains runtime adapter",
+                ["runtime"] = {
+                    ["categoryID"] = "dynamic_trading:trade",
+                    ["choiceID"] = "DT.trade",
+                    ["openingKey"] = "opening.trade",
+                    ["responseKey"] = "response.trade",
+                },
+                ["textRows"] = {
+                    {
+                        ["key"] = "category.trade",
+                        ["text"] = {
+                            ["EN"] = "Trade",
+                            ["TL"] = "Kalakalan",
+                        },
+                    },
+                    {
+                        ["key"] = "choice.trade",
+                        ["text"] = {
+                            ["EN"] = "Open trading",
+                            ["TL"] = "Buksan ang kalakalan",
+                        },
+                    },
+                    {
+                        ["key"] = "opening.trade",
+                        ["text"] = {
+                            ["EN"] = "What do you need?",
+                            ["TL"] = "Ano ang kailangan mo?",
+                        },
+                    },
+                    {
+                        ["key"] = "response.trade",
+                        ["text"] = {
+                            ["EN"] = "Let's see what we can trade.",
+                            ["TL"] = "Tingnan natin kung ano ang maaari nating ipagpalit.",
+                        },
+                    },
+                },
+                ["textTarget"] = "dynamic_trading/trade/opening",
+            },
+            ["response"] = {
+                ["act"] = "TRADE_OPENING",
+                ["variants"] = {
+                    {
+                        ["id"] = "trade.opening",
+                        ["metadata"] = {
+                            ["templateID"] = "DTCommon.TradeOpening",
+                            ["textKey"] = "response.trade",
+                        },
+                        ["text"] = {
+                            ["EN"] = {
+                                "Let's see what we can trade.",
+                            },
+                            ["TL"] = {
+                                "Tingnan natin kung ano ang maaari nating ipagpalit.",
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        ["references"] = {
+        },
+        ["slots"] = {
+        },
+        ["sourceShard"] = "psdl/dialogue/trading.json",
+        ["target"] = {
+            ["multiple"] = false,
+            ["required"] = false,
+            ["type"] = "entity.person",
+        },
+        ["when"] = nil,
+    },
+    {
+        ["domain"] = "trading",
+        ["id"] = "trade.conversation.referral",
+        ["kind"] = "dialogue",
+        ["lineage"] = {
+            ["sourceId"] = "trade.conversation.referral",
+            ["sourcePath"] = "psdl/dialogue/trading.json#records[2]",
+        },
+        ["module"] = "PNC/Semantics/Generated/Conversation/PSDL/Dialogue/Trading/Catalog",
+        ["owner"] = "DTCommon",
+        ["participants"] = {
+            ["addressee"] = {
+                "participant",
+            },
+            ["speaker"] = {
+                "participant",
+            },
+        },
+        ["payload"] = {
+            ["metadata"] = {
+                ["migration"] = "DTCommon-owned PSDL referral wording and adapter metadata; guard eligibility remains DTHoomans-owned",
+                ["runtime"] = {
+                    ["blockID"] = "dthoomans:caravan_referral",
+                    ["categoryID"] = "dthoomans:caravan_referral",
+                    ["choiceID"] = "trader_referral",
+                    ["entryKey"] = "opening",
+                    ["openingKey"] = "opening",
+                    ["responseKey"] = "response.trader_referral",
+                },
+                ["textRows"] = {
+                    {
+                        ["key"] = "category.caravan_referral",
+                        ["text"] = {
+                            ["EN"] = "Caravan",
+                            ["TL"] = "Karabana",
+                        },
+                    },
+                    {
+                        ["key"] = "choice.trader_referral",
+                        ["text"] = {
+                            ["EN"] = "Who handles the trading?",
+                            ["TL"] = "Sino ang namamahala sa kalakalan?",
+                        },
+                    },
+                    {
+                        ["key"] = "opening",
+                        ["text"] = {
+                            ["EN"] = "I am only here to keep watch. What do you need?",
+                            ["TL"] = "Narito lang ako para magbantay. Ano ang kailangan mo?",
+                        },
+                    },
+                    {
+                        ["key"] = "response.trader_referral",
+                        ["text"] = {
+                            ["EN"] = "I am just a mercenary. Our trader handles the deals.",
+                            ["TL"] = "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan.",
+                        },
+                    },
+                },
+                ["textTarget"] = "dynamic_trading/caravan/referral/guard",
+            },
+            ["response"] = {
+                ["act"] = "TRADER_REFERRAL",
+                ["variants"] = {
+                    {
+                        ["id"] = "trader.referral",
+                        ["metadata"] = {
+                            ["templateID"] = "DTCommon.TraderReferral",
+                            ["textKey"] = "response.trader_referral",
+                        },
+                        ["text"] = {
+                            ["EN"] = {
+                                "I am just a mercenary. Our trader handles the deals.",
+                            },
+                            ["TL"] = {
+                                "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan.",
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        ["references"] = {
+        },
+        ["slots"] = {
+        },
+        ["sourceShard"] = "psdl/dialogue/trading.json",
+        ["target"] = {
+            ["multiple"] = false,
+            ["required"] = false,
+            ["type"] = "entity.person",
+        },
+        ["when"] = nil,
+    },
+    {
+        ["domain"] = "trading",
         ["id"] = "trade.conversation.suggestions",
         ["kind"] = "dialogue",
         ["lineage"] = {
             ["sourceId"] = "trade.conversation.suggestions",
-            ["sourcePath"] = "psdl/dialogue/trading.json",
+            ["sourcePath"] = "psdl/dialogue/trading.json#records[0]",
         },
-        ["module"] = "DTCommon/Semantics/Generated/Conversation/PSDL/Dialogue/trade_conversation_suggestions",
+        ["module"] = "PNC/Semantics/Generated/Conversation/PSDL/Dialogue/Trading/Catalog",
         ["owner"] = "DTCommon",
         ["participants"] = {
             ["addressee"] = {

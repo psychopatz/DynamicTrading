@@ -23,13 +23,15 @@ return {
             ["sourceShard"] = "psdl/dialogue/trading.json",
         },
         {
-            ["bytes"] = 32927,
+            ["bytes"] = 40080,
             ["domain"] = "trading",
             ["kind"] = "PSDL",
-            ["module"] = "DTCommon/Semantics/Generated/Conversation/PSDL/Dialogue/trade_conversation_suggestions",
+            ["module"] = "DTCommon/Semantics/Generated/Conversation/PSDL/Dialogue/Trading/Catalog",
             ["owner"] = "DTCommon",
-            ["recordCount"] = 1,
+            ["recordCount"] = 3,
             ["recordIDs"] = {
+                "trade.conversation.opening",
+                "trade.conversation.referral",
                 "trade.conversation.suggestions",
             },
             ["registryOwner"] = "ProjectHoomans",
@@ -64,5 +66,5 @@ return {
             ["sourceShard"] = "psdl/dialogue/trading.json",
         },
     },
-    ["wholeModelFingerprint"] = "b5e099b14d9c4e6855d0962d47f17e996925c6e459a54b3a2cf9f04db00682eb",
+    ["wholeModelFingerprint"] = "e45f890bf0ca07241a587899c44e5da9b0d266fe661e77d513ff689c9cf4d3cd",
 }

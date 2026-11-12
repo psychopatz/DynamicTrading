@@ -112,6 +112,19 @@ local function categoryEligibility(category, context)
 end
 
 local function registerReferral(conversations)
+    -- PSDL owns the referral wording and semantic identity.  This adapter only
+    -- projects the compiled plan into DTHoomans' existing category/block API;
+    -- it does not author a second node/choice/outcome source.
+    local registry = PsychopatzCore and PsychopatzCore.Conversation
+        and PsychopatzCore.Conversation.Registry or nil
+    local plan = registry and type(registry.PSDLPlan) == "function"
+        and registry.PSDLPlan("trade.conversation.referral") or nil
+    local payload = plan and plan.payload or nil
+    local metadata = payload and payload.metadata or nil
+    local runtime = metadata and metadata.runtime or nil
+    if type(runtime) ~= "table" then
+        return false, "psdl_referral_plan_unavailable"
+    end
     local category = type(conversations.GetCategory) == "function"
         and conversations.GetCategory(CATEGORY_ID)
         or nil
@@ -120,7 +133,7 @@ local function registerReferral(conversations)
             CATEGORY_ID,
             {
                 ownerModID = DTHoomans.MOD_ID,
-                labelKey = "category.caravan_referral",
+                labelKey = runtime.categoryKey or "category.caravan_referral",
                 order = 705,
                 textSource = TEXT_SOURCE,
             }
@@ -148,20 +161,20 @@ local function registerReferral(conversations)
                 priority = 1000,
                 weight = 100,
                 textSource = TEXT_SOURCE,
-                entryNode = "opening",
+                entryNode = runtime.entryKey or "opening",
                 nodes = {
                     opening = {
-                        textKey = "opening",
+                        textKey = runtime.openingKey or "opening",
                         choices = {
                             {
-                                id = Integration.REFERRAL_CHOICE_ID,
-                                textKey = "choice.trader_referral",
+                                id = runtime.choiceID or Integration.REFERRAL_CHOICE_ID,
+                                textKey = runtime.choiceKey or "choice.trader_referral",
                                 outcomes = {
                                     {
                                         id = "reply",
                                         weight = 100,
-                                        responseKey =
-                                            "response.trader_referral",
+                                        responseKey = runtime.responseKey
+                                            or "response.trader_referral",
                                         next = "$root",
                                     },
                                 },
