@@ -1,0 +1,67 @@
+{
+  "kind": "dialogue",
+  "id": "opening",
+  "owner": "DTCommon",
+  "target": {
+    "type": "entity.person",
+    "required": false
+  },
+  "response": {
+    "act": "TRADE_OPENING",
+    "variants": [
+      {
+        "id": "trade.opening",
+        "text": {
+          "EN": "Let's see what we can trade.",
+          "TL": "Tingnan natin kung ano ang maaari nating ipagpalit."
+        },
+        "metadata": {
+          "templateID": "DTCommon.TradeOpening",
+          "textKey": "response.trade"
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "textTarget": "dynamic_trading/trade/opening",
+    "textRows": [
+      {
+        "key": "category.trade",
+        "text": {
+          "EN": "Trade",
+          "TL": "Kalakalan"
+        }
+      },
+      {
+        "key": "choice.trade",
+        "text": {
+          "EN": "Open trading",
+          "TL": "Buksan ang kalakalan"
+        }
+      },
+      {
+        "key": "opening.trade",
+        "text": {
+          "EN": "What do you need?",
+          "TL": "Ano ang kailangan mo?"
+        }
+      },
+      {
+        "key": "response.trade",
+        "text": {
+          "EN": "Let's see what we can trade.",
+          "TL": "Tingnan natin kung ano ang maaari nating ipagpalit."
+        }
+      }
+    ],
+    "runtime": {
+      "categoryID": "dynamic_trading:trade",
+      "choiceID": "DT.trade",
+      "openingKey": "opening.trade",
+      "responseKey": "response.trade"
+    },
+    "migration": "DTCommon-owned PSDL trade opening wording; trader conversation remains runtime adapter"
+  },
+  "namespace": "trade.conversation",
+  "schema": "psychopatz.convo-engine.v1"
+}

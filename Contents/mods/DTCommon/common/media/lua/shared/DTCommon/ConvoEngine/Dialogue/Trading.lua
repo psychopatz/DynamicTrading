@@ -5,12 +5,13 @@ return {
         ["id"] = "trade.conversation.opening",
         ["kind"] = "dialogue",
         ["lineage"] = {
-            ["migrationReadOnly"] = true,
+            ["localId"] = "opening",
             ["sourceId"] = "trade.conversation.opening",
-            ["sourcePath"] = "psdl/dialogue/trading.json#records[1]",
-            ["sourceSchema"] = "psychopatz.semantic.dialogue-language.v1",
+            ["sourcePath"] = "adopters/dt/dialogue/trading/trade_conversation_opening.json",
+            ["sourceSchema"] = "psychopatz.convo-engine.v1",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["namespace"] = "trade.conversation",
         ["owner"] = "DTCommon",
         ["participants"] = {
             ["addressee"] = {
@@ -86,7 +87,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "psdl/dialogue/trading.json",
+        ["sourceShard"] = "adopters/dt/dialogue/trading/trade_conversation_opening.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,
@@ -99,12 +100,13 @@ return {
         ["id"] = "trade.conversation.referral",
         ["kind"] = "dialogue",
         ["lineage"] = {
-            ["migrationReadOnly"] = true,
+            ["localId"] = "referral",
             ["sourceId"] = "trade.conversation.referral",
-            ["sourcePath"] = "psdl/dialogue/trading.json#records[2]",
-            ["sourceSchema"] = "psychopatz.semantic.dialogue-language.v1",
+            ["sourcePath"] = "adopters/dt/dialogue/trading/trade_conversation_referral.json",
+            ["sourceSchema"] = "psychopatz.convo-engine.v1",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["namespace"] = "trade.conversation",
         ["owner"] = "DTCommon",
         ["participants"] = {
             ["addressee"] = {
@@ -182,7 +184,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "psdl/dialogue/trading.json",
+        ["sourceShard"] = "adopters/dt/dialogue/trading/trade_conversation_referral.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,
@@ -195,12 +197,13 @@ return {
         ["id"] = "trade.conversation.suggestions",
         ["kind"] = "dialogue",
         ["lineage"] = {
-            ["migrationReadOnly"] = true,
+            ["localId"] = "suggestions",
             ["sourceId"] = "trade.conversation.suggestions",
-            ["sourcePath"] = "psdl/dialogue/trading.json#records[0]",
-            ["sourceSchema"] = "psychopatz.semantic.dialogue-language.v1",
+            ["sourcePath"] = "adopters/dt/dialogue/trading/trade_conversation_suggestions.json",
+            ["sourceSchema"] = "psychopatz.convo-engine.v1",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["namespace"] = "trade.conversation",
         ["owner"] = "DTCommon",
         ["participants"] = {
             ["addressee"] = {
@@ -1018,7 +1021,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "psdl/dialogue/trading.json",
+        ["sourceShard"] = "adopters/dt/dialogue/trading/trade_conversation_suggestions.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,
