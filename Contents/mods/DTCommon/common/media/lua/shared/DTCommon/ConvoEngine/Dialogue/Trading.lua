@@ -5,10 +5,12 @@ return {
         ["id"] = "trade.conversation.opening",
         ["kind"] = "dialogue",
         ["lineage"] = {
+            ["migrationReadOnly"] = true,
             ["sourceId"] = "trade.conversation.opening",
             ["sourcePath"] = "psdl/dialogue/trading.json#records[1]",
+            ["sourceSchema"] = "psychopatz.semantic.dialogue-language.v1",
         },
-        ["module"] = "PNC/Semantics/Generated/Conversation/PSDL/Dialogue/Trading/Catalog",
+        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
         ["owner"] = "DTCommon",
         ["participants"] = {
             ["addressee"] = {
@@ -97,10 +99,12 @@ return {
         ["id"] = "trade.conversation.referral",
         ["kind"] = "dialogue",
         ["lineage"] = {
+            ["migrationReadOnly"] = true,
             ["sourceId"] = "trade.conversation.referral",
             ["sourcePath"] = "psdl/dialogue/trading.json#records[2]",
+            ["sourceSchema"] = "psychopatz.semantic.dialogue-language.v1",
         },
-        ["module"] = "PNC/Semantics/Generated/Conversation/PSDL/Dialogue/Trading/Catalog",
+        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
         ["owner"] = "DTCommon",
         ["participants"] = {
             ["addressee"] = {
@@ -191,10 +195,12 @@ return {
         ["id"] = "trade.conversation.suggestions",
         ["kind"] = "dialogue",
         ["lineage"] = {
+            ["migrationReadOnly"] = true,
             ["sourceId"] = "trade.conversation.suggestions",
             ["sourcePath"] = "psdl/dialogue/trading.json#records[0]",
+            ["sourceSchema"] = "psychopatz.semantic.dialogue-language.v1",
         },
-        ["module"] = "PNC/Semantics/Generated/Conversation/PSDL/Dialogue/Trading/Catalog",
+        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
         ["owner"] = "DTCommon",
         ["participants"] = {
             ["addressee"] = {

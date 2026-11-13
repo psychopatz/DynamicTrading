@@ -4,7 +4,7 @@ T.addPackagePaths()
 PsychopatzCore = {}
 require "PsychopatzCore/Semantics/PsychopatzSemantic"
 local generatedRegistry = require
-    "DTCommon/Semantics/Generated/Conversation/Registry"
+    "DTCommon/ConvoEngine/Registry"
 DTCommon = { GeneratedSemanticRegistry = generatedRegistry }
 require "DTCommon/DTCommon_SemanticPack"
 T.truthy(generatedRegistry.PACKS and generatedRegistry.PACKS[1],

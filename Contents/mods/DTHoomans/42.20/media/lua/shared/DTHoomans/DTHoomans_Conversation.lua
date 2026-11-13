@@ -117,8 +117,8 @@ local function registerReferral(conversations)
     -- it does not author a second node/choice/outcome source.
     local registry = PsychopatzCore and PsychopatzCore.Conversation
         and PsychopatzCore.Conversation.Registry or nil
-    local plan = registry and type(registry.PSDLPlan) == "function"
-        and registry.PSDLPlan("trade.conversation.referral") or nil
+    local plan = registry and type(registry.ConvoPlan) == "function"
+        and registry.ConvoPlan("trade.conversation.referral") or nil
     local payload = plan and plan.payload or nil
     local metadata = payload and payload.metadata or nil
     local runtime = metadata and metadata.runtime or nil

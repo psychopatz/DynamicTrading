@@ -1,8 +1,8 @@
 local suggestions = dofile(
-    "Contents/mods/DTCommon/common/media/lua/shared/DTCommon/Semantics/Generated/Conversation/UI/Psdl/Dialogue/Trading.lua"
+    "Contents/mods/DTCommon/common/media/lua/shared/DTCommon/ConvoEngine/UI/Dialogue/Trading.lua"
 )
 local packs = dofile(
-    "Contents/mods/DTCommon/common/media/lua/shared/DTCommon/Semantics/Generated/Conversation/Packs/Psdl/Dialogue/Trading.lua"
+    "Contents/mods/DTCommon/common/media/lua/shared/DTCommon/ConvoEngine/Packs/Dialogue/Trading.lua"
 )
 
 assert(type(packs) == "table" and #packs == 1, "PSDL recognition projection changed pack count")

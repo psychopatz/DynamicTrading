@@ -9,7 +9,7 @@ local Conversation = DTCommon.TraderConversation
 local CoreClient = require
     "PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"
 local SemanticFoundation = require
-    "PsychopatzCore/Semantics/PsychopatzSemanticFoundation"
+    "PsychopatzCore/ConvoEngine/Foundation"
 local ActorNames = require
     "PsychopatzCore/Actors/PsychopatzActorNames"
 local Landing = require

@@ -13,8 +13,8 @@ local Knowledge = require "PsychopatzCore/Actors/PsychopatzActorKnowledge"
 local Json = require "PsychopatzCore/Serialization/PsychopatzJson"
 local ActorService = require
     "PsychopatzCore/Conversation/PsychopatzActorConversationService"
-local Router = require "PsychopatzCore/Semantics/PsychopatzSemanticDialogueRouter"
-local State = require "PsychopatzCore/Semantics/PsychopatzSemanticDialogueState"
+local Router = require "PsychopatzCore/ConvoEngine/DialogueRouter"
+local State = require "PsychopatzCore/ConvoEngine/DialogueState"
 
 
 local function firstInventoryItemID(payload)
