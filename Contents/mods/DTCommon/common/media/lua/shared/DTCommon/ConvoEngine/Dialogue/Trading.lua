@@ -1993,7 +1993,6 @@ return {
         },
         ["payload"] = {
             ["metadata"] = {
-                ["migration"] = "DTCommon-owned PSDL trade opening wording; trader conversation remains runtime adapter",
                 ["responseAct"] = "TRADE_OPENING",
                 ["runtime"] = {
                     ["categoryID"] = "dynamic_trading:trade",
@@ -2189,7 +2188,6 @@ return {
         },
         ["payload"] = {
             ["metadata"] = {
-                ["migration"] = "DTCommon-owned PSDL referral wording and adapter metadata; guard eligibility remains DTHoomans-owned",
                 ["responseAct"] = "TRADER_REFERRAL",
                 ["runtime"] = {
                     ["blockID"] = "dthoomans:caravan_referral",

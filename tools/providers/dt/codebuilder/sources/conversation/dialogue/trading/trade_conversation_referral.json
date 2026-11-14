@@ -18,7 +18,6 @@
       "openingKey": "opening",
       "responseKey": "response.trader_referral"
     },
-    "migration": "DTCommon-owned PSDL referral wording and adapter metadata; guard eligibility remains DTHoomans-owned",
     "responseAct": "TRADER_REFERRAL",
     "textRows": [
       {

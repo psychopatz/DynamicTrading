@@ -16,7 +16,6 @@
       "openingKey": "opening.trade",
       "responseKey": "response.trade"
     },
-    "migration": "DTCommon-owned PSDL trade opening wording; trader conversation remains runtime adapter",
     "responseAct": "TRADE_OPENING",
     "textRows": [
       {

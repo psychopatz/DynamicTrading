@@ -23,7 +23,7 @@ return {
             ["sourceShard"] = "adopters/dt/dialogue/trading/suggestions_recognition.json",
         },
         {
-            ["bytes"] = 108413,
+            ["bytes"] = 108155,
             ["domain"] = "trading",
             ["kind"] = "PSDL",
             ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
@@ -74,5 +74,5 @@ return {
             ["sourceShard"] = "adopters/dt/dialogue/trading/question_trader.json",
         },
     },
-    ["wholeModelFingerprint"] = "984de668d76da5f88e76fed9df29b57f7782e03f32b5850cf316f25557e8551f",
+    ["wholeModelFingerprint"] = "e87edeeb6127568c6a665c311730780b1d2682cc4f2ba18f1c5cb5e4309870bf",
 }
