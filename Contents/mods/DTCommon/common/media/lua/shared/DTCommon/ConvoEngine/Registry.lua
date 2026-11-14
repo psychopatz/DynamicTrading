@@ -9,7 +9,7 @@ Registry.REGISTRY_MODULE = "DTCommon/ConvoEngine/Registry"
 Registry.SCHEMA = "pnc.conversation.model.v1"
 Registry.VERSION = 1
 Registry.CONTENT_FINGERPRINT = "0c0dd14df241eb4b742a95ede0729f2131a3ac66d66cb1497ea50aff9d9e9e39"
-Registry.WHOLE_MODEL_FINGERPRINT = "d52df465134086d6374d6c2d481740a6a51a6a60c91a29820a202a5e2ba7240c"
+Registry.WHOLE_MODEL_FINGERPRINT = "d928b3977ed5ac186eb549996cac3dc79620ae6f8200b966dd9d02600422fe93"
 Registry.PHRASE_FAMILIES = {}
 Registry.PLAYER_CHOICES = {}
 Registry.PATTERNS = {}
@@ -63,6 +63,9 @@ local function appendConvoPlans(loaded)
             local templateID = type(metadata) == "table" and metadata.responseTemplateID or nil
             if type(templateID) == "string" and templateID ~= "" then
                 Registry.CONVO_RESPONSE_TEMPLATES[templateID] = true
+            end
+            if type(value.exchangeFamily) == "table" or (type(payload) == "table" and payload.say ~= nil) then
+                Registry.CONVO_RESPONSE_TEMPLATES[tostring(value.id)] = true
             end
             local outputs = type(payload) == "table" and payload.outputs or nil
             if type(outputs) == "table" then

@@ -1,29 +1,25 @@
 {
+  "schema": "psychopatz.convo-engine.v1",
   "kind": "dialogue",
+  "namespace": "trade.conversation",
   "id": "referral",
   "owner": "DTCommon",
   "target": {
     "type": "entity.person",
     "required": false
   },
-  "response": {
-    "act": "TRADER_REFERRAL",
-    "variants": [
-      {
-        "id": "trader.referral",
-        "text": {
-          "EN": "I am just a mercenary. Our trader handles the deals.",
-          "TL": "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan."
-        },
-        "metadata": {
-          "templateID": "DTCommon.TraderReferral",
-          "textKey": "response.trader_referral"
-        }
-      }
-    ]
-  },
   "metadata": {
     "textTarget": "dynamic_trading/caravan/referral/guard",
+    "runtime": {
+      "categoryID": "dthoomans:caravan_referral",
+      "blockID": "dthoomans:caravan_referral",
+      "choiceID": "trader_referral",
+      "entryKey": "opening",
+      "openingKey": "opening",
+      "responseKey": "response.trader_referral"
+    },
+    "migration": "DTCommon-owned PSDL referral wording and adapter metadata; guard eligibility remains DTHoomans-owned",
+    "responseAct": "TRADER_REFERRAL",
     "textRows": [
       {
         "key": "category.caravan_referral",
@@ -53,17 +49,21 @@
           "TL": "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan."
         }
       }
-    ],
-    "runtime": {
-      "categoryID": "dthoomans:caravan_referral",
-      "blockID": "dthoomans:caravan_referral",
-      "choiceID": "trader_referral",
-      "entryKey": "opening",
-      "openingKey": "opening",
-      "responseKey": "response.trader_referral"
-    },
-    "migration": "DTCommon-owned PSDL referral wording and adapter metadata; guard eligibility remains DTHoomans-owned"
+    ]
   },
-  "namespace": "trade.conversation",
-  "schema": "psychopatz.convo-engine.v1"
+  "say": {
+    "variants": [
+      {
+        "id": "trader.referral",
+        "text": {
+          "EN": "I am just a mercenary. Our trader handles the deals.",
+          "TL": "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan."
+        },
+        "metadata": {
+          "templateID": "DTCommon.TraderReferral",
+          "textKey": "response.trader_referral"
+        }
+      }
+    ]
+  }
 }

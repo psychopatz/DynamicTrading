@@ -23,7 +23,7 @@ return {
             ["sourceShard"] = "adopters/dt/dialogue/trading/trade_conversation_suggestions.json",
         },
         {
-            ["bytes"] = 40596,
+            ["bytes"] = 49102,
             ["domain"] = "trading",
             ["kind"] = "PSDL",
             ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
@@ -66,5 +66,5 @@ return {
             ["sourceShard"] = "adopters/dt/dialogue/trading/trade_conversation_suggestions.json",
         },
     },
-    ["wholeModelFingerprint"] = "d52df465134086d6374d6c2d481740a6a51a6a60c91a29820a202a5e2ba7240c",
+    ["wholeModelFingerprint"] = "d928b3977ed5ac186eb549996cac3dc79620ae6f8200b966dd9d02600422fe93",
 }

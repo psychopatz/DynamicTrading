@@ -1,29 +1,23 @@
 {
+  "schema": "psychopatz.convo-engine.v1",
   "kind": "dialogue",
+  "namespace": "trade.conversation",
   "id": "opening",
   "owner": "DTCommon",
   "target": {
     "type": "entity.person",
     "required": false
   },
-  "response": {
-    "act": "TRADE_OPENING",
-    "variants": [
-      {
-        "id": "trade.opening",
-        "text": {
-          "EN": "Let's see what we can trade.",
-          "TL": "Tingnan natin kung ano ang maaari nating ipagpalit."
-        },
-        "metadata": {
-          "templateID": "DTCommon.TradeOpening",
-          "textKey": "response.trade"
-        }
-      }
-    ]
-  },
   "metadata": {
     "textTarget": "dynamic_trading/trade/opening",
+    "runtime": {
+      "categoryID": "dynamic_trading:trade",
+      "choiceID": "DT.trade",
+      "openingKey": "opening.trade",
+      "responseKey": "response.trade"
+    },
+    "migration": "DTCommon-owned PSDL trade opening wording; trader conversation remains runtime adapter",
+    "responseAct": "TRADE_OPENING",
     "textRows": [
       {
         "key": "category.trade",
@@ -53,15 +47,21 @@
           "TL": "Tingnan natin kung ano ang maaari nating ipagpalit."
         }
       }
-    ],
-    "runtime": {
-      "categoryID": "dynamic_trading:trade",
-      "choiceID": "DT.trade",
-      "openingKey": "opening.trade",
-      "responseKey": "response.trade"
-    },
-    "migration": "DTCommon-owned PSDL trade opening wording; trader conversation remains runtime adapter"
+    ]
   },
-  "namespace": "trade.conversation",
-  "schema": "psychopatz.convo-engine.v1"
+  "say": {
+    "variants": [
+      {
+        "id": "trade.opening",
+        "text": {
+          "EN": "Let's see what we can trade.",
+          "TL": "Tingnan natin kung ano ang maaari nating ipagpalit."
+        },
+        "metadata": {
+          "templateID": "DTCommon.TradeOpening",
+          "textKey": "response.trade"
+        }
+      }
+    ]
+  }
 }

@@ -2,6 +2,56 @@
 return {
     {
         ["domain"] = "trading",
+        ["exchangeFamily"] = {
+            ["familyID"] = "trade.conversation.opening",
+            ["initiatingSay"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["fallback"] = "Let's see what we can trade.",
+                                ["id"] = "trade.opening",
+                                ["templateID"] = "convo.trade.conversation.opening.say.1.trade.opening",
+                                ["textRole"] = "spoken_action",
+                                ["translations"] = {
+                                    ["EN"] = {
+                                        "Let's see what we can trade.",
+                                    },
+                                    ["TL"] = {
+                                        "Tingnan natin kung ano ang maaari nating ipagpalit.",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+            ["namespace"] = "trade.conversation",
+            ["textRoles"] = {
+                {
+                    ["fallback"] = "Let's see what we can trade.",
+                    ["realizationKey"] = "1",
+                    ["role"] = "spoken_action",
+                    ["templateID"] = "convo.trade.conversation.opening.say.1.trade.opening",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Let's see what we can trade.",
+                        },
+                        ["TL"] = {
+                            "Tingnan natin kung ano ang maaari nating ipagpalit.",
+                        },
+                    },
+                    ["variantID"] = "trade.opening",
+                },
+            },
+        },
         ["id"] = "trade.conversation.opening",
         ["kind"] = "dialogue",
         ["lineage"] = {
@@ -24,6 +74,7 @@ return {
         ["payload"] = {
             ["metadata"] = {
                 ["migration"] = "DTCommon-owned PSDL trade opening wording; trader conversation remains runtime adapter",
+                ["responseAct"] = "TRADE_OPENING",
                 ["runtime"] = {
                     ["categoryID"] = "dynamic_trading:trade",
                     ["choiceID"] = "DT.trade",
@@ -62,28 +113,61 @@ return {
                 },
                 ["textTarget"] = "dynamic_trading/trade/opening",
             },
-            ["response"] = {
-                ["act"] = "TRADE_OPENING",
-                ["variants"] = {
-                    {
-                        ["id"] = "trade.opening",
-                        ["metadata"] = {
-                            ["templateID"] = "DTCommon.TradeOpening",
-                            ["textKey"] = "response.trade",
-                        },
-                        ["text"] = {
-                            ["EN"] = {
-                                "Let's see what we can trade.",
-                            },
-                            ["TL"] = {
-                                "Tingnan natin kung ano ang maaari nating ipagpalit.",
+            ["say"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["id"] = "trade.opening",
+                                ["metadata"] = {
+                                    ["templateID"] = "DTCommon.TradeOpening",
+                                    ["textKey"] = "response.trade",
+                                },
+                                ["text"] = {
+                                    ["EN"] = {
+                                        "Let's see what we can trade.",
+                                    },
+                                    ["TL"] = {
+                                        "Tingnan natin kung ano ang maaari nating ipagpalit.",
+                                    },
+                                },
                             },
                         },
                     },
                 },
+                ["textRole"] = "spoken_action",
             },
         },
         ["references"] = {
+        },
+        ["responsePlan"] = {
+            ["dialogueAct"] = "TRADE_OPENING",
+            ["kind"] = "dialogue_act_plan",
+            ["responsePlanID"] = "trade.conversation.opening",
+            ["schemaVersion"] = 1,
+            ["turns"] = {
+                {
+                    ["continuation"] = "end",
+                    ["id"] = "say_1",
+                    ["offers"] = {
+                    },
+                    ["segments"] = {
+                        {
+                            ["args"] = {
+                            },
+                            ["fallback"] = "Let's see what we can trade.",
+                            ["kind"] = "translation",
+                            ["templateID"] = "psdl.trade.conversation.opening.say_1",
+                        },
+                    },
+                },
+            },
         },
         ["slots"] = {
         },
@@ -93,10 +177,77 @@ return {
             ["required"] = false,
             ["type"] = "entity.person",
         },
+        ["textRoles"] = {
+            {
+                ["fallback"] = "Let's see what we can trade.",
+                ["realizationKey"] = "1",
+                ["role"] = "spoken_action",
+                ["templateID"] = "convo.trade.conversation.opening.say.1.trade.opening",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Let's see what we can trade.",
+                    },
+                    ["TL"] = {
+                        "Tingnan natin kung ano ang maaari nating ipagpalit.",
+                    },
+                },
+                ["variantID"] = "trade.opening",
+            },
+        },
         ["when"] = nil,
     },
     {
         ["domain"] = "trading",
+        ["exchangeFamily"] = {
+            ["familyID"] = "trade.conversation.referral",
+            ["initiatingSay"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["fallback"] = "I am just a mercenary. Our trader handles the deals.",
+                                ["id"] = "trader.referral",
+                                ["templateID"] = "convo.trade.conversation.referral.say.1.trader.referral",
+                                ["textRole"] = "spoken_action",
+                                ["translations"] = {
+                                    ["EN"] = {
+                                        "I am just a mercenary. Our trader handles the deals.",
+                                    },
+                                    ["TL"] = {
+                                        "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan.",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+            ["namespace"] = "trade.conversation",
+            ["textRoles"] = {
+                {
+                    ["fallback"] = "I am just a mercenary. Our trader handles the deals.",
+                    ["realizationKey"] = "1",
+                    ["role"] = "spoken_action",
+                    ["templateID"] = "convo.trade.conversation.referral.say.1.trader.referral",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "I am just a mercenary. Our trader handles the deals.",
+                        },
+                        ["TL"] = {
+                            "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan.",
+                        },
+                    },
+                    ["variantID"] = "trader.referral",
+                },
+            },
+        },
         ["id"] = "trade.conversation.referral",
         ["kind"] = "dialogue",
         ["lineage"] = {
@@ -119,6 +270,7 @@ return {
         ["payload"] = {
             ["metadata"] = {
                 ["migration"] = "DTCommon-owned PSDL referral wording and adapter metadata; guard eligibility remains DTHoomans-owned",
+                ["responseAct"] = "TRADER_REFERRAL",
                 ["runtime"] = {
                     ["blockID"] = "dthoomans:caravan_referral",
                     ["categoryID"] = "dthoomans:caravan_referral",
@@ -159,28 +311,61 @@ return {
                 },
                 ["textTarget"] = "dynamic_trading/caravan/referral/guard",
             },
-            ["response"] = {
-                ["act"] = "TRADER_REFERRAL",
-                ["variants"] = {
-                    {
-                        ["id"] = "trader.referral",
-                        ["metadata"] = {
-                            ["templateID"] = "DTCommon.TraderReferral",
-                            ["textKey"] = "response.trader_referral",
-                        },
-                        ["text"] = {
-                            ["EN"] = {
-                                "I am just a mercenary. Our trader handles the deals.",
-                            },
-                            ["TL"] = {
-                                "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan.",
+            ["say"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["id"] = "trader.referral",
+                                ["metadata"] = {
+                                    ["templateID"] = "DTCommon.TraderReferral",
+                                    ["textKey"] = "response.trader_referral",
+                                },
+                                ["text"] = {
+                                    ["EN"] = {
+                                        "I am just a mercenary. Our trader handles the deals.",
+                                    },
+                                    ["TL"] = {
+                                        "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan.",
+                                    },
+                                },
                             },
                         },
                     },
                 },
+                ["textRole"] = "spoken_action",
             },
         },
         ["references"] = {
+        },
+        ["responsePlan"] = {
+            ["dialogueAct"] = "TRADER_REFERRAL",
+            ["kind"] = "dialogue_act_plan",
+            ["responsePlanID"] = "trade.conversation.referral",
+            ["schemaVersion"] = 1,
+            ["turns"] = {
+                {
+                    ["continuation"] = "end",
+                    ["id"] = "say_1",
+                    ["offers"] = {
+                    },
+                    ["segments"] = {
+                        {
+                            ["args"] = {
+                            },
+                            ["fallback"] = "I am just a mercenary. Our trader handles the deals.",
+                            ["kind"] = "translation",
+                            ["templateID"] = "psdl.trade.conversation.referral.say_1",
+                        },
+                    },
+                },
+            },
         },
         ["slots"] = {
         },
@@ -189,6 +374,23 @@ return {
             ["multiple"] = false,
             ["required"] = false,
             ["type"] = "entity.person",
+        },
+        ["textRoles"] = {
+            {
+                ["fallback"] = "I am just a mercenary. Our trader handles the deals.",
+                ["realizationKey"] = "1",
+                ["role"] = "spoken_action",
+                ["templateID"] = "convo.trade.conversation.referral.say.1.trader.referral",
+                ["translations"] = {
+                    ["EN"] = {
+                        "I am just a mercenary. Our trader handles the deals.",
+                    },
+                    ["TL"] = {
+                        "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan.",
+                    },
+                },
+                ["variantID"] = "trader.referral",
+            },
         },
         ["when"] = nil,
     },

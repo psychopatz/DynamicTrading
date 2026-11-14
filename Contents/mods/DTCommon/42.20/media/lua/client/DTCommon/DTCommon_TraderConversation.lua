@@ -372,7 +372,7 @@ local function newsResponse(traderID)
         end
     end
     return foundationPhrase(
-        "semantic.gossip.unknown",
+        "gossip.unknown",
         "neutral",
         traderID,
         "I haven't heard any news lately."
@@ -594,7 +594,7 @@ local function responseFor(traderID, ir, context)
     if intent == "GREETING" then
         return {
             text = foundationResponse(
-                "semantic.greeting",
+                "greeting",
                 traderID,
                 "Good to see you. What can I trade for you today."
             ),
