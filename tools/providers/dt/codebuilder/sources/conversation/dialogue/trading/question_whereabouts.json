@@ -1,0 +1,43 @@
+{
+  "schema": "psychopatz.convo-engine.v1",
+  "kind": "dialogue",
+  "namespace": "question",
+  "id": "whereabouts",
+  "owner": "DTCommon",
+  "metadata": {
+    "textNamespace": "UI_DT_Conversation_Suggestion",
+    "ui": {
+      "id": "question.whereabouts",
+      "order": 60,
+      "patternID": "pattern.trade.concept_whereabouts",
+      "intent": "QUESTION",
+      "speechAct": "QUESTION",
+      "subject": "WHEREABOUTS",
+      "topic": "whereabouts",
+      "domain": "whereabouts"
+    }
+  },
+  "invoke": {
+    "patternID": "pattern.trade.concept_whereabouts",
+    "intent": "QUESTION",
+    "speechAct": "QUESTION",
+    "subject": "WHEREABOUTS",
+    "topic": "whereabouts"
+  },
+  "affordance": {
+    "label": {
+      "EN": "Ask about their travels",
+      "TL": "Itanong ang kanilang ruta"
+    },
+    "consumers": [
+      "player"
+    ],
+    "groups": [
+      "whereabouts"
+    ]
+  },
+  "say": {
+    "EN": "What route are you travelling?",
+    "TL": "Anong ruta ang tinatahak ninyo?"
+  }
+}

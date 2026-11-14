@@ -1,0 +1,43 @@
+{
+  "schema": "psychopatz.convo-engine.v1",
+  "kind": "dialogue",
+  "namespace": "question",
+  "id": "trader",
+  "owner": "DTCommon",
+  "metadata": {
+    "textNamespace": "UI_DT_Conversation_Suggestion",
+    "ui": {
+      "id": "question.trader",
+      "order": 10,
+      "patternID": "pattern.trade.concept_who",
+      "intent": "QUESTION",
+      "speechAct": "QUESTION",
+      "subject": "TRADER",
+      "topic": "identity",
+      "domain": "identity"
+    }
+  },
+  "invoke": {
+    "patternID": "pattern.trade.concept_who",
+    "intent": "QUESTION",
+    "speechAct": "QUESTION",
+    "subject": "TRADER",
+    "topic": "identity"
+  },
+  "affordance": {
+    "label": {
+      "EN": "Ask who they are",
+      "TL": "Itanong kung sino sila"
+    },
+    "consumers": [
+      "player"
+    ],
+    "groups": [
+      "identity"
+    ]
+  },
+  "say": {
+    "EN": "Who are you?",
+    "TL": "Sino kayo?"
+  }
+}

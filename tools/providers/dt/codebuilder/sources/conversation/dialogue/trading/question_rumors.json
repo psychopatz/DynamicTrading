@@ -1,0 +1,43 @@
+{
+  "schema": "psychopatz.convo-engine.v1",
+  "kind": "dialogue",
+  "namespace": "question",
+  "id": "rumors",
+  "owner": "DTCommon",
+  "metadata": {
+    "textNamespace": "UI_DT_Conversation_Suggestion",
+    "ui": {
+      "id": "question.rumors",
+      "order": 50,
+      "patternID": "pattern.trade.concept_rumors",
+      "intent": "GOSSIP",
+      "speechAct": "GOSSIP",
+      "subject": "RUMORS",
+      "topic": "gossip",
+      "domain": "gossip"
+    }
+  },
+  "invoke": {
+    "patternID": "pattern.trade.concept_rumors",
+    "intent": "GOSSIP",
+    "speechAct": "GOSSIP",
+    "subject": "RUMORS",
+    "topic": "gossip"
+  },
+  "affordance": {
+    "label": {
+      "EN": "Ask for news from the road",
+      "TL": "Magtanong ng balita mula sa daan"
+    },
+    "consumers": [
+      "player"
+    ],
+    "groups": [
+      "gossip"
+    ]
+  },
+  "say": {
+    "EN": "Any news from the road?",
+    "TL": "May balita ba mula sa daan?"
+  }
+}

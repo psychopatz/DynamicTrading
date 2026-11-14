@@ -1,0 +1,43 @@
+{
+  "schema": "psychopatz.convo-engine.v1",
+  "kind": "dialogue",
+  "namespace": "question",
+  "id": "story",
+  "owner": "DTCommon",
+  "metadata": {
+    "textNamespace": "UI_DT_Conversation_Suggestion",
+    "ui": {
+      "id": "question.story",
+      "order": 70,
+      "patternID": "pattern.trade.concept_story",
+      "intent": "GOSSIP",
+      "speechAct": "GOSSIP",
+      "subject": "STORY",
+      "topic": "story",
+      "domain": "story"
+    }
+  },
+  "invoke": {
+    "patternID": "pattern.trade.concept_story",
+    "intent": "GOSSIP",
+    "speechAct": "GOSSIP",
+    "subject": "STORY",
+    "topic": "story"
+  },
+  "affordance": {
+    "label": {
+      "EN": "Ask for a caravan story",
+      "TL": "Humingi ng kuwento ng karaban"
+    },
+    "consumers": [
+      "player"
+    ],
+    "groups": [
+      "story"
+    ]
+  },
+  "say": {
+    "EN": "Tell me a caravan story.",
+    "TL": "Magkuwento kayo tungkol sa karaban."
+  }
+}

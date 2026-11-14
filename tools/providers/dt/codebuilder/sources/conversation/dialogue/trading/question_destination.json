@@ -1,0 +1,43 @@
+{
+  "schema": "psychopatz.convo-engine.v1",
+  "kind": "dialogue",
+  "namespace": "question",
+  "id": "destination",
+  "owner": "DTCommon",
+  "metadata": {
+    "textNamespace": "UI_DT_Conversation_Suggestion",
+    "ui": {
+      "id": "question.destination",
+      "order": 20,
+      "patternID": "pattern.trade.concept_destination",
+      "intent": "QUESTION",
+      "speechAct": "QUESTION",
+      "subject": "DESTINATION",
+      "topic": "whereabouts",
+      "domain": "whereabouts"
+    }
+  },
+  "invoke": {
+    "patternID": "pattern.trade.concept_destination",
+    "intent": "QUESTION",
+    "speechAct": "QUESTION",
+    "subject": "DESTINATION",
+    "topic": "whereabouts"
+  },
+  "affordance": {
+    "label": {
+      "EN": "Ask where they are headed",
+      "TL": "Itanong kung saan sila patungo"
+    },
+    "consumers": [
+      "player"
+    ],
+    "groups": [
+      "whereabouts"
+    ]
+  },
+  "say": {
+    "EN": "Where are you heading?",
+    "TL": "Saan kayo patungo?"
+  }
+}

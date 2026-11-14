@@ -1,0 +1,43 @@
+{
+  "schema": "psychopatz.convo-engine.v1",
+  "kind": "dialogue",
+  "namespace": "action",
+  "id": "trade",
+  "owner": "DTCommon",
+  "metadata": {
+    "textNamespace": "UI_DT_Conversation_Suggestion",
+    "ui": {
+      "id": "action.trade",
+      "order": 80,
+      "patternID": "pattern.trade.concept_open",
+      "intent": "TRADE",
+      "speechAct": "TRADE",
+      "subject": "TRADE",
+      "topic": "trade",
+      "domain": "trade"
+    }
+  },
+  "invoke": {
+    "patternID": "pattern.trade.concept_open",
+    "intent": "TRADE",
+    "speechAct": "TRADE",
+    "subject": "TRADE",
+    "topic": "trade"
+  },
+  "affordance": {
+    "label": {
+      "EN": "Open trading",
+      "TL": "Buksan ang kalakalan"
+    },
+    "consumers": [
+      "player"
+    ],
+    "groups": [
+      "trade"
+    ]
+  },
+  "say": {
+    "EN": "Let's trade.",
+    "TL": "Magpalitan tayo."
+  }
+}

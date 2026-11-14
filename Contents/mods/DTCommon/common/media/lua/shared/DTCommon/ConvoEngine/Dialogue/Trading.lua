@@ -3,6 +3,1926 @@ return {
     {
         ["domain"] = "trading",
         ["exchangeFamily"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "trade",
+                },
+                ["labelFallback"] = "Open trading",
+                ["labelKey"] = "convo.action.trade.affordance.label",
+                ["textRole"] = "button_label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Open trading",
+                    },
+                    ["TL"] = {
+                        "Buksan ang kalakalan",
+                    },
+                },
+            },
+            ["familyID"] = "action.trade",
+            ["initiatingSay"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["fallback"] = "Let's trade.",
+                                ["id"] = "default",
+                                ["templateID"] = "convo.action.trade.say.1.default",
+                                ["textRole"] = "spoken_action",
+                                ["translations"] = {
+                                    ["EN"] = {
+                                        "Let's trade.",
+                                    },
+                                    ["TL"] = {
+                                        "Magpalitan tayo.",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+            ["invoke"] = {
+                ["intent"] = "TRADE",
+                ["patternID"] = "pattern.trade.concept_open",
+                ["speechAct"] = "TRADE",
+                ["subject"] = "TRADE",
+                ["topic"] = "trade",
+            },
+            ["namespace"] = "action",
+            ["textRoles"] = {
+                {
+                    ["fallback"] = "Open trading",
+                    ["role"] = "button_label",
+                    ["templateID"] = "convo.action.trade.affordance.label",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Open trading",
+                        },
+                        ["TL"] = {
+                            "Buksan ang kalakalan",
+                        },
+                    },
+                },
+                {
+                    ["fallback"] = "Let's trade.",
+                    ["realizationKey"] = "1",
+                    ["role"] = "spoken_action",
+                    ["templateID"] = "convo.action.trade.say.1.default",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Let's trade.",
+                        },
+                        ["TL"] = {
+                            "Magpalitan tayo.",
+                        },
+                    },
+                    ["variantID"] = "default",
+                },
+            },
+        },
+        ["id"] = "action.trade",
+        ["kind"] = "dialogue",
+        ["lineage"] = {
+            ["localId"] = "trade",
+            ["sourceId"] = "action.trade",
+            ["sourcePath"] = "adopters/dt/dialogue/trading/action_trade.json",
+            ["sourceSchema"] = "psychopatz.convo-engine.v1",
+        },
+        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["namespace"] = "action",
+        ["owner"] = "DTCommon",
+        ["participants"] = {
+            ["addressee"] = {
+                "participant",
+            },
+            ["speaker"] = {
+                "participant",
+            },
+        },
+        ["payload"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "trade",
+                },
+                ["label"] = {
+                    ["EN"] = {
+                        "Open trading",
+                    },
+                    ["TL"] = {
+                        "Buksan ang kalakalan",
+                    },
+                },
+                ["textRole"] = "button_label",
+            },
+            ["invoke"] = {
+                ["intent"] = "TRADE",
+                ["patternID"] = "pattern.trade.concept_open",
+                ["speechAct"] = "TRADE",
+                ["subject"] = "TRADE",
+                ["topic"] = "trade",
+            },
+            ["metadata"] = {
+                ["textNamespace"] = "UI_DT_Conversation_Suggestion",
+                ["ui"] = {
+                    ["domain"] = "trade",
+                    ["id"] = "action.trade",
+                    ["intent"] = "TRADE",
+                    ["order"] = 80,
+                    ["patternID"] = "pattern.trade.concept_open",
+                    ["speechAct"] = "TRADE",
+                    ["subject"] = "TRADE",
+                    ["topic"] = "trade",
+                },
+            },
+            ["say"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["id"] = "default",
+                                ["text"] = {
+                                    ["EN"] = {
+                                        "Let's trade.",
+                                    },
+                                    ["TL"] = {
+                                        "Magpalitan tayo.",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+        },
+        ["references"] = {
+        },
+        ["responsePlan"] = {
+            ["dialogueAct"] = nil,
+            ["kind"] = "dialogue_act_plan",
+            ["responsePlanID"] = "action.trade",
+            ["schemaVersion"] = 1,
+            ["turns"] = {
+                {
+                    ["continuation"] = "end",
+                    ["id"] = "say_1",
+                    ["offers"] = {
+                    },
+                    ["segments"] = {
+                        {
+                            ["args"] = {
+                            },
+                            ["fallback"] = "Let's trade.",
+                            ["kind"] = "translation",
+                            ["templateID"] = "psdl.action.trade.say_1",
+                        },
+                    },
+                },
+            },
+        },
+        ["slots"] = {
+        },
+        ["sourceShard"] = "adopters/dt/dialogue/trading/action_trade.json",
+        ["target"] = {
+            ["multiple"] = false,
+            ["required"] = false,
+            ["type"] = "entity.any",
+        },
+        ["textRoles"] = {
+            {
+                ["fallback"] = "Open trading",
+                ["role"] = "button_label",
+                ["templateID"] = "convo.action.trade.affordance.label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Open trading",
+                    },
+                    ["TL"] = {
+                        "Buksan ang kalakalan",
+                    },
+                },
+            },
+            {
+                ["fallback"] = "Let's trade.",
+                ["realizationKey"] = "1",
+                ["role"] = "spoken_action",
+                ["templateID"] = "convo.action.trade.say.1.default",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Let's trade.",
+                    },
+                    ["TL"] = {
+                        "Magpalitan tayo.",
+                    },
+                },
+                ["variantID"] = "default",
+            },
+        },
+        ["when"] = nil,
+    },
+    {
+        ["domain"] = "trading",
+        ["exchangeFamily"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "whereabouts",
+                },
+                ["labelFallback"] = "Ask where they are headed",
+                ["labelKey"] = "convo.question.destination.affordance.label",
+                ["textRole"] = "button_label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask where they are headed",
+                    },
+                    ["TL"] = {
+                        "Itanong kung saan sila patungo",
+                    },
+                },
+            },
+            ["familyID"] = "question.destination",
+            ["initiatingSay"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["fallback"] = "Where are you heading?",
+                                ["id"] = "default",
+                                ["templateID"] = "convo.question.destination.say.1.default",
+                                ["textRole"] = "spoken_action",
+                                ["translations"] = {
+                                    ["EN"] = {
+                                        "Where are you heading?",
+                                    },
+                                    ["TL"] = {
+                                        "Saan kayo patungo?",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+            ["invoke"] = {
+                ["intent"] = "QUESTION",
+                ["patternID"] = "pattern.trade.concept_destination",
+                ["speechAct"] = "QUESTION",
+                ["subject"] = "DESTINATION",
+                ["topic"] = "whereabouts",
+            },
+            ["namespace"] = "question",
+            ["textRoles"] = {
+                {
+                    ["fallback"] = "Ask where they are headed",
+                    ["role"] = "button_label",
+                    ["templateID"] = "convo.question.destination.affordance.label",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Ask where they are headed",
+                        },
+                        ["TL"] = {
+                            "Itanong kung saan sila patungo",
+                        },
+                    },
+                },
+                {
+                    ["fallback"] = "Where are you heading?",
+                    ["realizationKey"] = "1",
+                    ["role"] = "spoken_action",
+                    ["templateID"] = "convo.question.destination.say.1.default",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Where are you heading?",
+                        },
+                        ["TL"] = {
+                            "Saan kayo patungo?",
+                        },
+                    },
+                    ["variantID"] = "default",
+                },
+            },
+        },
+        ["id"] = "question.destination",
+        ["kind"] = "dialogue",
+        ["lineage"] = {
+            ["localId"] = "destination",
+            ["sourceId"] = "question.destination",
+            ["sourcePath"] = "adopters/dt/dialogue/trading/question_destination.json",
+            ["sourceSchema"] = "psychopatz.convo-engine.v1",
+        },
+        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["namespace"] = "question",
+        ["owner"] = "DTCommon",
+        ["participants"] = {
+            ["addressee"] = {
+                "participant",
+            },
+            ["speaker"] = {
+                "participant",
+            },
+        },
+        ["payload"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "whereabouts",
+                },
+                ["label"] = {
+                    ["EN"] = {
+                        "Ask where they are headed",
+                    },
+                    ["TL"] = {
+                        "Itanong kung saan sila patungo",
+                    },
+                },
+                ["textRole"] = "button_label",
+            },
+            ["invoke"] = {
+                ["intent"] = "QUESTION",
+                ["patternID"] = "pattern.trade.concept_destination",
+                ["speechAct"] = "QUESTION",
+                ["subject"] = "DESTINATION",
+                ["topic"] = "whereabouts",
+            },
+            ["metadata"] = {
+                ["textNamespace"] = "UI_DT_Conversation_Suggestion",
+                ["ui"] = {
+                    ["domain"] = "whereabouts",
+                    ["id"] = "question.destination",
+                    ["intent"] = "QUESTION",
+                    ["order"] = 20,
+                    ["patternID"] = "pattern.trade.concept_destination",
+                    ["speechAct"] = "QUESTION",
+                    ["subject"] = "DESTINATION",
+                    ["topic"] = "whereabouts",
+                },
+            },
+            ["say"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["id"] = "default",
+                                ["text"] = {
+                                    ["EN"] = {
+                                        "Where are you heading?",
+                                    },
+                                    ["TL"] = {
+                                        "Saan kayo patungo?",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+        },
+        ["references"] = {
+        },
+        ["responsePlan"] = {
+            ["dialogueAct"] = nil,
+            ["kind"] = "dialogue_act_plan",
+            ["responsePlanID"] = "question.destination",
+            ["schemaVersion"] = 1,
+            ["turns"] = {
+                {
+                    ["continuation"] = "end",
+                    ["id"] = "say_1",
+                    ["offers"] = {
+                    },
+                    ["segments"] = {
+                        {
+                            ["args"] = {
+                            },
+                            ["fallback"] = "Where are you heading?",
+                            ["kind"] = "translation",
+                            ["templateID"] = "psdl.question.destination.say_1",
+                        },
+                    },
+                },
+            },
+        },
+        ["slots"] = {
+        },
+        ["sourceShard"] = "adopters/dt/dialogue/trading/question_destination.json",
+        ["target"] = {
+            ["multiple"] = false,
+            ["required"] = false,
+            ["type"] = "entity.any",
+        },
+        ["textRoles"] = {
+            {
+                ["fallback"] = "Ask where they are headed",
+                ["role"] = "button_label",
+                ["templateID"] = "convo.question.destination.affordance.label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask where they are headed",
+                    },
+                    ["TL"] = {
+                        "Itanong kung saan sila patungo",
+                    },
+                },
+            },
+            {
+                ["fallback"] = "Where are you heading?",
+                ["realizationKey"] = "1",
+                ["role"] = "spoken_action",
+                ["templateID"] = "convo.question.destination.say.1.default",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Where are you heading?",
+                    },
+                    ["TL"] = {
+                        "Saan kayo patungo?",
+                    },
+                },
+                ["variantID"] = "default",
+            },
+        },
+        ["when"] = nil,
+    },
+    {
+        ["domain"] = "trading",
+        ["exchangeFamily"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "whereabouts",
+                },
+                ["labelFallback"] = "Ask where they came from",
+                ["labelKey"] = "convo.question.origin.affordance.label",
+                ["textRole"] = "button_label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask where they came from",
+                    },
+                    ["TL"] = {
+                        "Itanong kung saan sila nanggaling",
+                    },
+                },
+            },
+            ["familyID"] = "question.origin",
+            ["initiatingSay"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["fallback"] = "Where did you come from?",
+                                ["id"] = "default",
+                                ["templateID"] = "convo.question.origin.say.1.default",
+                                ["textRole"] = "spoken_action",
+                                ["translations"] = {
+                                    ["EN"] = {
+                                        "Where did you come from?",
+                                    },
+                                    ["TL"] = {
+                                        "Saan kayo nanggaling?",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+            ["invoke"] = {
+                ["intent"] = "QUESTION",
+                ["patternID"] = "pattern.trade.concept_origin",
+                ["speechAct"] = "QUESTION",
+                ["subject"] = "ORIGIN",
+                ["topic"] = "whereabouts",
+            },
+            ["namespace"] = "question",
+            ["textRoles"] = {
+                {
+                    ["fallback"] = "Ask where they came from",
+                    ["role"] = "button_label",
+                    ["templateID"] = "convo.question.origin.affordance.label",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Ask where they came from",
+                        },
+                        ["TL"] = {
+                            "Itanong kung saan sila nanggaling",
+                        },
+                    },
+                },
+                {
+                    ["fallback"] = "Where did you come from?",
+                    ["realizationKey"] = "1",
+                    ["role"] = "spoken_action",
+                    ["templateID"] = "convo.question.origin.say.1.default",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Where did you come from?",
+                        },
+                        ["TL"] = {
+                            "Saan kayo nanggaling?",
+                        },
+                    },
+                    ["variantID"] = "default",
+                },
+            },
+        },
+        ["id"] = "question.origin",
+        ["kind"] = "dialogue",
+        ["lineage"] = {
+            ["localId"] = "origin",
+            ["sourceId"] = "question.origin",
+            ["sourcePath"] = "adopters/dt/dialogue/trading/question_origin.json",
+            ["sourceSchema"] = "psychopatz.convo-engine.v1",
+        },
+        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["namespace"] = "question",
+        ["owner"] = "DTCommon",
+        ["participants"] = {
+            ["addressee"] = {
+                "participant",
+            },
+            ["speaker"] = {
+                "participant",
+            },
+        },
+        ["payload"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "whereabouts",
+                },
+                ["label"] = {
+                    ["EN"] = {
+                        "Ask where they came from",
+                    },
+                    ["TL"] = {
+                        "Itanong kung saan sila nanggaling",
+                    },
+                },
+                ["textRole"] = "button_label",
+            },
+            ["invoke"] = {
+                ["intent"] = "QUESTION",
+                ["patternID"] = "pattern.trade.concept_origin",
+                ["speechAct"] = "QUESTION",
+                ["subject"] = "ORIGIN",
+                ["topic"] = "whereabouts",
+            },
+            ["metadata"] = {
+                ["textNamespace"] = "UI_DT_Conversation_Suggestion",
+                ["ui"] = {
+                    ["domain"] = "whereabouts",
+                    ["id"] = "question.origin",
+                    ["intent"] = "QUESTION",
+                    ["order"] = 30,
+                    ["patternID"] = "pattern.trade.concept_origin",
+                    ["speechAct"] = "QUESTION",
+                    ["subject"] = "ORIGIN",
+                    ["topic"] = "whereabouts",
+                },
+            },
+            ["say"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["id"] = "default",
+                                ["text"] = {
+                                    ["EN"] = {
+                                        "Where did you come from?",
+                                    },
+                                    ["TL"] = {
+                                        "Saan kayo nanggaling?",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+        },
+        ["references"] = {
+        },
+        ["responsePlan"] = {
+            ["dialogueAct"] = nil,
+            ["kind"] = "dialogue_act_plan",
+            ["responsePlanID"] = "question.origin",
+            ["schemaVersion"] = 1,
+            ["turns"] = {
+                {
+                    ["continuation"] = "end",
+                    ["id"] = "say_1",
+                    ["offers"] = {
+                    },
+                    ["segments"] = {
+                        {
+                            ["args"] = {
+                            },
+                            ["fallback"] = "Where did you come from?",
+                            ["kind"] = "translation",
+                            ["templateID"] = "psdl.question.origin.say_1",
+                        },
+                    },
+                },
+            },
+        },
+        ["slots"] = {
+        },
+        ["sourceShard"] = "adopters/dt/dialogue/trading/question_origin.json",
+        ["target"] = {
+            ["multiple"] = false,
+            ["required"] = false,
+            ["type"] = "entity.any",
+        },
+        ["textRoles"] = {
+            {
+                ["fallback"] = "Ask where they came from",
+                ["role"] = "button_label",
+                ["templateID"] = "convo.question.origin.affordance.label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask where they came from",
+                    },
+                    ["TL"] = {
+                        "Itanong kung saan sila nanggaling",
+                    },
+                },
+            },
+            {
+                ["fallback"] = "Where did you come from?",
+                ["realizationKey"] = "1",
+                ["role"] = "spoken_action",
+                ["templateID"] = "convo.question.origin.say.1.default",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Where did you come from?",
+                    },
+                    ["TL"] = {
+                        "Saan kayo nanggaling?",
+                    },
+                },
+                ["variantID"] = "default",
+            },
+        },
+        ["when"] = nil,
+    },
+    {
+        ["domain"] = "trading",
+        ["exchangeFamily"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "gossip",
+                },
+                ["labelFallback"] = "Ask for news from the road",
+                ["labelKey"] = "convo.question.rumors.affordance.label",
+                ["textRole"] = "button_label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask for news from the road",
+                    },
+                    ["TL"] = {
+                        "Magtanong ng balita mula sa daan",
+                    },
+                },
+            },
+            ["familyID"] = "question.rumors",
+            ["initiatingSay"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["fallback"] = "Any news from the road?",
+                                ["id"] = "default",
+                                ["templateID"] = "convo.question.rumors.say.1.default",
+                                ["textRole"] = "spoken_action",
+                                ["translations"] = {
+                                    ["EN"] = {
+                                        "Any news from the road?",
+                                    },
+                                    ["TL"] = {
+                                        "May balita ba mula sa daan?",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+            ["invoke"] = {
+                ["intent"] = "GOSSIP",
+                ["patternID"] = "pattern.trade.concept_rumors",
+                ["speechAct"] = "GOSSIP",
+                ["subject"] = "RUMORS",
+                ["topic"] = "gossip",
+            },
+            ["namespace"] = "question",
+            ["textRoles"] = {
+                {
+                    ["fallback"] = "Ask for news from the road",
+                    ["role"] = "button_label",
+                    ["templateID"] = "convo.question.rumors.affordance.label",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Ask for news from the road",
+                        },
+                        ["TL"] = {
+                            "Magtanong ng balita mula sa daan",
+                        },
+                    },
+                },
+                {
+                    ["fallback"] = "Any news from the road?",
+                    ["realizationKey"] = "1",
+                    ["role"] = "spoken_action",
+                    ["templateID"] = "convo.question.rumors.say.1.default",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Any news from the road?",
+                        },
+                        ["TL"] = {
+                            "May balita ba mula sa daan?",
+                        },
+                    },
+                    ["variantID"] = "default",
+                },
+            },
+        },
+        ["id"] = "question.rumors",
+        ["kind"] = "dialogue",
+        ["lineage"] = {
+            ["localId"] = "rumors",
+            ["sourceId"] = "question.rumors",
+            ["sourcePath"] = "adopters/dt/dialogue/trading/question_rumors.json",
+            ["sourceSchema"] = "psychopatz.convo-engine.v1",
+        },
+        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["namespace"] = "question",
+        ["owner"] = "DTCommon",
+        ["participants"] = {
+            ["addressee"] = {
+                "participant",
+            },
+            ["speaker"] = {
+                "participant",
+            },
+        },
+        ["payload"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "gossip",
+                },
+                ["label"] = {
+                    ["EN"] = {
+                        "Ask for news from the road",
+                    },
+                    ["TL"] = {
+                        "Magtanong ng balita mula sa daan",
+                    },
+                },
+                ["textRole"] = "button_label",
+            },
+            ["invoke"] = {
+                ["intent"] = "GOSSIP",
+                ["patternID"] = "pattern.trade.concept_rumors",
+                ["speechAct"] = "GOSSIP",
+                ["subject"] = "RUMORS",
+                ["topic"] = "gossip",
+            },
+            ["metadata"] = {
+                ["textNamespace"] = "UI_DT_Conversation_Suggestion",
+                ["ui"] = {
+                    ["domain"] = "gossip",
+                    ["id"] = "question.rumors",
+                    ["intent"] = "GOSSIP",
+                    ["order"] = 50,
+                    ["patternID"] = "pattern.trade.concept_rumors",
+                    ["speechAct"] = "GOSSIP",
+                    ["subject"] = "RUMORS",
+                    ["topic"] = "gossip",
+                },
+            },
+            ["say"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["id"] = "default",
+                                ["text"] = {
+                                    ["EN"] = {
+                                        "Any news from the road?",
+                                    },
+                                    ["TL"] = {
+                                        "May balita ba mula sa daan?",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+        },
+        ["references"] = {
+        },
+        ["responsePlan"] = {
+            ["dialogueAct"] = nil,
+            ["kind"] = "dialogue_act_plan",
+            ["responsePlanID"] = "question.rumors",
+            ["schemaVersion"] = 1,
+            ["turns"] = {
+                {
+                    ["continuation"] = "end",
+                    ["id"] = "say_1",
+                    ["offers"] = {
+                    },
+                    ["segments"] = {
+                        {
+                            ["args"] = {
+                            },
+                            ["fallback"] = "Any news from the road?",
+                            ["kind"] = "translation",
+                            ["templateID"] = "psdl.question.rumors.say_1",
+                        },
+                    },
+                },
+            },
+        },
+        ["slots"] = {
+        },
+        ["sourceShard"] = "adopters/dt/dialogue/trading/question_rumors.json",
+        ["target"] = {
+            ["multiple"] = false,
+            ["required"] = false,
+            ["type"] = "entity.any",
+        },
+        ["textRoles"] = {
+            {
+                ["fallback"] = "Ask for news from the road",
+                ["role"] = "button_label",
+                ["templateID"] = "convo.question.rumors.affordance.label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask for news from the road",
+                    },
+                    ["TL"] = {
+                        "Magtanong ng balita mula sa daan",
+                    },
+                },
+            },
+            {
+                ["fallback"] = "Any news from the road?",
+                ["realizationKey"] = "1",
+                ["role"] = "spoken_action",
+                ["templateID"] = "convo.question.rumors.say.1.default",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Any news from the road?",
+                    },
+                    ["TL"] = {
+                        "May balita ba mula sa daan?",
+                    },
+                },
+                ["variantID"] = "default",
+            },
+        },
+        ["when"] = nil,
+    },
+    {
+        ["domain"] = "trading",
+        ["exchangeFamily"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "whereabouts",
+                },
+                ["labelFallback"] = "Ask about the nearest settlement",
+                ["labelKey"] = "convo.question.settlement.affordance.label",
+                ["textRole"] = "button_label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask about the nearest settlement",
+                    },
+                    ["TL"] = {
+                        "Itanong ang pinakamalapit na pamayanan",
+                    },
+                },
+            },
+            ["familyID"] = "question.settlement",
+            ["initiatingSay"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["fallback"] = "Where is the nearest settlement?",
+                                ["id"] = "default",
+                                ["templateID"] = "convo.question.settlement.say.1.default",
+                                ["textRole"] = "spoken_action",
+                                ["translations"] = {
+                                    ["EN"] = {
+                                        "Where is the nearest settlement?",
+                                    },
+                                    ["TL"] = {
+                                        "Nasaan ang pinakamalapit na pamayanan?",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+            ["invoke"] = {
+                ["intent"] = "QUESTION",
+                ["patternID"] = "pattern.trade.concept_settlement",
+                ["speechAct"] = "QUESTION",
+                ["subject"] = "SETTLEMENT",
+                ["topic"] = "whereabouts",
+            },
+            ["namespace"] = "question",
+            ["textRoles"] = {
+                {
+                    ["fallback"] = "Ask about the nearest settlement",
+                    ["role"] = "button_label",
+                    ["templateID"] = "convo.question.settlement.affordance.label",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Ask about the nearest settlement",
+                        },
+                        ["TL"] = {
+                            "Itanong ang pinakamalapit na pamayanan",
+                        },
+                    },
+                },
+                {
+                    ["fallback"] = "Where is the nearest settlement?",
+                    ["realizationKey"] = "1",
+                    ["role"] = "spoken_action",
+                    ["templateID"] = "convo.question.settlement.say.1.default",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Where is the nearest settlement?",
+                        },
+                        ["TL"] = {
+                            "Nasaan ang pinakamalapit na pamayanan?",
+                        },
+                    },
+                    ["variantID"] = "default",
+                },
+            },
+        },
+        ["id"] = "question.settlement",
+        ["kind"] = "dialogue",
+        ["lineage"] = {
+            ["localId"] = "settlement",
+            ["sourceId"] = "question.settlement",
+            ["sourcePath"] = "adopters/dt/dialogue/trading/question_settlement.json",
+            ["sourceSchema"] = "psychopatz.convo-engine.v1",
+        },
+        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["namespace"] = "question",
+        ["owner"] = "DTCommon",
+        ["participants"] = {
+            ["addressee"] = {
+                "participant",
+            },
+            ["speaker"] = {
+                "participant",
+            },
+        },
+        ["payload"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "whereabouts",
+                },
+                ["label"] = {
+                    ["EN"] = {
+                        "Ask about the nearest settlement",
+                    },
+                    ["TL"] = {
+                        "Itanong ang pinakamalapit na pamayanan",
+                    },
+                },
+                ["textRole"] = "button_label",
+            },
+            ["invoke"] = {
+                ["intent"] = "QUESTION",
+                ["patternID"] = "pattern.trade.concept_settlement",
+                ["speechAct"] = "QUESTION",
+                ["subject"] = "SETTLEMENT",
+                ["topic"] = "whereabouts",
+            },
+            ["metadata"] = {
+                ["textNamespace"] = "UI_DT_Conversation_Suggestion",
+                ["ui"] = {
+                    ["domain"] = "whereabouts",
+                    ["id"] = "question.settlement",
+                    ["intent"] = "QUESTION",
+                    ["order"] = 40,
+                    ["patternID"] = "pattern.trade.concept_settlement",
+                    ["speechAct"] = "QUESTION",
+                    ["subject"] = "SETTLEMENT",
+                    ["topic"] = "whereabouts",
+                },
+            },
+            ["say"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["id"] = "default",
+                                ["text"] = {
+                                    ["EN"] = {
+                                        "Where is the nearest settlement?",
+                                    },
+                                    ["TL"] = {
+                                        "Nasaan ang pinakamalapit na pamayanan?",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+        },
+        ["references"] = {
+        },
+        ["responsePlan"] = {
+            ["dialogueAct"] = nil,
+            ["kind"] = "dialogue_act_plan",
+            ["responsePlanID"] = "question.settlement",
+            ["schemaVersion"] = 1,
+            ["turns"] = {
+                {
+                    ["continuation"] = "end",
+                    ["id"] = "say_1",
+                    ["offers"] = {
+                    },
+                    ["segments"] = {
+                        {
+                            ["args"] = {
+                            },
+                            ["fallback"] = "Where is the nearest settlement?",
+                            ["kind"] = "translation",
+                            ["templateID"] = "psdl.question.settlement.say_1",
+                        },
+                    },
+                },
+            },
+        },
+        ["slots"] = {
+        },
+        ["sourceShard"] = "adopters/dt/dialogue/trading/question_settlement.json",
+        ["target"] = {
+            ["multiple"] = false,
+            ["required"] = false,
+            ["type"] = "entity.any",
+        },
+        ["textRoles"] = {
+            {
+                ["fallback"] = "Ask about the nearest settlement",
+                ["role"] = "button_label",
+                ["templateID"] = "convo.question.settlement.affordance.label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask about the nearest settlement",
+                    },
+                    ["TL"] = {
+                        "Itanong ang pinakamalapit na pamayanan",
+                    },
+                },
+            },
+            {
+                ["fallback"] = "Where is the nearest settlement?",
+                ["realizationKey"] = "1",
+                ["role"] = "spoken_action",
+                ["templateID"] = "convo.question.settlement.say.1.default",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Where is the nearest settlement?",
+                    },
+                    ["TL"] = {
+                        "Nasaan ang pinakamalapit na pamayanan?",
+                    },
+                },
+                ["variantID"] = "default",
+            },
+        },
+        ["when"] = nil,
+    },
+    {
+        ["domain"] = "trading",
+        ["exchangeFamily"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "story",
+                },
+                ["labelFallback"] = "Ask for a caravan story",
+                ["labelKey"] = "convo.question.story.affordance.label",
+                ["textRole"] = "button_label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask for a caravan story",
+                    },
+                    ["TL"] = {
+                        "Humingi ng kuwento ng karaban",
+                    },
+                },
+            },
+            ["familyID"] = "question.story",
+            ["initiatingSay"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["fallback"] = "Tell me a caravan story.",
+                                ["id"] = "default",
+                                ["templateID"] = "convo.question.story.say.1.default",
+                                ["textRole"] = "spoken_action",
+                                ["translations"] = {
+                                    ["EN"] = {
+                                        "Tell me a caravan story.",
+                                    },
+                                    ["TL"] = {
+                                        "Magkuwento kayo tungkol sa karaban.",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+            ["invoke"] = {
+                ["intent"] = "GOSSIP",
+                ["patternID"] = "pattern.trade.concept_story",
+                ["speechAct"] = "GOSSIP",
+                ["subject"] = "STORY",
+                ["topic"] = "story",
+            },
+            ["namespace"] = "question",
+            ["textRoles"] = {
+                {
+                    ["fallback"] = "Ask for a caravan story",
+                    ["role"] = "button_label",
+                    ["templateID"] = "convo.question.story.affordance.label",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Ask for a caravan story",
+                        },
+                        ["TL"] = {
+                            "Humingi ng kuwento ng karaban",
+                        },
+                    },
+                },
+                {
+                    ["fallback"] = "Tell me a caravan story.",
+                    ["realizationKey"] = "1",
+                    ["role"] = "spoken_action",
+                    ["templateID"] = "convo.question.story.say.1.default",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Tell me a caravan story.",
+                        },
+                        ["TL"] = {
+                            "Magkuwento kayo tungkol sa karaban.",
+                        },
+                    },
+                    ["variantID"] = "default",
+                },
+            },
+        },
+        ["id"] = "question.story",
+        ["kind"] = "dialogue",
+        ["lineage"] = {
+            ["localId"] = "story",
+            ["sourceId"] = "question.story",
+            ["sourcePath"] = "adopters/dt/dialogue/trading/question_story.json",
+            ["sourceSchema"] = "psychopatz.convo-engine.v1",
+        },
+        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["namespace"] = "question",
+        ["owner"] = "DTCommon",
+        ["participants"] = {
+            ["addressee"] = {
+                "participant",
+            },
+            ["speaker"] = {
+                "participant",
+            },
+        },
+        ["payload"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "story",
+                },
+                ["label"] = {
+                    ["EN"] = {
+                        "Ask for a caravan story",
+                    },
+                    ["TL"] = {
+                        "Humingi ng kuwento ng karaban",
+                    },
+                },
+                ["textRole"] = "button_label",
+            },
+            ["invoke"] = {
+                ["intent"] = "GOSSIP",
+                ["patternID"] = "pattern.trade.concept_story",
+                ["speechAct"] = "GOSSIP",
+                ["subject"] = "STORY",
+                ["topic"] = "story",
+            },
+            ["metadata"] = {
+                ["textNamespace"] = "UI_DT_Conversation_Suggestion",
+                ["ui"] = {
+                    ["domain"] = "story",
+                    ["id"] = "question.story",
+                    ["intent"] = "GOSSIP",
+                    ["order"] = 70,
+                    ["patternID"] = "pattern.trade.concept_story",
+                    ["speechAct"] = "GOSSIP",
+                    ["subject"] = "STORY",
+                    ["topic"] = "story",
+                },
+            },
+            ["say"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["id"] = "default",
+                                ["text"] = {
+                                    ["EN"] = {
+                                        "Tell me a caravan story.",
+                                    },
+                                    ["TL"] = {
+                                        "Magkuwento kayo tungkol sa karaban.",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+        },
+        ["references"] = {
+        },
+        ["responsePlan"] = {
+            ["dialogueAct"] = nil,
+            ["kind"] = "dialogue_act_plan",
+            ["responsePlanID"] = "question.story",
+            ["schemaVersion"] = 1,
+            ["turns"] = {
+                {
+                    ["continuation"] = "end",
+                    ["id"] = "say_1",
+                    ["offers"] = {
+                    },
+                    ["segments"] = {
+                        {
+                            ["args"] = {
+                            },
+                            ["fallback"] = "Tell me a caravan story.",
+                            ["kind"] = "translation",
+                            ["templateID"] = "psdl.question.story.say_1",
+                        },
+                    },
+                },
+            },
+        },
+        ["slots"] = {
+        },
+        ["sourceShard"] = "adopters/dt/dialogue/trading/question_story.json",
+        ["target"] = {
+            ["multiple"] = false,
+            ["required"] = false,
+            ["type"] = "entity.any",
+        },
+        ["textRoles"] = {
+            {
+                ["fallback"] = "Ask for a caravan story",
+                ["role"] = "button_label",
+                ["templateID"] = "convo.question.story.affordance.label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask for a caravan story",
+                    },
+                    ["TL"] = {
+                        "Humingi ng kuwento ng karaban",
+                    },
+                },
+            },
+            {
+                ["fallback"] = "Tell me a caravan story.",
+                ["realizationKey"] = "1",
+                ["role"] = "spoken_action",
+                ["templateID"] = "convo.question.story.say.1.default",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Tell me a caravan story.",
+                    },
+                    ["TL"] = {
+                        "Magkuwento kayo tungkol sa karaban.",
+                    },
+                },
+                ["variantID"] = "default",
+            },
+        },
+        ["when"] = nil,
+    },
+    {
+        ["domain"] = "trading",
+        ["exchangeFamily"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "identity",
+                },
+                ["labelFallback"] = "Ask who they are",
+                ["labelKey"] = "convo.question.trader.affordance.label",
+                ["textRole"] = "button_label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask who they are",
+                    },
+                    ["TL"] = {
+                        "Itanong kung sino sila",
+                    },
+                },
+            },
+            ["familyID"] = "question.trader",
+            ["initiatingSay"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["fallback"] = "Who are you?",
+                                ["id"] = "default",
+                                ["templateID"] = "convo.question.trader.say.1.default",
+                                ["textRole"] = "spoken_action",
+                                ["translations"] = {
+                                    ["EN"] = {
+                                        "Who are you?",
+                                    },
+                                    ["TL"] = {
+                                        "Sino kayo?",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+            ["invoke"] = {
+                ["intent"] = "QUESTION",
+                ["patternID"] = "pattern.trade.concept_who",
+                ["speechAct"] = "QUESTION",
+                ["subject"] = "TRADER",
+                ["topic"] = "identity",
+            },
+            ["namespace"] = "question",
+            ["textRoles"] = {
+                {
+                    ["fallback"] = "Ask who they are",
+                    ["role"] = "button_label",
+                    ["templateID"] = "convo.question.trader.affordance.label",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Ask who they are",
+                        },
+                        ["TL"] = {
+                            "Itanong kung sino sila",
+                        },
+                    },
+                },
+                {
+                    ["fallback"] = "Who are you?",
+                    ["realizationKey"] = "1",
+                    ["role"] = "spoken_action",
+                    ["templateID"] = "convo.question.trader.say.1.default",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Who are you?",
+                        },
+                        ["TL"] = {
+                            "Sino kayo?",
+                        },
+                    },
+                    ["variantID"] = "default",
+                },
+            },
+        },
+        ["id"] = "question.trader",
+        ["kind"] = "dialogue",
+        ["lineage"] = {
+            ["localId"] = "trader",
+            ["sourceId"] = "question.trader",
+            ["sourcePath"] = "adopters/dt/dialogue/trading/question_trader.json",
+            ["sourceSchema"] = "psychopatz.convo-engine.v1",
+        },
+        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["namespace"] = "question",
+        ["owner"] = "DTCommon",
+        ["participants"] = {
+            ["addressee"] = {
+                "participant",
+            },
+            ["speaker"] = {
+                "participant",
+            },
+        },
+        ["payload"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "identity",
+                },
+                ["label"] = {
+                    ["EN"] = {
+                        "Ask who they are",
+                    },
+                    ["TL"] = {
+                        "Itanong kung sino sila",
+                    },
+                },
+                ["textRole"] = "button_label",
+            },
+            ["invoke"] = {
+                ["intent"] = "QUESTION",
+                ["patternID"] = "pattern.trade.concept_who",
+                ["speechAct"] = "QUESTION",
+                ["subject"] = "TRADER",
+                ["topic"] = "identity",
+            },
+            ["metadata"] = {
+                ["textNamespace"] = "UI_DT_Conversation_Suggestion",
+                ["ui"] = {
+                    ["domain"] = "identity",
+                    ["id"] = "question.trader",
+                    ["intent"] = "QUESTION",
+                    ["order"] = 10,
+                    ["patternID"] = "pattern.trade.concept_who",
+                    ["speechAct"] = "QUESTION",
+                    ["subject"] = "TRADER",
+                    ["topic"] = "identity",
+                },
+            },
+            ["say"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["id"] = "default",
+                                ["text"] = {
+                                    ["EN"] = {
+                                        "Who are you?",
+                                    },
+                                    ["TL"] = {
+                                        "Sino kayo?",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+        },
+        ["references"] = {
+        },
+        ["responsePlan"] = {
+            ["dialogueAct"] = nil,
+            ["kind"] = "dialogue_act_plan",
+            ["responsePlanID"] = "question.trader",
+            ["schemaVersion"] = 1,
+            ["turns"] = {
+                {
+                    ["continuation"] = "end",
+                    ["id"] = "say_1",
+                    ["offers"] = {
+                    },
+                    ["segments"] = {
+                        {
+                            ["args"] = {
+                            },
+                            ["fallback"] = "Who are you?",
+                            ["kind"] = "translation",
+                            ["templateID"] = "psdl.question.trader.say_1",
+                        },
+                    },
+                },
+            },
+        },
+        ["slots"] = {
+        },
+        ["sourceShard"] = "adopters/dt/dialogue/trading/question_trader.json",
+        ["target"] = {
+            ["multiple"] = false,
+            ["required"] = false,
+            ["type"] = "entity.any",
+        },
+        ["textRoles"] = {
+            {
+                ["fallback"] = "Ask who they are",
+                ["role"] = "button_label",
+                ["templateID"] = "convo.question.trader.affordance.label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask who they are",
+                    },
+                    ["TL"] = {
+                        "Itanong kung sino sila",
+                    },
+                },
+            },
+            {
+                ["fallback"] = "Who are you?",
+                ["realizationKey"] = "1",
+                ["role"] = "spoken_action",
+                ["templateID"] = "convo.question.trader.say.1.default",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Who are you?",
+                    },
+                    ["TL"] = {
+                        "Sino kayo?",
+                    },
+                },
+                ["variantID"] = "default",
+            },
+        },
+        ["when"] = nil,
+    },
+    {
+        ["domain"] = "trading",
+        ["exchangeFamily"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "whereabouts",
+                },
+                ["labelFallback"] = "Ask about their travels",
+                ["labelKey"] = "convo.question.whereabouts.affordance.label",
+                ["textRole"] = "button_label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask about their travels",
+                    },
+                    ["TL"] = {
+                        "Itanong ang kanilang ruta",
+                    },
+                },
+            },
+            ["familyID"] = "question.whereabouts",
+            ["initiatingSay"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["fallback"] = "What route are you travelling?",
+                                ["id"] = "default",
+                                ["templateID"] = "convo.question.whereabouts.say.1.default",
+                                ["textRole"] = "spoken_action",
+                                ["translations"] = {
+                                    ["EN"] = {
+                                        "What route are you travelling?",
+                                    },
+                                    ["TL"] = {
+                                        "Anong ruta ang tinatahak ninyo?",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+            ["invoke"] = {
+                ["intent"] = "QUESTION",
+                ["patternID"] = "pattern.trade.concept_whereabouts",
+                ["speechAct"] = "QUESTION",
+                ["subject"] = "WHEREABOUTS",
+                ["topic"] = "whereabouts",
+            },
+            ["namespace"] = "question",
+            ["textRoles"] = {
+                {
+                    ["fallback"] = "Ask about their travels",
+                    ["role"] = "button_label",
+                    ["templateID"] = "convo.question.whereabouts.affordance.label",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "Ask about their travels",
+                        },
+                        ["TL"] = {
+                            "Itanong ang kanilang ruta",
+                        },
+                    },
+                },
+                {
+                    ["fallback"] = "What route are you travelling?",
+                    ["realizationKey"] = "1",
+                    ["role"] = "spoken_action",
+                    ["templateID"] = "convo.question.whereabouts.say.1.default",
+                    ["translations"] = {
+                        ["EN"] = {
+                            "What route are you travelling?",
+                        },
+                        ["TL"] = {
+                            "Anong ruta ang tinatahak ninyo?",
+                        },
+                    },
+                    ["variantID"] = "default",
+                },
+            },
+        },
+        ["id"] = "question.whereabouts",
+        ["kind"] = "dialogue",
+        ["lineage"] = {
+            ["localId"] = "whereabouts",
+            ["sourceId"] = "question.whereabouts",
+            ["sourcePath"] = "adopters/dt/dialogue/trading/question_whereabouts.json",
+            ["sourceSchema"] = "psychopatz.convo-engine.v1",
+        },
+        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["namespace"] = "question",
+        ["owner"] = "DTCommon",
+        ["participants"] = {
+            ["addressee"] = {
+                "participant",
+            },
+            ["speaker"] = {
+                "participant",
+            },
+        },
+        ["payload"] = {
+            ["affordance"] = {
+                ["consumers"] = {
+                    "player",
+                },
+                ["groups"] = {
+                    "whereabouts",
+                },
+                ["label"] = {
+                    ["EN"] = {
+                        "Ask about their travels",
+                    },
+                    ["TL"] = {
+                        "Itanong ang kanilang ruta",
+                    },
+                },
+                ["textRole"] = "button_label",
+            },
+            ["invoke"] = {
+                ["intent"] = "QUESTION",
+                ["patternID"] = "pattern.trade.concept_whereabouts",
+                ["speechAct"] = "QUESTION",
+                ["subject"] = "WHEREABOUTS",
+                ["topic"] = "whereabouts",
+            },
+            ["metadata"] = {
+                ["textNamespace"] = "UI_DT_Conversation_Suggestion",
+                ["ui"] = {
+                    ["domain"] = "whereabouts",
+                    ["id"] = "question.whereabouts",
+                    ["intent"] = "QUESTION",
+                    ["order"] = 60,
+                    ["patternID"] = "pattern.trade.concept_whereabouts",
+                    ["speechAct"] = "QUESTION",
+                    ["subject"] = "WHEREABOUTS",
+                    ["topic"] = "whereabouts",
+                },
+            },
+            ["say"] = {
+                ["keyOrder"] = {
+                    "1",
+                },
+                ["mode"] = "single",
+                ["realizations"] = {
+                    ["1"] = {
+                        ["key"] = "1",
+                        ["shorthand"] = true,
+                        ["variants"] = {
+                            {
+                                ["id"] = "default",
+                                ["text"] = {
+                                    ["EN"] = {
+                                        "What route are you travelling?",
+                                    },
+                                    ["TL"] = {
+                                        "Anong ruta ang tinatahak ninyo?",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ["textRole"] = "spoken_action",
+            },
+        },
+        ["references"] = {
+        },
+        ["responsePlan"] = {
+            ["dialogueAct"] = nil,
+            ["kind"] = "dialogue_act_plan",
+            ["responsePlanID"] = "question.whereabouts",
+            ["schemaVersion"] = 1,
+            ["turns"] = {
+                {
+                    ["continuation"] = "end",
+                    ["id"] = "say_1",
+                    ["offers"] = {
+                    },
+                    ["segments"] = {
+                        {
+                            ["args"] = {
+                            },
+                            ["fallback"] = "What route are you travelling?",
+                            ["kind"] = "translation",
+                            ["templateID"] = "psdl.question.whereabouts.say_1",
+                        },
+                    },
+                },
+            },
+        },
+        ["slots"] = {
+        },
+        ["sourceShard"] = "adopters/dt/dialogue/trading/question_whereabouts.json",
+        ["target"] = {
+            ["multiple"] = false,
+            ["required"] = false,
+            ["type"] = "entity.any",
+        },
+        ["textRoles"] = {
+            {
+                ["fallback"] = "Ask about their travels",
+                ["role"] = "button_label",
+                ["templateID"] = "convo.question.whereabouts.affordance.label",
+                ["translations"] = {
+                    ["EN"] = {
+                        "Ask about their travels",
+                    },
+                    ["TL"] = {
+                        "Itanong ang kanilang ruta",
+                    },
+                },
+            },
+            {
+                ["fallback"] = "What route are you travelling?",
+                ["realizationKey"] = "1",
+                ["role"] = "spoken_action",
+                ["templateID"] = "convo.question.whereabouts.say.1.default",
+                ["translations"] = {
+                    ["EN"] = {
+                        "What route are you travelling?",
+                    },
+                    ["TL"] = {
+                        "Anong ruta ang tinatahak ninyo?",
+                    },
+                },
+                ["variantID"] = "default",
+            },
+        },
+        ["when"] = nil,
+    },
+    {
+        ["domain"] = "trading",
+        ["exchangeFamily"] = {
             ["familyID"] = "trade.conversation.opening",
             ["initiatingSay"] = {
                 ["keyOrder"] = {
@@ -396,12 +2316,12 @@ return {
     },
     {
         ["domain"] = "trading",
-        ["id"] = "trade.conversation.suggestions",
+        ["id"] = "trade.conversation.suggestions_recognition",
         ["kind"] = "dialogue",
         ["lineage"] = {
-            ["localId"] = "suggestions",
-            ["sourceId"] = "trade.conversation.suggestions",
-            ["sourcePath"] = "adopters/dt/dialogue/trading/trade_conversation_suggestions.json",
+            ["localId"] = "suggestions_recognition",
+            ["sourceId"] = "trade.conversation.suggestions_recognition",
+            ["sourcePath"] = "adopters/dt/dialogue/trading/suggestions_recognition.json",
             ["sourceSchema"] = "psychopatz.convo-engine.v1",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
@@ -416,275 +2336,6 @@ return {
             },
         },
         ["payload"] = {
-            ["metadata"] = {
-                ["textNamespace"] = "UI_DT_Conversation_Suggestion",
-            },
-            ["offers"] = {
-                {
-                    ["consumers"] = {
-                        "participant",
-                    },
-                    ["frame"] = {
-                        ["intent"] = "QUESTION",
-                        ["patternID"] = "pattern.trade.concept_who",
-                        ["speechAct"] = "QUESTION",
-                        ["subject"] = "TRADER",
-                        ["topic"] = "identity",
-                    },
-                    ["id"] = "question.trader",
-                    ["label"] = {
-                        ["EN"] = {
-                            "Ask who they are",
-                        },
-                        ["TL"] = {
-                            "Itanong kung sino sila",
-                        },
-                    },
-                    ["metadata"] = {
-                        ["domain"] = "identity",
-                        ["order"] = 10,
-                    },
-                    ["utterance"] = {
-                        ["EN"] = {
-                            "Who are you?",
-                        },
-                        ["TL"] = {
-                            "Sino kayo?",
-                        },
-                    },
-                },
-                {
-                    ["consumers"] = {
-                        "participant",
-                    },
-                    ["frame"] = {
-                        ["intent"] = "QUESTION",
-                        ["patternID"] = "pattern.trade.concept_destination",
-                        ["speechAct"] = "QUESTION",
-                        ["subject"] = "DESTINATION",
-                        ["topic"] = "whereabouts",
-                    },
-                    ["id"] = "question.destination",
-                    ["label"] = {
-                        ["EN"] = {
-                            "Ask where they are headed",
-                        },
-                        ["TL"] = {
-                            "Itanong kung saan sila patungo",
-                        },
-                    },
-                    ["metadata"] = {
-                        ["domain"] = "whereabouts",
-                        ["order"] = 20,
-                    },
-                    ["utterance"] = {
-                        ["EN"] = {
-                            "Where are you heading?",
-                        },
-                        ["TL"] = {
-                            "Saan kayo patungo?",
-                        },
-                    },
-                },
-                {
-                    ["consumers"] = {
-                        "participant",
-                    },
-                    ["frame"] = {
-                        ["intent"] = "QUESTION",
-                        ["patternID"] = "pattern.trade.concept_origin",
-                        ["speechAct"] = "QUESTION",
-                        ["subject"] = "ORIGIN",
-                        ["topic"] = "whereabouts",
-                    },
-                    ["id"] = "question.origin",
-                    ["label"] = {
-                        ["EN"] = {
-                            "Ask where they came from",
-                        },
-                        ["TL"] = {
-                            "Itanong kung saan sila nanggaling",
-                        },
-                    },
-                    ["metadata"] = {
-                        ["domain"] = "whereabouts",
-                        ["order"] = 30,
-                    },
-                    ["utterance"] = {
-                        ["EN"] = {
-                            "Where did you come from?",
-                        },
-                        ["TL"] = {
-                            "Saan kayo nanggaling?",
-                        },
-                    },
-                },
-                {
-                    ["consumers"] = {
-                        "participant",
-                    },
-                    ["frame"] = {
-                        ["intent"] = "QUESTION",
-                        ["patternID"] = "pattern.trade.concept_settlement",
-                        ["speechAct"] = "QUESTION",
-                        ["subject"] = "SETTLEMENT",
-                        ["topic"] = "whereabouts",
-                    },
-                    ["id"] = "question.settlement",
-                    ["label"] = {
-                        ["EN"] = {
-                            "Ask about the nearest settlement",
-                        },
-                        ["TL"] = {
-                            "Itanong ang pinakamalapit na pamayanan",
-                        },
-                    },
-                    ["metadata"] = {
-                        ["domain"] = "whereabouts",
-                        ["order"] = 40,
-                    },
-                    ["utterance"] = {
-                        ["EN"] = {
-                            "Where is the nearest settlement?",
-                        },
-                        ["TL"] = {
-                            "Nasaan ang pinakamalapit na pamayanan?",
-                        },
-                    },
-                },
-                {
-                    ["consumers"] = {
-                        "participant",
-                    },
-                    ["frame"] = {
-                        ["intent"] = "GOSSIP",
-                        ["patternID"] = "pattern.trade.concept_rumors",
-                        ["speechAct"] = "GOSSIP",
-                        ["subject"] = "RUMORS",
-                        ["topic"] = "gossip",
-                    },
-                    ["id"] = "question.rumors",
-                    ["label"] = {
-                        ["EN"] = {
-                            "Ask for news from the road",
-                        },
-                        ["TL"] = {
-                            "Magtanong ng balita mula sa daan",
-                        },
-                    },
-                    ["metadata"] = {
-                        ["domain"] = "gossip",
-                        ["order"] = 50,
-                    },
-                    ["utterance"] = {
-                        ["EN"] = {
-                            "Any news from the road?",
-                        },
-                        ["TL"] = {
-                            "May balita ba mula sa daan?",
-                        },
-                    },
-                },
-                {
-                    ["consumers"] = {
-                        "participant",
-                    },
-                    ["frame"] = {
-                        ["intent"] = "QUESTION",
-                        ["patternID"] = "pattern.trade.concept_whereabouts",
-                        ["speechAct"] = "QUESTION",
-                        ["subject"] = "WHEREABOUTS",
-                        ["topic"] = "whereabouts",
-                    },
-                    ["id"] = "question.whereabouts",
-                    ["label"] = {
-                        ["EN"] = {
-                            "Ask about their travels",
-                        },
-                        ["TL"] = {
-                            "Itanong ang kanilang ruta",
-                        },
-                    },
-                    ["metadata"] = {
-                        ["domain"] = "whereabouts",
-                        ["order"] = 60,
-                    },
-                    ["utterance"] = {
-                        ["EN"] = {
-                            "What route are you travelling?",
-                        },
-                        ["TL"] = {
-                            "Anong ruta ang tinatahak ninyo?",
-                        },
-                    },
-                },
-                {
-                    ["consumers"] = {
-                        "participant",
-                    },
-                    ["frame"] = {
-                        ["intent"] = "GOSSIP",
-                        ["patternID"] = "pattern.trade.concept_story",
-                        ["speechAct"] = "GOSSIP",
-                        ["subject"] = "STORY",
-                        ["topic"] = "story",
-                    },
-                    ["id"] = "question.story",
-                    ["label"] = {
-                        ["EN"] = {
-                            "Ask for a caravan story",
-                        },
-                        ["TL"] = {
-                            "Humingi ng kuwento ng karaban",
-                        },
-                    },
-                    ["metadata"] = {
-                        ["domain"] = "story",
-                        ["order"] = 70,
-                    },
-                    ["utterance"] = {
-                        ["EN"] = {
-                            "Tell me a caravan story.",
-                        },
-                        ["TL"] = {
-                            "Magkuwento kayo tungkol sa karaban.",
-                        },
-                    },
-                },
-                {
-                    ["consumers"] = {
-                        "participant",
-                    },
-                    ["frame"] = {
-                        ["intent"] = "TRADE",
-                        ["patternID"] = "pattern.trade.concept_open",
-                        ["speechAct"] = "TRADE",
-                        ["subject"] = "TRADE",
-                        ["topic"] = "trade",
-                    },
-                    ["id"] = "action.trade",
-                    ["label"] = {
-                        ["EN"] = {
-                            "Open trading",
-                        },
-                        ["TL"] = {
-                            "Buksan ang kalakalan",
-                        },
-                    },
-                    ["metadata"] = {
-                        ["domain"] = "trade",
-                        ["order"] = 80,
-                    },
-                    ["utterance"] = {
-                        ["EN"] = {
-                            "Let's trade.",
-                        },
-                        ["TL"] = {
-                            "Magpalitan tayo.",
-                        },
-                    },
-                },
-            },
             ["recognition"] = {
                 ["actionProviders"] = {
                     {
@@ -1223,7 +2874,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "adopters/dt/dialogue/trading/trade_conversation_suggestions.json",
+        ["sourceShard"] = "adopters/dt/dialogue/trading/suggestions_recognition.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,

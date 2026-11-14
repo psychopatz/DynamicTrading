@@ -1,0 +1,43 @@
+{
+  "schema": "psychopatz.convo-engine.v1",
+  "kind": "dialogue",
+  "namespace": "question",
+  "id": "origin",
+  "owner": "DTCommon",
+  "metadata": {
+    "textNamespace": "UI_DT_Conversation_Suggestion",
+    "ui": {
+      "id": "question.origin",
+      "order": 30,
+      "patternID": "pattern.trade.concept_origin",
+      "intent": "QUESTION",
+      "speechAct": "QUESTION",
+      "subject": "ORIGIN",
+      "topic": "whereabouts",
+      "domain": "whereabouts"
+    }
+  },
+  "invoke": {
+    "patternID": "pattern.trade.concept_origin",
+    "intent": "QUESTION",
+    "speechAct": "QUESTION",
+    "subject": "ORIGIN",
+    "topic": "whereabouts"
+  },
+  "affordance": {
+    "label": {
+      "EN": "Ask where they came from",
+      "TL": "Itanong kung saan sila nanggaling"
+    },
+    "consumers": [
+      "player"
+    ],
+    "groups": [
+      "whereabouts"
+    ]
+  },
+  "say": {
+    "EN": "Where did you come from?",
+    "TL": "Saan kayo nanggaling?"
+  }
+}
