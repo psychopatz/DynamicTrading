@@ -112,7 +112,7 @@ local function categoryEligibility(category, context)
 end
 
 local function registerReferral(conversations)
-    -- PSDL owns the referral wording and semantic identity.  This adapter only
+    -- ConvoEngine owns the referral wording and semantic identity.  This adapter only
     -- projects the compiled plan into DTHoomans' existing category/block API;
     -- it does not author a second node/choice/outcome source.
     local registry = PsychopatzCore and PsychopatzCore.Conversation
@@ -123,7 +123,7 @@ local function registerReferral(conversations)
     local metadata = payload and payload.metadata or nil
     local runtime = metadata and metadata.runtime or nil
     if type(runtime) ~= "table" then
-        return false, "psdl_referral_plan_unavailable"
+        return false, "convo_referral_plan_unavailable"
     end
     local category = type(conversations.GetCategory) == "function"
         and conversations.GetCategory(CATEGORY_ID)
