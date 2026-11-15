@@ -9,7 +9,7 @@
     "DTCommon_Trade_Selling": "Selling...",
     "DTCommon_Trade_Rejected": "Trade rejected.",
     "DTHoomans_Debug_SpawnTrader": "[Debug] Spawn Trader",
-    "DTHoomans_Debug_TraderManager_Title": "Trader Manager",
+    "DTHoomans_Debug_TraderManager_Title": "Trader Caravan Manager",
     "DTHoomans_Debug_TraderManager_Description": "List, process, locate, teleport, and open spawned trader caravans.",
     "DTHoomans_Trade": "Trade",
     "DTAbstract_Radio_ContactCaravanTrader": "[Radio] Contact Caravan Trader",

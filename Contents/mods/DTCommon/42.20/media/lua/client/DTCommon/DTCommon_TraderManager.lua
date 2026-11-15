@@ -9,6 +9,13 @@ local Manager = DTCommon.TraderManager
 local Presentation = DTCommon.TraderPresentation
     or require "DTCommon/DTCommon_TraderPresentation"
 
+local function translate(key, fallback)
+    if type(DTCommon.T) == "function" then
+        return DTCommon.T(key, fallback)
+    end
+    return fallback
+end
+
 Manager.Providers = Manager.Providers or {}
 Manager.MAX_ROWS = tonumber(Manager.MAX_ROWS) or 18
 Manager.instance = Manager.instance or nil
@@ -415,8 +422,14 @@ then
         source = "Dynamic Trading",
         order = 220,
         category = "dynamictrading",
-        title = "Trader Manager",
-        description = "Inspect and operate Dynamic Trading traders.",
+        title = translate(
+            "DTHoomans_Debug_TraderManager_Title",
+            "Trader Caravan Manager"
+        ),
+        description = translate(
+            "DTHoomans_Debug_TraderManager_Description",
+            "List, process, locate, teleport, and open spawned trader caravans."
+        ),
         available = Manager.CanUse,
         action = Manager.Open,
     })
