@@ -74,5 +74,5 @@ return {
             ["sourceShard"] = "adopters/dt/dialogue/trading/question_trader.json",
         },
     },
-    ["wholeModelFingerprint"] = "cbb4cb3ed7fc811f24daf61d5cdc28a1eaadeca80bf3bf479fd46a6ac31ac2ac",
+    ["wholeModelFingerprint"] = "378c3e2c710385fdd0d7566e54615724754d13e78313864e68c9e818bc6ebc72",
 }
