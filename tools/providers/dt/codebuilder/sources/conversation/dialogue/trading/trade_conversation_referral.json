@@ -1,9 +1,6 @@
 {
-  "schema": "psychopatz.convo-engine.v1",
-  "kind": "dialogue",
-  "namespace": "trade.conversation",
-  "id": "referral",
-  "owner": "DTCommon",
+  "schema": "psychopatz.psdl.v2",
+  "id": "trade.conversation.referral",
   "target": {
     "type": "entity.person",
     "required": false

@@ -1,9 +1,6 @@
 {
-  "schema": "psychopatz.convo-engine.v1",
-  "kind": "dialogue",
-  "namespace": "question",
-  "id": "story",
-  "owner": "DTCommon",
+  "schema": "psychopatz.psdl.v2",
+  "id": "question.story",
   "metadata": {
     "textNamespace": "UI_DT_Conversation_Suggestion",
     "ui": {

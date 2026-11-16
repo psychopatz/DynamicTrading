@@ -1,9 +1,6 @@
 {
-  "schema": "psychopatz.convo-engine.v1",
-  "kind": "dialogue",
-  "namespace": "trade.conversation",
-  "id": "suggestions_recognition",
-  "owner": "DTCommon",
+  "schema": "psychopatz.psdl.v2",
+  "id": "trade.conversation.suggestions_recognition",
   "recognition": {
     "packID": "pack.DT.trader_story",
     "ownerModID": "DynamicTrading",
