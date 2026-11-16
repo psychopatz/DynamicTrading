@@ -2,6 +2,7 @@
 return {
     {
         ["domain"] = "trading",
+        ["domainPath"] = "trading",
         ["exchangeFamily"] = {
             ["affordance"] = {
                 ["consumers"] = {
@@ -101,7 +102,7 @@ return {
             ["sourcePath"] = "dialogue/trading/action_trade.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
-        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
         ["namespace"] = "action",
         ["owner"] = "DTCommon",
         ["participants"] = {
@@ -244,6 +245,7 @@ return {
     },
     {
         ["domain"] = "trading",
+        ["domainPath"] = "trading",
         ["exchangeFamily"] = {
             ["affordance"] = {
                 ["consumers"] = {
@@ -343,7 +345,7 @@ return {
             ["sourcePath"] = "dialogue/trading/question_destination.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
-        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
         ["namespace"] = "question",
         ["owner"] = "DTCommon",
         ["participants"] = {
@@ -486,6 +488,7 @@ return {
     },
     {
         ["domain"] = "trading",
+        ["domainPath"] = "trading",
         ["exchangeFamily"] = {
             ["affordance"] = {
                 ["consumers"] = {
@@ -585,7 +588,7 @@ return {
             ["sourcePath"] = "dialogue/trading/question_origin.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
-        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
         ["namespace"] = "question",
         ["owner"] = "DTCommon",
         ["participants"] = {
@@ -728,6 +731,7 @@ return {
     },
     {
         ["domain"] = "trading",
+        ["domainPath"] = "trading",
         ["exchangeFamily"] = {
             ["affordance"] = {
                 ["consumers"] = {
@@ -827,7 +831,7 @@ return {
             ["sourcePath"] = "dialogue/trading/question_rumors.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
-        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
         ["namespace"] = "question",
         ["owner"] = "DTCommon",
         ["participants"] = {
@@ -970,6 +974,7 @@ return {
     },
     {
         ["domain"] = "trading",
+        ["domainPath"] = "trading",
         ["exchangeFamily"] = {
             ["affordance"] = {
                 ["consumers"] = {
@@ -1069,7 +1074,7 @@ return {
             ["sourcePath"] = "dialogue/trading/question_settlement.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
-        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
         ["namespace"] = "question",
         ["owner"] = "DTCommon",
         ["participants"] = {
@@ -1212,6 +1217,7 @@ return {
     },
     {
         ["domain"] = "trading",
+        ["domainPath"] = "trading",
         ["exchangeFamily"] = {
             ["affordance"] = {
                 ["consumers"] = {
@@ -1311,7 +1317,7 @@ return {
             ["sourcePath"] = "dialogue/trading/question_story.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
-        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
         ["namespace"] = "question",
         ["owner"] = "DTCommon",
         ["participants"] = {
@@ -1454,6 +1460,7 @@ return {
     },
     {
         ["domain"] = "trading",
+        ["domainPath"] = "trading",
         ["exchangeFamily"] = {
             ["affordance"] = {
                 ["consumers"] = {
@@ -1553,7 +1560,7 @@ return {
             ["sourcePath"] = "dialogue/trading/question_trader.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
-        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
         ["namespace"] = "question",
         ["owner"] = "DTCommon",
         ["participants"] = {
@@ -1696,6 +1703,7 @@ return {
     },
     {
         ["domain"] = "trading",
+        ["domainPath"] = "trading",
         ["exchangeFamily"] = {
             ["affordance"] = {
                 ["consumers"] = {
@@ -1795,7 +1803,7 @@ return {
             ["sourcePath"] = "dialogue/trading/question_whereabouts.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
-        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
         ["namespace"] = "question",
         ["owner"] = "DTCommon",
         ["participants"] = {
@@ -1938,6 +1946,7 @@ return {
     },
     {
         ["domain"] = "trading",
+        ["domainPath"] = "trading",
         ["exchangeFamily"] = {
             ["familyID"] = "trade.conversation.opening",
             ["initiatingSay"] = {
@@ -1998,7 +2007,7 @@ return {
             ["sourcePath"] = "dialogue/trading/trade_conversation_opening.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
-        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
         ["namespace"] = "trade.conversation",
         ["owner"] = "DTCommon",
         ["participants"] = {
@@ -2135,6 +2144,7 @@ return {
     },
     {
         ["domain"] = "trading",
+        ["domainPath"] = "trading",
         ["exchangeFamily"] = {
             ["familyID"] = "trade.conversation.referral",
             ["initiatingSay"] = {
@@ -2195,7 +2205,7 @@ return {
             ["sourcePath"] = "dialogue/trading/trade_conversation_referral.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
-        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
         ["namespace"] = "trade.conversation",
         ["owner"] = "DTCommon",
         ["participants"] = {
@@ -2334,6 +2344,7 @@ return {
     },
     {
         ["domain"] = "trading",
+        ["domainPath"] = "trading",
         ["id"] = "trade.conversation.suggestions_recognition",
         ["kind"] = "dialogue",
         ["lineage"] = {
@@ -2344,7 +2355,7 @@ return {
             ["sourcePath"] = "dialogue/trading/suggestions_recognition.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
-        ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
+        ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
         ["namespace"] = "trade.conversation",
         ["owner"] = "DTCommon",
         ["participants"] = {
