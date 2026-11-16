@@ -19,7 +19,7 @@ return {
             ["shardOwner"] = "DTCommon",
             ["sourceOwner"] = "DTCommon",
             ["sourcePath"] = "tools/providers/dt/codebuilder/sources/conversation/dialogue/trading/suggestions_recognition.json",
-            ["sourceRepository"] = "/home/psychopatz/Zomboid/Workshop/DynamicTrading",
+            ["sourceRepository"] = "DynamicTrading",
             ["sourceShard"] = "adopters/dt/dialogue/trading/suggestions_recognition.json",
         },
         {
@@ -46,7 +46,7 @@ return {
             ["shardOwner"] = "DTCommon",
             ["sourceOwner"] = "DTCommon",
             ["sourcePath"] = "tools/providers/dt/codebuilder/sources/conversation/dialogue/trading/action_trade.json",
-            ["sourceRepository"] = "/home/psychopatz/Zomboid/Workshop/DynamicTrading",
+            ["sourceRepository"] = "DynamicTrading",
             ["sourceShard"] = "adopters/dt/dialogue/trading/action_trade.json",
         },
         {
@@ -70,7 +70,7 @@ return {
             ["shardOwner"] = "DTCommon",
             ["sourceOwner"] = "DTCommon",
             ["sourcePath"] = "tools/providers/dt/codebuilder/sources/conversation/dialogue/trading/question_trader.json",
-            ["sourceRepository"] = "/home/psychopatz/Zomboid/Workshop/DynamicTrading",
+            ["sourceRepository"] = "DynamicTrading",
             ["sourceShard"] = "adopters/dt/dialogue/trading/question_trader.json",
         },
     },
