@@ -115,10 +115,25 @@ local function registerReferral(conversations)
     -- ConvoEngine owns the referral wording and semantic identity.  This adapter only
     -- projects the compiled plan into DTHoomans' existing category/block API;
     -- it does not author a second node/choice/outcome source.
-    local registry = PsychopatzCore and PsychopatzCore.Conversation
+    local convoRegistry = DTCommon
+        and ((DTCommon.ConvoEngine and DTCommon.ConvoEngine.Registry)
+            or DTCommon.GeneratedSemanticRegistry)
+        or nil
+    if not (convoRegistry and type(convoRegistry.ConvoPlan) == "function")
+        and type(require) == "function"
+    then
+        local loadedRegistry = require "DTCommon/ConvoEngine/Registry"
+        if type(loadedRegistry) == "table" then
+            convoRegistry = loadedRegistry
+        end
+    end
+    local coreRegistry = PsychopatzCore and PsychopatzCore.Conversation
         and PsychopatzCore.Conversation.Registry or nil
-    local plan = registry and type(registry.ConvoPlan) == "function"
-        and registry.ConvoPlan("trade.conversation.referral") or nil
+    local plan = (convoRegistry and type(convoRegistry.ConvoPlan) == "function"
+        and convoRegistry.ConvoPlan("trade.conversation.referral"))
+        or (coreRegistry and type(coreRegistry.ConvoPlan) == "function"
+            and coreRegistry.ConvoPlan("trade.conversation.referral"))
+        or nil
     local payload = plan and plan.payload or nil
     local metadata = payload and payload.metadata or nil
     local runtime = metadata and metadata.runtime or nil
