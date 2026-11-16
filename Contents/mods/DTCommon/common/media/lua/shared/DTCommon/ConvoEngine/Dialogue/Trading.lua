@@ -98,7 +98,7 @@ return {
             ["canonicalSchema"] = "psychopatz.convo-engine.v1",
             ["localId"] = "trade",
             ["sourceId"] = "action.trade",
-            ["sourcePath"] = "adopters/dt/dialogue/trading/action_trade.json",
+            ["sourcePath"] = "dialogue/trading/action_trade.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
@@ -204,7 +204,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "adopters/dt/dialogue/trading/action_trade.json",
+        ["sourceShard"] = "dialogue/trading/action_trade.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,
@@ -340,7 +340,7 @@ return {
             ["canonicalSchema"] = "psychopatz.convo-engine.v1",
             ["localId"] = "destination",
             ["sourceId"] = "question.destination",
-            ["sourcePath"] = "adopters/dt/dialogue/trading/question_destination.json",
+            ["sourcePath"] = "dialogue/trading/question_destination.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
@@ -446,7 +446,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "adopters/dt/dialogue/trading/question_destination.json",
+        ["sourceShard"] = "dialogue/trading/question_destination.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,
@@ -582,7 +582,7 @@ return {
             ["canonicalSchema"] = "psychopatz.convo-engine.v1",
             ["localId"] = "origin",
             ["sourceId"] = "question.origin",
-            ["sourcePath"] = "adopters/dt/dialogue/trading/question_origin.json",
+            ["sourcePath"] = "dialogue/trading/question_origin.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
@@ -688,7 +688,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "adopters/dt/dialogue/trading/question_origin.json",
+        ["sourceShard"] = "dialogue/trading/question_origin.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,
@@ -824,7 +824,7 @@ return {
             ["canonicalSchema"] = "psychopatz.convo-engine.v1",
             ["localId"] = "rumors",
             ["sourceId"] = "question.rumors",
-            ["sourcePath"] = "adopters/dt/dialogue/trading/question_rumors.json",
+            ["sourcePath"] = "dialogue/trading/question_rumors.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
@@ -930,7 +930,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "adopters/dt/dialogue/trading/question_rumors.json",
+        ["sourceShard"] = "dialogue/trading/question_rumors.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,
@@ -1066,7 +1066,7 @@ return {
             ["canonicalSchema"] = "psychopatz.convo-engine.v1",
             ["localId"] = "settlement",
             ["sourceId"] = "question.settlement",
-            ["sourcePath"] = "adopters/dt/dialogue/trading/question_settlement.json",
+            ["sourcePath"] = "dialogue/trading/question_settlement.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
@@ -1172,7 +1172,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "adopters/dt/dialogue/trading/question_settlement.json",
+        ["sourceShard"] = "dialogue/trading/question_settlement.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,
@@ -1308,7 +1308,7 @@ return {
             ["canonicalSchema"] = "psychopatz.convo-engine.v1",
             ["localId"] = "story",
             ["sourceId"] = "question.story",
-            ["sourcePath"] = "adopters/dt/dialogue/trading/question_story.json",
+            ["sourcePath"] = "dialogue/trading/question_story.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
@@ -1414,7 +1414,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "adopters/dt/dialogue/trading/question_story.json",
+        ["sourceShard"] = "dialogue/trading/question_story.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,
@@ -1550,7 +1550,7 @@ return {
             ["canonicalSchema"] = "psychopatz.convo-engine.v1",
             ["localId"] = "trader",
             ["sourceId"] = "question.trader",
-            ["sourcePath"] = "adopters/dt/dialogue/trading/question_trader.json",
+            ["sourcePath"] = "dialogue/trading/question_trader.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
@@ -1656,7 +1656,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "adopters/dt/dialogue/trading/question_trader.json",
+        ["sourceShard"] = "dialogue/trading/question_trader.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,
@@ -1792,7 +1792,7 @@ return {
             ["canonicalSchema"] = "psychopatz.convo-engine.v1",
             ["localId"] = "whereabouts",
             ["sourceId"] = "question.whereabouts",
-            ["sourcePath"] = "adopters/dt/dialogue/trading/question_whereabouts.json",
+            ["sourcePath"] = "dialogue/trading/question_whereabouts.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
@@ -1898,7 +1898,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "adopters/dt/dialogue/trading/question_whereabouts.json",
+        ["sourceShard"] = "dialogue/trading/question_whereabouts.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,
@@ -1995,7 +1995,7 @@ return {
             ["canonicalSchema"] = "psychopatz.convo-engine.v1",
             ["localId"] = "opening",
             ["sourceId"] = "trade.conversation.opening",
-            ["sourcePath"] = "adopters/dt/dialogue/trading/trade_conversation_opening.json",
+            ["sourcePath"] = "dialogue/trading/trade_conversation_opening.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
@@ -2108,7 +2108,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "adopters/dt/dialogue/trading/trade_conversation_opening.json",
+        ["sourceShard"] = "dialogue/trading/trade_conversation_opening.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,
@@ -2192,7 +2192,7 @@ return {
             ["canonicalSchema"] = "psychopatz.convo-engine.v1",
             ["localId"] = "referral",
             ["sourceId"] = "trade.conversation.referral",
-            ["sourcePath"] = "adopters/dt/dialogue/trading/trade_conversation_referral.json",
+            ["sourcePath"] = "dialogue/trading/trade_conversation_referral.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
@@ -2307,7 +2307,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "adopters/dt/dialogue/trading/trade_conversation_referral.json",
+        ["sourceShard"] = "dialogue/trading/trade_conversation_referral.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,
@@ -2341,7 +2341,7 @@ return {
             ["canonicalSchema"] = "psychopatz.convo-engine.v1",
             ["localId"] = "suggestions_recognition",
             ["sourceId"] = "trade.conversation.suggestions_recognition",
-            ["sourcePath"] = "adopters/dt/dialogue/trading/suggestions_recognition.json",
+            ["sourcePath"] = "dialogue/trading/suggestions_recognition.json",
             ["sourceSchema"] = "psychopatz.psdl.v2",
         },
         ["module"] = "PNC/ConvoEngine/Dialogue/Trading",
@@ -2894,7 +2894,7 @@ return {
         },
         ["slots"] = {
         },
-        ["sourceShard"] = "adopters/dt/dialogue/trading/suggestions_recognition.json",
+        ["sourceShard"] = "dialogue/trading/suggestions_recognition.json",
         ["target"] = {
             ["multiple"] = false,
             ["required"] = false,

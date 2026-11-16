@@ -1,0 +1,47 @@
+{
+  "schema": "psychopatz.psdl.package.v2",
+  "version": 1,
+  "package": "DTCommon",
+  "defaultOwner": "DTCommon",
+  "registryOwner": "DTCommon",
+  "imports": [
+    "PsychopatzCore"
+  ],
+  "defaults": {
+    "participants": {
+      "speaker": [
+        "participant"
+      ],
+      "addressee": [
+        "participant"
+      ]
+    }
+  },
+  "profiles": {
+    "dialogue_participant": {
+      "kind": "dialogue",
+      "participants": {
+        "speaker": [
+          "participant"
+        ],
+        "addressee": [
+          "participant"
+        ]
+      }
+    }
+  },
+  "requiredCapabilities": [
+    "speech",
+    "DT.trade"
+  ],
+  "sourceRoots": [
+    {
+      "path": "dialogue",
+      "kind": "convo_engine",
+      "domain": "trading",
+      "order": 3010,
+      "owner": "DTCommon",
+      "domainFromSubdir": true
+    }
+  ]
+}

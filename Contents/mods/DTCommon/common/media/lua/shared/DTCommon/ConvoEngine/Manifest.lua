@@ -20,10 +20,10 @@ return {
             ["sourceOwner"] = "DTCommon",
             ["sourcePath"] = "tools/providers/dt/codebuilder/sources/conversation/dialogue/trading/suggestions_recognition.json",
             ["sourceRepository"] = "DynamicTrading",
-            ["sourceShard"] = "adopters/dt/dialogue/trading/suggestions_recognition.json",
+            ["sourceShard"] = "dialogue/trading/suggestions_recognition.json",
         },
         {
-            ["bytes"] = 109397,
+            ["bytes"] = 109133,
             ["domain"] = "trading",
             ["kind"] = "ConvoEngine",
             ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
@@ -47,7 +47,7 @@ return {
             ["sourceOwner"] = "DTCommon",
             ["sourcePath"] = "tools/providers/dt/codebuilder/sources/conversation/dialogue/trading/action_trade.json",
             ["sourceRepository"] = "DynamicTrading",
-            ["sourceShard"] = "adopters/dt/dialogue/trading/action_trade.json",
+            ["sourceShard"] = "dialogue/trading/action_trade.json",
         },
         {
             ["bytes"] = 8399,
@@ -71,8 +71,8 @@ return {
             ["sourceOwner"] = "DTCommon",
             ["sourcePath"] = "tools/providers/dt/codebuilder/sources/conversation/dialogue/trading/question_trader.json",
             ["sourceRepository"] = "DynamicTrading",
-            ["sourceShard"] = "adopters/dt/dialogue/trading/question_trader.json",
+            ["sourceShard"] = "dialogue/trading/question_trader.json",
         },
     },
-    ["wholeModelFingerprint"] = "56dca873764e172f9335e7929cf2901799769cc1e737ef494dfb13c669953986",
+    ["wholeModelFingerprint"] = "89b22cb813b6820e922e6292086a95ead039453ef38cc0a9081c54939e325313",
 }
