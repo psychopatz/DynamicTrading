@@ -36,5 +36,45 @@
   "say": {
     "EN": "Let's trade.",
     "TL": "Magpalitan tayo."
-  }
+  },
+  "roles": {
+    "speaker": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    },
+    "addressee": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    },
+    "target": {
+      "cardinality": "OPTIONAL_ONE",
+      "kinds": [
+        "actor",
+        "entity"
+      ]
+    }
+  },
+  "domains": [
+    {
+      "domain": "trade",
+      "owner": "DTCommon"
+    }
+  ],
+  "topics": [
+    {
+      "id": "trade",
+      "domain": "trade"
+    }
+  ],
+  "slots": {
+    "item": {
+      "type": "entity.item",
+      "required": false
+    }
+  },
+  "owner": "DTCommon"
 }

@@ -36,5 +36,32 @@
   "say": {
     "EN": "Any news from the road?",
     "TL": "May balita ba mula sa daan?"
-  }
+  },
+  "roles": {
+    "speaker": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    },
+    "addressee": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    }
+  },
+  "domains": [
+    {
+      "domain": "trade",
+      "owner": "DTCommon"
+    }
+  ],
+  "topics": [
+    {
+      "id": "market_rumors",
+      "domain": "trade"
+    }
+  ],
+  "owner": "DTCommon"
 }

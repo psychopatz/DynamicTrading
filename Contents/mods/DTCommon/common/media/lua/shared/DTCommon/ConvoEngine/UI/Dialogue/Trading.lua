@@ -19,6 +19,14 @@ return {
         ["order"] = 10,
         ["owner"] = "DTCommon",
         ["patternID"] = "pattern.trade.concept_who",
+        ["slots"] = {
+            ["subject"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.person",
+            },
+        },
         ["speechAct"] = "QUESTION",
         ["subject"] = "TRADER",
         ["target"] = {
@@ -49,6 +57,14 @@ return {
         ["order"] = 20,
         ["owner"] = "DTCommon",
         ["patternID"] = "pattern.trade.concept_destination",
+        ["slots"] = {
+            ["location"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.location",
+            },
+        },
         ["speechAct"] = "QUESTION",
         ["subject"] = "DESTINATION",
         ["target"] = {
@@ -79,6 +95,14 @@ return {
         ["order"] = 30,
         ["owner"] = "DTCommon",
         ["patternID"] = "pattern.trade.concept_origin",
+        ["slots"] = {
+            ["location"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.location",
+            },
+        },
         ["speechAct"] = "QUESTION",
         ["subject"] = "ORIGIN",
         ["target"] = {
@@ -109,6 +133,14 @@ return {
         ["order"] = 40,
         ["owner"] = "DTCommon",
         ["patternID"] = "pattern.trade.concept_settlement",
+        ["slots"] = {
+            ["location"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.location",
+            },
+        },
         ["speechAct"] = "QUESTION",
         ["subject"] = "SETTLEMENT",
         ["target"] = {
@@ -169,6 +201,14 @@ return {
         ["order"] = 60,
         ["owner"] = "DTCommon",
         ["patternID"] = "pattern.trade.concept_whereabouts",
+        ["slots"] = {
+            ["location"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.location",
+            },
+        },
         ["speechAct"] = "QUESTION",
         ["subject"] = "WHEREABOUTS",
         ["target"] = {
@@ -229,6 +269,14 @@ return {
         ["order"] = 80,
         ["owner"] = "DTCommon",
         ["patternID"] = "pattern.trade.concept_open",
+        ["slots"] = {
+            ["item"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.item",
+            },
+        },
         ["speechAct"] = "TRADE",
         ["subject"] = "TRADE",
         ["target"] = {

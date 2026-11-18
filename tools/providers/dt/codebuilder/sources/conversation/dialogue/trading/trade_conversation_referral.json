@@ -61,5 +61,45 @@
         }
       }
     ]
-  }
+  },
+  "roles": {
+    "speaker": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    },
+    "addressee": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    },
+    "target": {
+      "cardinality": "OPTIONAL_ONE",
+      "kinds": [
+        "actor",
+        "entity"
+      ]
+    }
+  },
+  "domains": [
+    {
+      "domain": "trade",
+      "owner": "DTCommon"
+    }
+  ],
+  "topics": [
+    {
+      "id": "caravan_referral",
+      "domain": "trade"
+    }
+  ],
+  "slots": {
+    "location": {
+      "type": "entity.location",
+      "required": false
+    }
+  },
+  "owner": "DTCommon"
 }

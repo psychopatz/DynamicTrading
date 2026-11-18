@@ -36,5 +36,45 @@
   "say": {
     "EN": "Who are you?",
     "TL": "Sino kayo?"
-  }
+  },
+  "roles": {
+    "speaker": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    },
+    "addressee": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    },
+    "target": {
+      "cardinality": "OPTIONAL_ONE",
+      "kinds": [
+        "actor",
+        "entity"
+      ]
+    }
+  },
+  "domains": [
+    {
+      "domain": "trade",
+      "owner": "DTCommon"
+    }
+  ],
+  "topics": [
+    {
+      "id": "trader_identity",
+      "domain": "trade"
+    }
+  ],
+  "slots": {
+    "subject": {
+      "type": "entity.person",
+      "required": false
+    }
+  },
+  "owner": "DTCommon"
 }

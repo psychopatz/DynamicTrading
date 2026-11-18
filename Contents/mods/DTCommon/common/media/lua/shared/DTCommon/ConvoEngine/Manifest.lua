@@ -23,7 +23,7 @@ return {
             ["sourceShard"] = "dialogue/trading/suggestions_recognition.json",
         },
         {
-            ["bytes"] = 109760,
+            ["bytes"] = 122855,
             ["domain"] = "trading",
             ["kind"] = "ConvoEngine",
             ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
@@ -50,7 +50,7 @@ return {
             ["sourceShard"] = "dialogue/trading/action_trade.json",
         },
         {
-            ["bytes"] = 8655,
+            ["bytes"] = 10048,
             ["domain"] = "identity",
             ["kind"] = "UI",
             ["module"] = "DTCommon/ConvoEngine/UI/Dialogue/Trading",
@@ -74,5 +74,5 @@ return {
             ["sourceShard"] = "dialogue/trading/question_trader.json",
         },
     },
-    ["wholeModelFingerprint"] = "f88a36f78eb66b6d4164df3ebdeb578904c8730be1b96f4e105ae4d82cc1dad1",
+    ["wholeModelFingerprint"] = "0e4520381342a822207cddc6a422d4c6aa974855d87d5c171ef66d76098487c4",
 }

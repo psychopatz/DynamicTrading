@@ -36,5 +36,38 @@
   "say": {
     "EN": "Where did you come from?",
     "TL": "Saan kayo nanggaling?"
-  }
+  },
+  "roles": {
+    "speaker": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    },
+    "addressee": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    }
+  },
+  "domains": [
+    {
+      "domain": "trade",
+      "owner": "DTCommon"
+    }
+  ],
+  "topics": [
+    {
+      "id": "origin",
+      "domain": "trade"
+    }
+  ],
+  "slots": {
+    "location": {
+      "type": "entity.location",
+      "required": false
+    }
+  },
+  "owner": "DTCommon"
 }

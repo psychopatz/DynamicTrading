@@ -36,5 +36,38 @@
   "say": {
     "EN": "Where is the nearest settlement?",
     "TL": "Nasaan ang pinakamalapit na pamayanan?"
-  }
+  },
+  "roles": {
+    "speaker": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    },
+    "addressee": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    }
+  },
+  "domains": [
+    {
+      "domain": "trade",
+      "owner": "DTCommon"
+    }
+  ],
+  "topics": [
+    {
+      "id": "settlement",
+      "domain": "trade"
+    }
+  ],
+  "slots": {
+    "location": {
+      "type": "entity.location",
+      "required": false
+    }
+  },
+  "owner": "DTCommon"
 }

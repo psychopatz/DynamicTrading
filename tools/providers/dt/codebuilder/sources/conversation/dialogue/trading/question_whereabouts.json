@@ -36,5 +36,38 @@
   "say": {
     "EN": "What route are you travelling?",
     "TL": "Anong ruta ang tinatahak ninyo?"
-  }
+  },
+  "roles": {
+    "speaker": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    },
+    "addressee": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    }
+  },
+  "domains": [
+    {
+      "domain": "trade",
+      "owner": "DTCommon"
+    }
+  ],
+  "topics": [
+    {
+      "id": "whereabouts",
+      "domain": "trade"
+    }
+  ],
+  "slots": {
+    "location": {
+      "type": "entity.location",
+      "required": false
+    }
+  },
+  "owner": "DTCommon"
 }

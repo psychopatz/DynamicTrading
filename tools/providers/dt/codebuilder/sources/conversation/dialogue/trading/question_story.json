@@ -36,5 +36,32 @@
   "say": {
     "EN": "Tell me a caravan story.",
     "TL": "Magkuwento kayo tungkol sa karaban."
-  }
+  },
+  "roles": {
+    "speaker": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    },
+    "addressee": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    }
+  },
+  "domains": [
+    {
+      "domain": "trade",
+      "owner": "DTCommon"
+    }
+  ],
+  "topics": [
+    {
+      "id": "market_rumors",
+      "domain": "trade"
+    }
+  ],
+  "owner": "DTCommon"
 }

@@ -61,6 +61,14 @@ return {
                 ["topic"] = "trade",
             },
             ["namespace"] = "action",
+            ["slots"] = {
+                ["item"] = {
+                    ["multiple"] = false,
+                    ["public"] = true,
+                    ["required"] = false,
+                    ["type"] = "entity.item",
+                },
+            },
             ["textRoles"] = {
                 {
                     ["fallback"] = "Open trading",
@@ -131,6 +139,12 @@ return {
                 },
                 ["textRole"] = "button_label",
             },
+            ["domains"] = {
+                {
+                    ["domain"] = "trade",
+                    ["owner"] = "DTCommon",
+                },
+            },
             ["invoke"] = {
                 ["intent"] = "TRADE",
                 ["patternID"] = "pattern.trade.concept_open",
@@ -177,6 +191,12 @@ return {
                 },
                 ["textRole"] = "spoken_action",
             },
+            ["topics"] = {
+                {
+                    ["domain"] = "trade",
+                    ["id"] = "trade",
+                },
+            },
         },
         ["references"] = {
         },
@@ -203,7 +223,37 @@ return {
                 },
             },
         },
+        ["roles"] = {
+            ["addressee"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "addressee",
+            },
+            ["speaker"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "speaker",
+            },
+            ["target"] = {
+                ["cardinality"] = "OPTIONAL_ONE",
+                ["kinds"] = {
+                    "actor",
+                    "entity",
+                },
+                ["role"] = "target",
+            },
+        },
         ["slots"] = {
+            ["item"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.item",
+            },
         },
         ["sourceShard"] = "dialogue/trading/action_trade.json",
         ["target"] = {
@@ -304,6 +354,14 @@ return {
                 ["topic"] = "whereabouts",
             },
             ["namespace"] = "question",
+            ["slots"] = {
+                ["location"] = {
+                    ["multiple"] = false,
+                    ["public"] = true,
+                    ["required"] = false,
+                    ["type"] = "entity.location",
+                },
+            },
             ["textRoles"] = {
                 {
                     ["fallback"] = "Ask where they are headed",
@@ -374,6 +432,12 @@ return {
                 },
                 ["textRole"] = "button_label",
             },
+            ["domains"] = {
+                {
+                    ["domain"] = "trade",
+                    ["owner"] = "DTCommon",
+                },
+            },
             ["invoke"] = {
                 ["intent"] = "QUESTION",
                 ["patternID"] = "pattern.trade.concept_destination",
@@ -420,6 +484,12 @@ return {
                 },
                 ["textRole"] = "spoken_action",
             },
+            ["topics"] = {
+                {
+                    ["domain"] = "trade",
+                    ["id"] = "destination",
+                },
+            },
         },
         ["references"] = {
         },
@@ -446,7 +516,29 @@ return {
                 },
             },
         },
+        ["roles"] = {
+            ["addressee"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "addressee",
+            },
+            ["speaker"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "speaker",
+            },
+        },
         ["slots"] = {
+            ["location"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.location",
+            },
         },
         ["sourceShard"] = "dialogue/trading/question_destination.json",
         ["target"] = {
@@ -547,6 +639,14 @@ return {
                 ["topic"] = "whereabouts",
             },
             ["namespace"] = "question",
+            ["slots"] = {
+                ["location"] = {
+                    ["multiple"] = false,
+                    ["public"] = true,
+                    ["required"] = false,
+                    ["type"] = "entity.location",
+                },
+            },
             ["textRoles"] = {
                 {
                     ["fallback"] = "Ask where they came from",
@@ -617,6 +717,12 @@ return {
                 },
                 ["textRole"] = "button_label",
             },
+            ["domains"] = {
+                {
+                    ["domain"] = "trade",
+                    ["owner"] = "DTCommon",
+                },
+            },
             ["invoke"] = {
                 ["intent"] = "QUESTION",
                 ["patternID"] = "pattern.trade.concept_origin",
@@ -663,6 +769,12 @@ return {
                 },
                 ["textRole"] = "spoken_action",
             },
+            ["topics"] = {
+                {
+                    ["domain"] = "trade",
+                    ["id"] = "origin",
+                },
+            },
         },
         ["references"] = {
         },
@@ -689,7 +801,29 @@ return {
                 },
             },
         },
+        ["roles"] = {
+            ["addressee"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "addressee",
+            },
+            ["speaker"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "speaker",
+            },
+        },
         ["slots"] = {
+            ["location"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.location",
+            },
         },
         ["sourceShard"] = "dialogue/trading/question_origin.json",
         ["target"] = {
@@ -860,6 +994,12 @@ return {
                 },
                 ["textRole"] = "button_label",
             },
+            ["domains"] = {
+                {
+                    ["domain"] = "trade",
+                    ["owner"] = "DTCommon",
+                },
+            },
             ["invoke"] = {
                 ["intent"] = "GOSSIP",
                 ["patternID"] = "pattern.trade.concept_rumors",
@@ -906,6 +1046,12 @@ return {
                 },
                 ["textRole"] = "spoken_action",
             },
+            ["topics"] = {
+                {
+                    ["domain"] = "trade",
+                    ["id"] = "market_rumors",
+                },
+            },
         },
         ["references"] = {
         },
@@ -930,6 +1076,22 @@ return {
                         },
                     },
                 },
+            },
+        },
+        ["roles"] = {
+            ["addressee"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "addressee",
+            },
+            ["speaker"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "speaker",
             },
         },
         ["slots"] = {
@@ -1033,6 +1195,14 @@ return {
                 ["topic"] = "whereabouts",
             },
             ["namespace"] = "question",
+            ["slots"] = {
+                ["location"] = {
+                    ["multiple"] = false,
+                    ["public"] = true,
+                    ["required"] = false,
+                    ["type"] = "entity.location",
+                },
+            },
             ["textRoles"] = {
                 {
                     ["fallback"] = "Ask about the nearest settlement",
@@ -1103,6 +1273,12 @@ return {
                 },
                 ["textRole"] = "button_label",
             },
+            ["domains"] = {
+                {
+                    ["domain"] = "trade",
+                    ["owner"] = "DTCommon",
+                },
+            },
             ["invoke"] = {
                 ["intent"] = "QUESTION",
                 ["patternID"] = "pattern.trade.concept_settlement",
@@ -1149,6 +1325,12 @@ return {
                 },
                 ["textRole"] = "spoken_action",
             },
+            ["topics"] = {
+                {
+                    ["domain"] = "trade",
+                    ["id"] = "settlement",
+                },
+            },
         },
         ["references"] = {
         },
@@ -1175,7 +1357,29 @@ return {
                 },
             },
         },
+        ["roles"] = {
+            ["addressee"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "addressee",
+            },
+            ["speaker"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "speaker",
+            },
+        },
         ["slots"] = {
+            ["location"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.location",
+            },
         },
         ["sourceShard"] = "dialogue/trading/question_settlement.json",
         ["target"] = {
@@ -1346,6 +1550,12 @@ return {
                 },
                 ["textRole"] = "button_label",
             },
+            ["domains"] = {
+                {
+                    ["domain"] = "trade",
+                    ["owner"] = "DTCommon",
+                },
+            },
             ["invoke"] = {
                 ["intent"] = "GOSSIP",
                 ["patternID"] = "pattern.trade.concept_story",
@@ -1392,6 +1602,12 @@ return {
                 },
                 ["textRole"] = "spoken_action",
             },
+            ["topics"] = {
+                {
+                    ["domain"] = "trade",
+                    ["id"] = "market_rumors",
+                },
+            },
         },
         ["references"] = {
         },
@@ -1416,6 +1632,22 @@ return {
                         },
                     },
                 },
+            },
+        },
+        ["roles"] = {
+            ["addressee"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "addressee",
+            },
+            ["speaker"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "speaker",
             },
         },
         ["slots"] = {
@@ -1519,6 +1751,14 @@ return {
                 ["topic"] = "identity",
             },
             ["namespace"] = "question",
+            ["slots"] = {
+                ["subject"] = {
+                    ["multiple"] = false,
+                    ["public"] = true,
+                    ["required"] = false,
+                    ["type"] = "entity.person",
+                },
+            },
             ["textRoles"] = {
                 {
                     ["fallback"] = "Ask who they are",
@@ -1589,6 +1829,12 @@ return {
                 },
                 ["textRole"] = "button_label",
             },
+            ["domains"] = {
+                {
+                    ["domain"] = "trade",
+                    ["owner"] = "DTCommon",
+                },
+            },
             ["invoke"] = {
                 ["intent"] = "QUESTION",
                 ["patternID"] = "pattern.trade.concept_who",
@@ -1635,6 +1881,12 @@ return {
                 },
                 ["textRole"] = "spoken_action",
             },
+            ["topics"] = {
+                {
+                    ["domain"] = "trade",
+                    ["id"] = "trader_identity",
+                },
+            },
         },
         ["references"] = {
         },
@@ -1661,7 +1913,37 @@ return {
                 },
             },
         },
+        ["roles"] = {
+            ["addressee"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "addressee",
+            },
+            ["speaker"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "speaker",
+            },
+            ["target"] = {
+                ["cardinality"] = "OPTIONAL_ONE",
+                ["kinds"] = {
+                    "actor",
+                    "entity",
+                },
+                ["role"] = "target",
+            },
+        },
         ["slots"] = {
+            ["subject"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.person",
+            },
         },
         ["sourceShard"] = "dialogue/trading/question_trader.json",
         ["target"] = {
@@ -1762,6 +2044,14 @@ return {
                 ["topic"] = "whereabouts",
             },
             ["namespace"] = "question",
+            ["slots"] = {
+                ["location"] = {
+                    ["multiple"] = false,
+                    ["public"] = true,
+                    ["required"] = false,
+                    ["type"] = "entity.location",
+                },
+            },
             ["textRoles"] = {
                 {
                     ["fallback"] = "Ask about their travels",
@@ -1832,6 +2122,12 @@ return {
                 },
                 ["textRole"] = "button_label",
             },
+            ["domains"] = {
+                {
+                    ["domain"] = "trade",
+                    ["owner"] = "DTCommon",
+                },
+            },
             ["invoke"] = {
                 ["intent"] = "QUESTION",
                 ["patternID"] = "pattern.trade.concept_whereabouts",
@@ -1878,6 +2174,12 @@ return {
                 },
                 ["textRole"] = "spoken_action",
             },
+            ["topics"] = {
+                {
+                    ["domain"] = "trade",
+                    ["id"] = "whereabouts",
+                },
+            },
         },
         ["references"] = {
         },
@@ -1904,7 +2206,29 @@ return {
                 },
             },
         },
+        ["roles"] = {
+            ["addressee"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "addressee",
+            },
+            ["speaker"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "speaker",
+            },
+        },
         ["slots"] = {
+            ["location"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.location",
+            },
         },
         ["sourceShard"] = "dialogue/trading/question_whereabouts.json",
         ["target"] = {
@@ -1979,6 +2303,14 @@ return {
                 ["textRole"] = "spoken_action",
             },
             ["namespace"] = "trade.conversation",
+            ["slots"] = {
+                ["item"] = {
+                    ["multiple"] = false,
+                    ["public"] = true,
+                    ["required"] = false,
+                    ["type"] = "entity.item",
+                },
+            },
             ["textRoles"] = {
                 {
                     ["fallback"] = "Let's see what we can trade.",
@@ -2019,6 +2351,12 @@ return {
             },
         },
         ["payload"] = {
+            ["domains"] = {
+                {
+                    ["domain"] = "trade",
+                    ["owner"] = "DTCommon",
+                },
+            },
             ["metadata"] = {
                 ["responseAct"] = "TRADE_OPENING",
                 ["runtime"] = {
@@ -2089,6 +2427,12 @@ return {
                 },
                 ["textRole"] = "spoken_action",
             },
+            ["topics"] = {
+                {
+                    ["domain"] = "trade",
+                    ["id"] = "trade",
+                },
+            },
         },
         ["references"] = {
         },
@@ -2115,7 +2459,37 @@ return {
                 },
             },
         },
+        ["roles"] = {
+            ["addressee"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "addressee",
+            },
+            ["speaker"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "speaker",
+            },
+            ["target"] = {
+                ["cardinality"] = "OPTIONAL_ONE",
+                ["kinds"] = {
+                    "actor",
+                    "entity",
+                },
+                ["role"] = "target",
+            },
+        },
         ["slots"] = {
+            ["item"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.item",
+            },
         },
         ["sourceShard"] = "dialogue/trading/trade_conversation_opening.json",
         ["target"] = {
@@ -2177,6 +2551,14 @@ return {
                 ["textRole"] = "spoken_action",
             },
             ["namespace"] = "trade.conversation",
+            ["slots"] = {
+                ["location"] = {
+                    ["multiple"] = false,
+                    ["public"] = true,
+                    ["required"] = false,
+                    ["type"] = "entity.location",
+                },
+            },
             ["textRoles"] = {
                 {
                     ["fallback"] = "I am just a mercenary. Our trader handles the deals.",
@@ -2217,6 +2599,12 @@ return {
             },
         },
         ["payload"] = {
+            ["domains"] = {
+                {
+                    ["domain"] = "trade",
+                    ["owner"] = "DTCommon",
+                },
+            },
             ["metadata"] = {
                 ["responseAct"] = "TRADER_REFERRAL",
                 ["runtime"] = {
@@ -2289,6 +2677,12 @@ return {
                 },
                 ["textRole"] = "spoken_action",
             },
+            ["topics"] = {
+                {
+                    ["domain"] = "trade",
+                    ["id"] = "caravan_referral",
+                },
+            },
         },
         ["references"] = {
         },
@@ -2315,7 +2709,37 @@ return {
                 },
             },
         },
+        ["roles"] = {
+            ["addressee"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "addressee",
+            },
+            ["speaker"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "speaker",
+            },
+            ["target"] = {
+                ["cardinality"] = "OPTIONAL_ONE",
+                ["kinds"] = {
+                    "actor",
+                    "entity",
+                },
+                ["role"] = "target",
+            },
+        },
         ["slots"] = {
+            ["location"] = {
+                ["multiple"] = false,
+                ["public"] = true,
+                ["required"] = false,
+                ["type"] = "entity.location",
+            },
         },
         ["sourceShard"] = "dialogue/trading/trade_conversation_referral.json",
         ["target"] = {
@@ -2367,6 +2791,12 @@ return {
             },
         },
         ["payload"] = {
+            ["domains"] = {
+                {
+                    ["domain"] = "trade",
+                    ["owner"] = "DTCommon",
+                },
+            },
             ["recognition"] = {
                 ["actionProviders"] = {
                     {
@@ -2900,8 +3330,30 @@ return {
                 },
                 ["version"] = 2,
             },
+            ["topics"] = {
+                {
+                    ["domain"] = "trade",
+                    ["id"] = "trade_suggestions",
+                },
+            },
         },
         ["references"] = {
+        },
+        ["roles"] = {
+            ["addressee"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "addressee",
+            },
+            ["speaker"] = {
+                ["cardinality"] = "ONE",
+                ["kinds"] = {
+                    "actor",
+                },
+                ["role"] = "speaker",
+            },
         },
         ["slots"] = {
         },

@@ -533,5 +533,32 @@
         "effectID": "DT.rumors"
       }
     ]
-  }
+  },
+  "roles": {
+    "speaker": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    },
+    "addressee": {
+      "cardinality": "ONE",
+      "kinds": [
+        "actor"
+      ]
+    }
+  },
+  "domains": [
+    {
+      "domain": "trade",
+      "owner": "DTCommon"
+    }
+  ],
+  "topics": [
+    {
+      "id": "trade_suggestions",
+      "domain": "trade"
+    }
+  ],
+  "owner": "DTCommon"
 }
