@@ -2606,6 +2606,10 @@ return {
                 },
             },
             ["metadata"] = {
+                ["modernizationRetention"] = {
+                    ["evidenceCode"] = "DISTINCT_SEMANTIC_ACT_OR_INTENT",
+                    ["reason"] = "trade.conversation.referral owns TRADER_REFERRAL guard referral dialogue while trade.conversation.suggestions_recognition owns the trader_story NLU recognition pack.",
+                },
                 ["responseAct"] = "TRADER_REFERRAL",
                 ["runtime"] = {
                     ["blockID"] = "dthoomans:caravan_referral",
