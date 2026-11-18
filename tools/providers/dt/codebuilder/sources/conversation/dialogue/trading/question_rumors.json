@@ -1,5 +1,5 @@
 {
-  "schema": "psychopatz.psdl.v2",
+  "schema": "psychopatz.convo-engine.v1",
   "id": "question.rumors",
   "metadata": {
     "textNamespace": "UI_DT_Conversation_Suggestion",

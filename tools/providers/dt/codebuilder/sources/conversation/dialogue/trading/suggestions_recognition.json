@@ -1,5 +1,5 @@
 {
-  "schema": "psychopatz.psdl.v2",
+  "schema": "psychopatz.convo-engine.v1",
   "id": "trade.conversation.suggestions_recognition",
   "recognition": {
     "packID": "pack.DT.trader_story",
