@@ -1,0 +1,9 @@
+{
+  "schema": "psychopatz.convo-engine.translation.v1",
+  "family": "question.settlement",
+  "locale": "TL",
+  "entries": {
+    "affordance.label": "Itanong ang pinakamalapit na pamayanan",
+    "say.variants.default": "Nasaan ang pinakamalapit na pamayanan?"
+  }
+}

@@ -31,7 +31,8 @@ for index, expectedID in ipairs(expected) do
     assert(row.patternID and row.patternID ~= "", "ConvoEngine offer lost its semantic pattern reference")
     assert(row.intent and row.speechAct, "ConvoEngine offer lost its semantic frame")
     assert(row.labelKey and row.utteranceKey, "Core did not generate UI translation keys")
-    assert(row.display and row.display.EN, "ConvoEngine offer lost EN display text")
+    assert(row.labelFallback and row.utteranceFallback, "ConvoEngine offer lost EN fallback text")
+    assert(row.display == nil, "ConvoEngine offer must not embed multi-locale display corpus")
 end
 
 print("dt_convo_ui_projection_smoke: PASS")

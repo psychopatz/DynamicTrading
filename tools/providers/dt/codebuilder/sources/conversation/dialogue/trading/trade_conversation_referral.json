@@ -18,32 +18,16 @@
     "responseAct": "TRADER_REFERRAL",
     "textRows": [
       {
-        "key": "category.caravan_referral",
-        "text": {
-          "EN": "Caravan",
-          "TL": "Karabana"
-        }
+        "key": "category.caravan_referral"
       },
       {
-        "key": "choice.trader_referral",
-        "text": {
-          "EN": "Who handles the trading?",
-          "TL": "Sino ang namamahala sa kalakalan?"
-        }
+        "key": "choice.trader_referral"
       },
       {
-        "key": "opening",
-        "text": {
-          "EN": "I am only here to keep watch. What do you need?",
-          "TL": "Narito lang ako para magbantay. Ano ang kailangan mo?"
-        }
+        "key": "opening"
       },
       {
-        "key": "response.trader_referral",
-        "text": {
-          "EN": "I am just a mercenary. Our trader handles the deals.",
-          "TL": "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan."
-        }
+        "key": "response.trader_referral"
       }
     ],
     "modernizationRetention": {
@@ -55,10 +39,6 @@
     "variants": [
       {
         "id": "trader.referral",
-        "text": {
-          "EN": "I am just a mercenary. Our trader handles the deals.",
-          "TL": "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan."
-        },
         "metadata": {
           "templateID": "DTCommon.TraderReferral",
           "textKey": "response.trader_referral"

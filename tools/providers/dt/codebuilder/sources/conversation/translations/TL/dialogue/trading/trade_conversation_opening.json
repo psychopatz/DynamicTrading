@@ -1,0 +1,12 @@
+{
+  "schema": "psychopatz.convo-engine.translation.v1",
+  "family": "trade.conversation.opening",
+  "locale": "TL",
+  "entries": {
+    "say.variants.trade.opening": "Tingnan natin kung ano ang maaari nating ipagpalit.",
+    "textRows.category.trade": "Kalakalan",
+    "textRows.choice.trade": "Buksan ang kalakalan",
+    "textRows.opening.trade": "Ano ang kailangan mo?",
+    "textRows.response.trade": "Tingnan natin kung ano ang maaari nating ipagpalit."
+  }
+}

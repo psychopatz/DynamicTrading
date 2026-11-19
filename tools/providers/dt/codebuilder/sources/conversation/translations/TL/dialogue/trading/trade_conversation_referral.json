@@ -1,0 +1,12 @@
+{
+  "schema": "psychopatz.convo-engine.translation.v1",
+  "family": "trade.conversation.referral",
+  "locale": "TL",
+  "entries": {
+    "say.variants.trader.referral": "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan.",
+    "textRows.category.caravan_referral": "Karabana",
+    "textRows.choice.trader_referral": "Sino ang namamahala sa kalakalan?",
+    "textRows.opening": "Narito lang ako para magbantay. Ano ang kailangan mo?",
+    "textRows.response.trader_referral": "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan."
+  }
+}

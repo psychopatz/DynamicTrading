@@ -1,0 +1,9 @@
+{
+  "schema": "psychopatz.convo-engine.translation.v1",
+  "family": "question.destination",
+  "locale": "TL",
+  "entries": {
+    "affordance.label": "Itanong kung saan sila patungo",
+    "say.variants.default": "Saan kayo patungo?"
+  }
+}

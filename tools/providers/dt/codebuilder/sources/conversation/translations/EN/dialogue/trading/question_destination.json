@@ -1,0 +1,9 @@
+{
+  "schema": "psychopatz.convo-engine.translation.v1",
+  "family": "question.destination",
+  "locale": "EN",
+  "entries": {
+    "affordance.label": "Ask where they are headed",
+    "say.variants.default": "Where are you heading?"
+  }
+}

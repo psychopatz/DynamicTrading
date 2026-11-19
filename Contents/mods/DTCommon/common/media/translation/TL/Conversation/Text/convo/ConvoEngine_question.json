@@ -1,0 +1,16 @@
+{
+  "convo.question.destination.affordance.label": "Itanong kung saan sila patungo",
+  "convo.question.destination.say.1.default": "Saan kayo patungo?",
+  "convo.question.origin.affordance.label": "Itanong kung saan sila nanggaling",
+  "convo.question.origin.say.1.default": "Saan kayo nanggaling?",
+  "convo.question.rumors.affordance.label": "Magtanong ng balita mula sa daan",
+  "convo.question.rumors.say.1.default": "May balita ba mula sa daan?",
+  "convo.question.settlement.affordance.label": "Itanong ang pinakamalapit na pamayanan",
+  "convo.question.settlement.say.1.default": "Nasaan ang pinakamalapit na pamayanan?",
+  "convo.question.story.affordance.label": "Humingi ng kuwento ng karaban",
+  "convo.question.story.say.1.default": "Magkuwento kayo tungkol sa karaban.",
+  "convo.question.trader.affordance.label": "Itanong kung sino sila",
+  "convo.question.trader.say.1.default": "Sino kayo?",
+  "convo.question.whereabouts.affordance.label": "Itanong ang kanilang ruta",
+  "convo.question.whereabouts.say.1.default": "Anong ruta ang tinatahak ninyo?"
+}

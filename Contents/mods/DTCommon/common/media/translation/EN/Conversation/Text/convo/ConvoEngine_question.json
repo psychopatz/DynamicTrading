@@ -1,0 +1,16 @@
+{
+  "convo.question.destination.affordance.label": "Ask where they are headed",
+  "convo.question.destination.say.1.default": "Where are you heading?",
+  "convo.question.origin.affordance.label": "Ask where they came from",
+  "convo.question.origin.say.1.default": "Where did you come from?",
+  "convo.question.rumors.affordance.label": "Ask for news from the road",
+  "convo.question.rumors.say.1.default": "Any news from the road?",
+  "convo.question.settlement.affordance.label": "Ask about the nearest settlement",
+  "convo.question.settlement.say.1.default": "Where is the nearest settlement?",
+  "convo.question.story.affordance.label": "Ask for a caravan story",
+  "convo.question.story.say.1.default": "Tell me a caravan story.",
+  "convo.question.trader.affordance.label": "Ask who they are",
+  "convo.question.trader.say.1.default": "Who are you?",
+  "convo.question.whereabouts.affordance.label": "Ask about their travels",
+  "convo.question.whereabouts.say.1.default": "What route are you travelling?"
+}

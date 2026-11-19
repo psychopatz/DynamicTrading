@@ -22,10 +22,6 @@
     "topic": "whereabouts"
   },
   "affordance": {
-    "label": {
-      "EN": "Ask where they are headed",
-      "TL": "Itanong kung saan sila patungo"
-    },
     "consumers": [
       "player"
     ],
@@ -34,8 +30,11 @@
     ]
   },
   "say": {
-    "EN": "Where are you heading?",
-    "TL": "Saan kayo patungo?"
+    "variants": [
+      {
+        "id": "default"
+      }
+    ]
   },
   "roles": {
     "speaker": {

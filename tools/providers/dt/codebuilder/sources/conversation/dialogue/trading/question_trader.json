@@ -22,10 +22,6 @@
     "topic": "identity"
   },
   "affordance": {
-    "label": {
-      "EN": "Ask who they are",
-      "TL": "Itanong kung sino sila"
-    },
     "consumers": [
       "player"
     ],
@@ -34,8 +30,11 @@
     ]
   },
   "say": {
-    "EN": "Who are you?",
-    "TL": "Sino kayo?"
+    "variants": [
+      {
+        "id": "default"
+      }
+    ]
   },
   "roles": {
     "speaker": {

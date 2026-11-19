@@ -1,0 +1,9 @@
+{
+  "schema": "psychopatz.convo-engine.translation.v1",
+  "family": "question.trader",
+  "locale": "TL",
+  "entries": {
+    "affordance.label": "Itanong kung sino sila",
+    "say.variants.default": "Sino kayo?"
+  }
+}

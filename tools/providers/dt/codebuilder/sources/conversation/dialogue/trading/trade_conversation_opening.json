@@ -16,32 +16,16 @@
     "responseAct": "TRADE_OPENING",
     "textRows": [
       {
-        "key": "category.trade",
-        "text": {
-          "EN": "Trade",
-          "TL": "Kalakalan"
-        }
+        "key": "category.trade"
       },
       {
-        "key": "choice.trade",
-        "text": {
-          "EN": "Open trading",
-          "TL": "Buksan ang kalakalan"
-        }
+        "key": "choice.trade"
       },
       {
-        "key": "opening.trade",
-        "text": {
-          "EN": "What do you need?",
-          "TL": "Ano ang kailangan mo?"
-        }
+        "key": "opening.trade"
       },
       {
-        "key": "response.trade",
-        "text": {
-          "EN": "Let's see what we can trade.",
-          "TL": "Tingnan natin kung ano ang maaari nating ipagpalit."
-        }
+        "key": "response.trade"
       }
     ]
   },
@@ -49,10 +33,6 @@
     "variants": [
       {
         "id": "trade.opening",
-        "text": {
-          "EN": "Let's see what we can trade.",
-          "TL": "Tingnan natin kung ano ang maaari nating ipagpalit."
-        },
         "metadata": {
           "templateID": "DTCommon.TradeOpening",
           "textKey": "response.trade"

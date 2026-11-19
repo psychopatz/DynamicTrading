@@ -1,0 +1,12 @@
+{
+  "schema": "psychopatz.convo-engine.translation.v1",
+  "family": "trade.conversation.opening",
+  "locale": "EN",
+  "entries": {
+    "say.variants.trade.opening": "Let's see what we can trade.",
+    "textRows.category.trade": "Trade",
+    "textRows.choice.trade": "Open trading",
+    "textRows.opening.trade": "What do you need?",
+    "textRows.response.trade": "Let's see what we can trade."
+  }
+}

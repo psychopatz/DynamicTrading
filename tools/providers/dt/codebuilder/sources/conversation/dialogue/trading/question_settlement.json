@@ -22,10 +22,6 @@
     "topic": "whereabouts"
   },
   "affordance": {
-    "label": {
-      "EN": "Ask about the nearest settlement",
-      "TL": "Itanong ang pinakamalapit na pamayanan"
-    },
     "consumers": [
       "player"
     ],
@@ -34,8 +30,11 @@
     ]
   },
   "say": {
-    "EN": "Where is the nearest settlement?",
-    "TL": "Nasaan ang pinakamalapit na pamayanan?"
+    "variants": [
+      {
+        "id": "default"
+      }
+    ]
   },
   "roles": {
     "speaker": {

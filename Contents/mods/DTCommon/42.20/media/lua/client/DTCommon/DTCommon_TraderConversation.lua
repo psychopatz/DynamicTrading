@@ -56,11 +56,12 @@ local function foundationResponse(poolID, seed, fallback)
     then
         local variant = SemanticFoundation.GetResponse(poolID, { seed = seed })
         if type(variant) == "table" then
-            local translations = variant.translations
-            local text = type(translations) == "table"
-                and (translations.EN or translations.TL)
+            local text = (DTCommon and type(DTCommon.TConvo) == "function" and variant.templateID)
+                and DTCommon.TConvo(variant.templateID, variant.fallback)
                 or variant.fallback
-            if text and tostring(text) ~= "" then return tostring(text) end
+            if text and tostring(text) ~= "" and tostring(text) ~= tostring(variant.templateID) then
+                return tostring(text)
+            end
         end
     end
     return fallback
@@ -76,12 +77,11 @@ local function foundationPhrase(templateID, style, seed, fallback)
             { seed = seed }
         )
         if type(phrase) == "table" then
-            local translations = phrase.translations
-            local text = type(translations) == "table"
-                and (translations.EN or translations.TL)
+            local text = (DTCommon and type(DTCommon.TConvo) == "function" and phrase.templateID)
+                and DTCommon.TConvo(phrase.templateID, phrase.fallback)
                 or phrase.fallback
             text = text and tostring(text) or ""
-            if text ~= "" and not string.find(text, "%%s", 1, true) then
+            if text ~= "" and text ~= tostring(phrase.templateID) and not string.find(text, "%%s", 1, true) then
                 return text
             end
         end

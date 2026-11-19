@@ -1,0 +1,9 @@
+{
+  "schema": "psychopatz.convo-engine.translation.v1",
+  "family": "question.rumors",
+  "locale": "EN",
+  "entries": {
+    "affordance.label": "Ask for news from the road",
+    "say.variants.default": "Any news from the road?"
+  }
+}

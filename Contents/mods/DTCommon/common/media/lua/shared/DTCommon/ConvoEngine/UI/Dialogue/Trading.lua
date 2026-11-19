@@ -1,16 +1,6 @@
 -- Generated; do not edit by hand.
 return {
     {
-        ["display"] = {
-            ["EN"] = {
-                ["label"] = "Ask who they are",
-                ["utterance"] = "Who are you?",
-            },
-            ["TL"] = {
-                ["label"] = "Itanong kung sino sila",
-                ["utterance"] = "Sino kayo?",
-            },
-        },
         ["domain"] = "identity",
         ["id"] = "question.trader",
         ["intent"] = "QUESTION",
@@ -39,16 +29,6 @@ return {
         ["utteranceKey"] = "UI_DT_Conversation_Suggestion_Trader_Utterance",
     },
     {
-        ["display"] = {
-            ["EN"] = {
-                ["label"] = "Ask where they are headed",
-                ["utterance"] = "Where are you heading?",
-            },
-            ["TL"] = {
-                ["label"] = "Itanong kung saan sila patungo",
-                ["utterance"] = "Saan kayo patungo?",
-            },
-        },
         ["domain"] = "whereabouts",
         ["id"] = "question.destination",
         ["intent"] = "QUESTION",
@@ -77,16 +57,6 @@ return {
         ["utteranceKey"] = "UI_DT_Conversation_Suggestion_Destination_Utterance",
     },
     {
-        ["display"] = {
-            ["EN"] = {
-                ["label"] = "Ask where they came from",
-                ["utterance"] = "Where did you come from?",
-            },
-            ["TL"] = {
-                ["label"] = "Itanong kung saan sila nanggaling",
-                ["utterance"] = "Saan kayo nanggaling?",
-            },
-        },
         ["domain"] = "whereabouts",
         ["id"] = "question.origin",
         ["intent"] = "QUESTION",
@@ -115,16 +85,6 @@ return {
         ["utteranceKey"] = "UI_DT_Conversation_Suggestion_Origin_Utterance",
     },
     {
-        ["display"] = {
-            ["EN"] = {
-                ["label"] = "Ask about the nearest settlement",
-                ["utterance"] = "Where is the nearest settlement?",
-            },
-            ["TL"] = {
-                ["label"] = "Itanong ang pinakamalapit na pamayanan",
-                ["utterance"] = "Nasaan ang pinakamalapit na pamayanan?",
-            },
-        },
         ["domain"] = "whereabouts",
         ["id"] = "question.settlement",
         ["intent"] = "QUESTION",
@@ -153,16 +113,6 @@ return {
         ["utteranceKey"] = "UI_DT_Conversation_Suggestion_Settlement_Utterance",
     },
     {
-        ["display"] = {
-            ["EN"] = {
-                ["label"] = "Ask for news from the road",
-                ["utterance"] = "Any news from the road?",
-            },
-            ["TL"] = {
-                ["label"] = "Magtanong ng balita mula sa daan",
-                ["utterance"] = "May balita ba mula sa daan?",
-            },
-        },
         ["domain"] = "gossip",
         ["id"] = "question.rumors",
         ["intent"] = "GOSSIP",
@@ -183,16 +133,6 @@ return {
         ["utteranceKey"] = "UI_DT_Conversation_Suggestion_Rumors_Utterance",
     },
     {
-        ["display"] = {
-            ["EN"] = {
-                ["label"] = "Ask about their travels",
-                ["utterance"] = "What route are you travelling?",
-            },
-            ["TL"] = {
-                ["label"] = "Itanong ang kanilang ruta",
-                ["utterance"] = "Anong ruta ang tinatahak ninyo?",
-            },
-        },
         ["domain"] = "whereabouts",
         ["id"] = "question.whereabouts",
         ["intent"] = "QUESTION",
@@ -221,16 +161,6 @@ return {
         ["utteranceKey"] = "UI_DT_Conversation_Suggestion_Whereabouts_Utterance",
     },
     {
-        ["display"] = {
-            ["EN"] = {
-                ["label"] = "Ask for a caravan story",
-                ["utterance"] = "Tell me a caravan story.",
-            },
-            ["TL"] = {
-                ["label"] = "Humingi ng kuwento ng karaban",
-                ["utterance"] = "Magkuwento kayo tungkol sa karaban.",
-            },
-        },
         ["domain"] = "story",
         ["id"] = "question.story",
         ["intent"] = "GOSSIP",
@@ -251,16 +181,6 @@ return {
         ["utteranceKey"] = "UI_DT_Conversation_Suggestion_Story_Utterance",
     },
     {
-        ["display"] = {
-            ["EN"] = {
-                ["label"] = "Open trading",
-                ["utterance"] = "Let's trade.",
-            },
-            ["TL"] = {
-                ["label"] = "Buksan ang kalakalan",
-                ["utterance"] = "Magpalitan tayo.",
-            },
-        },
         ["domain"] = "trade",
         ["id"] = "action.trade",
         ["intent"] = "TRADE",

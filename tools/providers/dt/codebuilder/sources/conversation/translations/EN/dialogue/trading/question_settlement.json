@@ -1,0 +1,9 @@
+{
+  "schema": "psychopatz.convo-engine.translation.v1",
+  "family": "question.settlement",
+  "locale": "EN",
+  "entries": {
+    "affordance.label": "Ask about the nearest settlement",
+    "say.variants.default": "Where is the nearest settlement?"
+  }
+}

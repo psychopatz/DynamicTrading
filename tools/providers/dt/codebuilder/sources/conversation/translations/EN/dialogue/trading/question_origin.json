@@ -1,0 +1,9 @@
+{
+  "schema": "psychopatz.convo-engine.translation.v1",
+  "family": "question.origin",
+  "locale": "EN",
+  "entries": {
+    "affordance.label": "Ask where they came from",
+    "say.variants.default": "Where did you come from?"
+  }
+}

@@ -1,9 +1,15 @@
 {
   "languages": {
     "EN": [
+      "EN/Conversation/Text/convo/ConvoEngine_action.json",
+      "EN/Conversation/Text/convo/ConvoEngine_question.json",
+      "EN/Conversation/Text/convo/ConvoEngine_trade.json",
       "EN/Conversation/UI.json"
     ],
     "TL": [
+      "TL/Conversation/Text/convo/ConvoEngine_action.json",
+      "TL/Conversation/Text/convo/ConvoEngine_question.json",
+      "TL/Conversation/Text/convo/ConvoEngine_trade.json",
       "TL/Conversation/UI.json"
     ]
   },

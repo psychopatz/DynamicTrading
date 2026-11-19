@@ -22,10 +22,6 @@
     "topic": "whereabouts"
   },
   "affordance": {
-    "label": {
-      "EN": "Ask where they came from",
-      "TL": "Itanong kung saan sila nanggaling"
-    },
     "consumers": [
       "player"
     ],
@@ -34,8 +30,11 @@
     ]
   },
   "say": {
-    "EN": "Where did you come from?",
-    "TL": "Saan kayo nanggaling?"
+    "variants": [
+      {
+        "id": "default"
+      }
+    ]
   },
   "roles": {
     "speaker": {

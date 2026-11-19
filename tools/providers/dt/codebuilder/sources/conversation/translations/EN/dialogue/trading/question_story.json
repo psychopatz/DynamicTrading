@@ -1,0 +1,9 @@
+{
+  "schema": "psychopatz.convo-engine.translation.v1",
+  "family": "question.story",
+  "locale": "EN",
+  "entries": {
+    "affordance.label": "Ask for a caravan story",
+    "say.variants.default": "Tell me a caravan story."
+  }
+}

@@ -14,14 +14,6 @@ return {
                 ["labelFallback"] = "Open trading",
                 ["labelKey"] = "convo.action.trade.affordance.label",
                 ["textRole"] = "button_label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Open trading",
-                    },
-                    ["TL"] = {
-                        "Buksan ang kalakalan",
-                    },
-                },
             },
             ["familyID"] = "action.trade",
             ["initiatingSay"] = {
@@ -39,14 +31,6 @@ return {
                                 ["id"] = "default",
                                 ["templateID"] = "convo.action.trade.say.1.default",
                                 ["textRole"] = "spoken_action",
-                                ["translations"] = {
-                                    ["EN"] = {
-                                        "Let's trade.",
-                                    },
-                                    ["TL"] = {
-                                        "Magpalitan tayo.",
-                                    },
-                                },
                             },
                         },
                     },
@@ -74,28 +58,12 @@ return {
                     ["fallback"] = "Open trading",
                     ["role"] = "button_label",
                     ["templateID"] = "convo.action.trade.affordance.label",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Open trading",
-                        },
-                        ["TL"] = {
-                            "Buksan ang kalakalan",
-                        },
-                    },
                 },
                 {
                     ["fallback"] = "Let's trade.",
                     ["realizationKey"] = "1",
                     ["role"] = "spoken_action",
                     ["templateID"] = "convo.action.trade.say.1.default",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Let's trade.",
-                        },
-                        ["TL"] = {
-                            "Magpalitan tayo.",
-                        },
-                    },
                     ["variantID"] = "default",
                 },
             },
@@ -129,14 +97,7 @@ return {
                 ["groups"] = {
                     "trade",
                 },
-                ["label"] = {
-                    ["EN"] = {
-                        "Open trading",
-                    },
-                    ["TL"] = {
-                        "Buksan ang kalakalan",
-                    },
-                },
+                ["labelFallback"] = "Open trading",
                 ["textRole"] = "button_label",
             },
             ["domains"] = {
@@ -176,15 +137,8 @@ return {
                         ["shorthand"] = true,
                         ["variants"] = {
                             {
+                                ["fallback"] = "Let's trade.",
                                 ["id"] = "default",
-                                ["text"] = {
-                                    ["EN"] = {
-                                        "Let's trade.",
-                                    },
-                                    ["TL"] = {
-                                        "Magpalitan tayo.",
-                                    },
-                                },
                             },
                         },
                     },
@@ -266,28 +220,12 @@ return {
                 ["fallback"] = "Open trading",
                 ["role"] = "button_label",
                 ["templateID"] = "convo.action.trade.affordance.label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Open trading",
-                    },
-                    ["TL"] = {
-                        "Buksan ang kalakalan",
-                    },
-                },
             },
             {
                 ["fallback"] = "Let's trade.",
                 ["realizationKey"] = "1",
                 ["role"] = "spoken_action",
                 ["templateID"] = "convo.action.trade.say.1.default",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Let's trade.",
-                    },
-                    ["TL"] = {
-                        "Magpalitan tayo.",
-                    },
-                },
                 ["variantID"] = "default",
             },
         },
@@ -307,14 +245,6 @@ return {
                 ["labelFallback"] = "Ask where they are headed",
                 ["labelKey"] = "convo.question.destination.affordance.label",
                 ["textRole"] = "button_label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask where they are headed",
-                    },
-                    ["TL"] = {
-                        "Itanong kung saan sila patungo",
-                    },
-                },
             },
             ["familyID"] = "question.destination",
             ["initiatingSay"] = {
@@ -332,14 +262,6 @@ return {
                                 ["id"] = "default",
                                 ["templateID"] = "convo.question.destination.say.1.default",
                                 ["textRole"] = "spoken_action",
-                                ["translations"] = {
-                                    ["EN"] = {
-                                        "Where are you heading?",
-                                    },
-                                    ["TL"] = {
-                                        "Saan kayo patungo?",
-                                    },
-                                },
                             },
                         },
                     },
@@ -367,28 +289,12 @@ return {
                     ["fallback"] = "Ask where they are headed",
                     ["role"] = "button_label",
                     ["templateID"] = "convo.question.destination.affordance.label",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Ask where they are headed",
-                        },
-                        ["TL"] = {
-                            "Itanong kung saan sila patungo",
-                        },
-                    },
                 },
                 {
                     ["fallback"] = "Where are you heading?",
                     ["realizationKey"] = "1",
                     ["role"] = "spoken_action",
                     ["templateID"] = "convo.question.destination.say.1.default",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Where are you heading?",
-                        },
-                        ["TL"] = {
-                            "Saan kayo patungo?",
-                        },
-                    },
                     ["variantID"] = "default",
                 },
             },
@@ -422,14 +328,7 @@ return {
                 ["groups"] = {
                     "whereabouts",
                 },
-                ["label"] = {
-                    ["EN"] = {
-                        "Ask where they are headed",
-                    },
-                    ["TL"] = {
-                        "Itanong kung saan sila patungo",
-                    },
-                },
+                ["labelFallback"] = "Ask where they are headed",
                 ["textRole"] = "button_label",
             },
             ["domains"] = {
@@ -469,15 +368,8 @@ return {
                         ["shorthand"] = true,
                         ["variants"] = {
                             {
+                                ["fallback"] = "Where are you heading?",
                                 ["id"] = "default",
-                                ["text"] = {
-                                    ["EN"] = {
-                                        "Where are you heading?",
-                                    },
-                                    ["TL"] = {
-                                        "Saan kayo patungo?",
-                                    },
-                                },
                             },
                         },
                     },
@@ -551,28 +443,12 @@ return {
                 ["fallback"] = "Ask where they are headed",
                 ["role"] = "button_label",
                 ["templateID"] = "convo.question.destination.affordance.label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask where they are headed",
-                    },
-                    ["TL"] = {
-                        "Itanong kung saan sila patungo",
-                    },
-                },
             },
             {
                 ["fallback"] = "Where are you heading?",
                 ["realizationKey"] = "1",
                 ["role"] = "spoken_action",
                 ["templateID"] = "convo.question.destination.say.1.default",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Where are you heading?",
-                    },
-                    ["TL"] = {
-                        "Saan kayo patungo?",
-                    },
-                },
                 ["variantID"] = "default",
             },
         },
@@ -592,14 +468,6 @@ return {
                 ["labelFallback"] = "Ask where they came from",
                 ["labelKey"] = "convo.question.origin.affordance.label",
                 ["textRole"] = "button_label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask where they came from",
-                    },
-                    ["TL"] = {
-                        "Itanong kung saan sila nanggaling",
-                    },
-                },
             },
             ["familyID"] = "question.origin",
             ["initiatingSay"] = {
@@ -617,14 +485,6 @@ return {
                                 ["id"] = "default",
                                 ["templateID"] = "convo.question.origin.say.1.default",
                                 ["textRole"] = "spoken_action",
-                                ["translations"] = {
-                                    ["EN"] = {
-                                        "Where did you come from?",
-                                    },
-                                    ["TL"] = {
-                                        "Saan kayo nanggaling?",
-                                    },
-                                },
                             },
                         },
                     },
@@ -652,28 +512,12 @@ return {
                     ["fallback"] = "Ask where they came from",
                     ["role"] = "button_label",
                     ["templateID"] = "convo.question.origin.affordance.label",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Ask where they came from",
-                        },
-                        ["TL"] = {
-                            "Itanong kung saan sila nanggaling",
-                        },
-                    },
                 },
                 {
                     ["fallback"] = "Where did you come from?",
                     ["realizationKey"] = "1",
                     ["role"] = "spoken_action",
                     ["templateID"] = "convo.question.origin.say.1.default",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Where did you come from?",
-                        },
-                        ["TL"] = {
-                            "Saan kayo nanggaling?",
-                        },
-                    },
                     ["variantID"] = "default",
                 },
             },
@@ -707,14 +551,7 @@ return {
                 ["groups"] = {
                     "whereabouts",
                 },
-                ["label"] = {
-                    ["EN"] = {
-                        "Ask where they came from",
-                    },
-                    ["TL"] = {
-                        "Itanong kung saan sila nanggaling",
-                    },
-                },
+                ["labelFallback"] = "Ask where they came from",
                 ["textRole"] = "button_label",
             },
             ["domains"] = {
@@ -754,15 +591,8 @@ return {
                         ["shorthand"] = true,
                         ["variants"] = {
                             {
+                                ["fallback"] = "Where did you come from?",
                                 ["id"] = "default",
-                                ["text"] = {
-                                    ["EN"] = {
-                                        "Where did you come from?",
-                                    },
-                                    ["TL"] = {
-                                        "Saan kayo nanggaling?",
-                                    },
-                                },
                             },
                         },
                     },
@@ -836,28 +666,12 @@ return {
                 ["fallback"] = "Ask where they came from",
                 ["role"] = "button_label",
                 ["templateID"] = "convo.question.origin.affordance.label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask where they came from",
-                    },
-                    ["TL"] = {
-                        "Itanong kung saan sila nanggaling",
-                    },
-                },
             },
             {
                 ["fallback"] = "Where did you come from?",
                 ["realizationKey"] = "1",
                 ["role"] = "spoken_action",
                 ["templateID"] = "convo.question.origin.say.1.default",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Where did you come from?",
-                    },
-                    ["TL"] = {
-                        "Saan kayo nanggaling?",
-                    },
-                },
                 ["variantID"] = "default",
             },
         },
@@ -877,14 +691,6 @@ return {
                 ["labelFallback"] = "Ask for news from the road",
                 ["labelKey"] = "convo.question.rumors.affordance.label",
                 ["textRole"] = "button_label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask for news from the road",
-                    },
-                    ["TL"] = {
-                        "Magtanong ng balita mula sa daan",
-                    },
-                },
             },
             ["familyID"] = "question.rumors",
             ["initiatingSay"] = {
@@ -902,14 +708,6 @@ return {
                                 ["id"] = "default",
                                 ["templateID"] = "convo.question.rumors.say.1.default",
                                 ["textRole"] = "spoken_action",
-                                ["translations"] = {
-                                    ["EN"] = {
-                                        "Any news from the road?",
-                                    },
-                                    ["TL"] = {
-                                        "May balita ba mula sa daan?",
-                                    },
-                                },
                             },
                         },
                     },
@@ -929,28 +727,12 @@ return {
                     ["fallback"] = "Ask for news from the road",
                     ["role"] = "button_label",
                     ["templateID"] = "convo.question.rumors.affordance.label",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Ask for news from the road",
-                        },
-                        ["TL"] = {
-                            "Magtanong ng balita mula sa daan",
-                        },
-                    },
                 },
                 {
                     ["fallback"] = "Any news from the road?",
                     ["realizationKey"] = "1",
                     ["role"] = "spoken_action",
                     ["templateID"] = "convo.question.rumors.say.1.default",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Any news from the road?",
-                        },
-                        ["TL"] = {
-                            "May balita ba mula sa daan?",
-                        },
-                    },
                     ["variantID"] = "default",
                 },
             },
@@ -984,14 +766,7 @@ return {
                 ["groups"] = {
                     "gossip",
                 },
-                ["label"] = {
-                    ["EN"] = {
-                        "Ask for news from the road",
-                    },
-                    ["TL"] = {
-                        "Magtanong ng balita mula sa daan",
-                    },
-                },
+                ["labelFallback"] = "Ask for news from the road",
                 ["textRole"] = "button_label",
             },
             ["domains"] = {
@@ -1031,15 +806,8 @@ return {
                         ["shorthand"] = true,
                         ["variants"] = {
                             {
+                                ["fallback"] = "Any news from the road?",
                                 ["id"] = "default",
-                                ["text"] = {
-                                    ["EN"] = {
-                                        "Any news from the road?",
-                                    },
-                                    ["TL"] = {
-                                        "May balita ba mula sa daan?",
-                                    },
-                                },
                             },
                         },
                     },
@@ -1107,28 +875,12 @@ return {
                 ["fallback"] = "Ask for news from the road",
                 ["role"] = "button_label",
                 ["templateID"] = "convo.question.rumors.affordance.label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask for news from the road",
-                    },
-                    ["TL"] = {
-                        "Magtanong ng balita mula sa daan",
-                    },
-                },
             },
             {
                 ["fallback"] = "Any news from the road?",
                 ["realizationKey"] = "1",
                 ["role"] = "spoken_action",
                 ["templateID"] = "convo.question.rumors.say.1.default",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Any news from the road?",
-                    },
-                    ["TL"] = {
-                        "May balita ba mula sa daan?",
-                    },
-                },
                 ["variantID"] = "default",
             },
         },
@@ -1148,14 +900,6 @@ return {
                 ["labelFallback"] = "Ask about the nearest settlement",
                 ["labelKey"] = "convo.question.settlement.affordance.label",
                 ["textRole"] = "button_label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask about the nearest settlement",
-                    },
-                    ["TL"] = {
-                        "Itanong ang pinakamalapit na pamayanan",
-                    },
-                },
             },
             ["familyID"] = "question.settlement",
             ["initiatingSay"] = {
@@ -1173,14 +917,6 @@ return {
                                 ["id"] = "default",
                                 ["templateID"] = "convo.question.settlement.say.1.default",
                                 ["textRole"] = "spoken_action",
-                                ["translations"] = {
-                                    ["EN"] = {
-                                        "Where is the nearest settlement?",
-                                    },
-                                    ["TL"] = {
-                                        "Nasaan ang pinakamalapit na pamayanan?",
-                                    },
-                                },
                             },
                         },
                     },
@@ -1208,28 +944,12 @@ return {
                     ["fallback"] = "Ask about the nearest settlement",
                     ["role"] = "button_label",
                     ["templateID"] = "convo.question.settlement.affordance.label",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Ask about the nearest settlement",
-                        },
-                        ["TL"] = {
-                            "Itanong ang pinakamalapit na pamayanan",
-                        },
-                    },
                 },
                 {
                     ["fallback"] = "Where is the nearest settlement?",
                     ["realizationKey"] = "1",
                     ["role"] = "spoken_action",
                     ["templateID"] = "convo.question.settlement.say.1.default",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Where is the nearest settlement?",
-                        },
-                        ["TL"] = {
-                            "Nasaan ang pinakamalapit na pamayanan?",
-                        },
-                    },
                     ["variantID"] = "default",
                 },
             },
@@ -1263,14 +983,7 @@ return {
                 ["groups"] = {
                     "whereabouts",
                 },
-                ["label"] = {
-                    ["EN"] = {
-                        "Ask about the nearest settlement",
-                    },
-                    ["TL"] = {
-                        "Itanong ang pinakamalapit na pamayanan",
-                    },
-                },
+                ["labelFallback"] = "Ask about the nearest settlement",
                 ["textRole"] = "button_label",
             },
             ["domains"] = {
@@ -1310,15 +1023,8 @@ return {
                         ["shorthand"] = true,
                         ["variants"] = {
                             {
+                                ["fallback"] = "Where is the nearest settlement?",
                                 ["id"] = "default",
-                                ["text"] = {
-                                    ["EN"] = {
-                                        "Where is the nearest settlement?",
-                                    },
-                                    ["TL"] = {
-                                        "Nasaan ang pinakamalapit na pamayanan?",
-                                    },
-                                },
                             },
                         },
                     },
@@ -1392,28 +1098,12 @@ return {
                 ["fallback"] = "Ask about the nearest settlement",
                 ["role"] = "button_label",
                 ["templateID"] = "convo.question.settlement.affordance.label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask about the nearest settlement",
-                    },
-                    ["TL"] = {
-                        "Itanong ang pinakamalapit na pamayanan",
-                    },
-                },
             },
             {
                 ["fallback"] = "Where is the nearest settlement?",
                 ["realizationKey"] = "1",
                 ["role"] = "spoken_action",
                 ["templateID"] = "convo.question.settlement.say.1.default",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Where is the nearest settlement?",
-                    },
-                    ["TL"] = {
-                        "Nasaan ang pinakamalapit na pamayanan?",
-                    },
-                },
                 ["variantID"] = "default",
             },
         },
@@ -1433,14 +1123,6 @@ return {
                 ["labelFallback"] = "Ask for a caravan story",
                 ["labelKey"] = "convo.question.story.affordance.label",
                 ["textRole"] = "button_label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask for a caravan story",
-                    },
-                    ["TL"] = {
-                        "Humingi ng kuwento ng karaban",
-                    },
-                },
             },
             ["familyID"] = "question.story",
             ["initiatingSay"] = {
@@ -1458,14 +1140,6 @@ return {
                                 ["id"] = "default",
                                 ["templateID"] = "convo.question.story.say.1.default",
                                 ["textRole"] = "spoken_action",
-                                ["translations"] = {
-                                    ["EN"] = {
-                                        "Tell me a caravan story.",
-                                    },
-                                    ["TL"] = {
-                                        "Magkuwento kayo tungkol sa karaban.",
-                                    },
-                                },
                             },
                         },
                     },
@@ -1485,28 +1159,12 @@ return {
                     ["fallback"] = "Ask for a caravan story",
                     ["role"] = "button_label",
                     ["templateID"] = "convo.question.story.affordance.label",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Ask for a caravan story",
-                        },
-                        ["TL"] = {
-                            "Humingi ng kuwento ng karaban",
-                        },
-                    },
                 },
                 {
                     ["fallback"] = "Tell me a caravan story.",
                     ["realizationKey"] = "1",
                     ["role"] = "spoken_action",
                     ["templateID"] = "convo.question.story.say.1.default",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Tell me a caravan story.",
-                        },
-                        ["TL"] = {
-                            "Magkuwento kayo tungkol sa karaban.",
-                        },
-                    },
                     ["variantID"] = "default",
                 },
             },
@@ -1540,14 +1198,7 @@ return {
                 ["groups"] = {
                     "story",
                 },
-                ["label"] = {
-                    ["EN"] = {
-                        "Ask for a caravan story",
-                    },
-                    ["TL"] = {
-                        "Humingi ng kuwento ng karaban",
-                    },
-                },
+                ["labelFallback"] = "Ask for a caravan story",
                 ["textRole"] = "button_label",
             },
             ["domains"] = {
@@ -1587,15 +1238,8 @@ return {
                         ["shorthand"] = true,
                         ["variants"] = {
                             {
+                                ["fallback"] = "Tell me a caravan story.",
                                 ["id"] = "default",
-                                ["text"] = {
-                                    ["EN"] = {
-                                        "Tell me a caravan story.",
-                                    },
-                                    ["TL"] = {
-                                        "Magkuwento kayo tungkol sa karaban.",
-                                    },
-                                },
                             },
                         },
                     },
@@ -1663,28 +1307,12 @@ return {
                 ["fallback"] = "Ask for a caravan story",
                 ["role"] = "button_label",
                 ["templateID"] = "convo.question.story.affordance.label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask for a caravan story",
-                    },
-                    ["TL"] = {
-                        "Humingi ng kuwento ng karaban",
-                    },
-                },
             },
             {
                 ["fallback"] = "Tell me a caravan story.",
                 ["realizationKey"] = "1",
                 ["role"] = "spoken_action",
                 ["templateID"] = "convo.question.story.say.1.default",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Tell me a caravan story.",
-                    },
-                    ["TL"] = {
-                        "Magkuwento kayo tungkol sa karaban.",
-                    },
-                },
                 ["variantID"] = "default",
             },
         },
@@ -1704,14 +1332,6 @@ return {
                 ["labelFallback"] = "Ask who they are",
                 ["labelKey"] = "convo.question.trader.affordance.label",
                 ["textRole"] = "button_label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask who they are",
-                    },
-                    ["TL"] = {
-                        "Itanong kung sino sila",
-                    },
-                },
             },
             ["familyID"] = "question.trader",
             ["initiatingSay"] = {
@@ -1729,14 +1349,6 @@ return {
                                 ["id"] = "default",
                                 ["templateID"] = "convo.question.trader.say.1.default",
                                 ["textRole"] = "spoken_action",
-                                ["translations"] = {
-                                    ["EN"] = {
-                                        "Who are you?",
-                                    },
-                                    ["TL"] = {
-                                        "Sino kayo?",
-                                    },
-                                },
                             },
                         },
                     },
@@ -1764,28 +1376,12 @@ return {
                     ["fallback"] = "Ask who they are",
                     ["role"] = "button_label",
                     ["templateID"] = "convo.question.trader.affordance.label",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Ask who they are",
-                        },
-                        ["TL"] = {
-                            "Itanong kung sino sila",
-                        },
-                    },
                 },
                 {
                     ["fallback"] = "Who are you?",
                     ["realizationKey"] = "1",
                     ["role"] = "spoken_action",
                     ["templateID"] = "convo.question.trader.say.1.default",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Who are you?",
-                        },
-                        ["TL"] = {
-                            "Sino kayo?",
-                        },
-                    },
                     ["variantID"] = "default",
                 },
             },
@@ -1819,14 +1415,7 @@ return {
                 ["groups"] = {
                     "identity",
                 },
-                ["label"] = {
-                    ["EN"] = {
-                        "Ask who they are",
-                    },
-                    ["TL"] = {
-                        "Itanong kung sino sila",
-                    },
-                },
+                ["labelFallback"] = "Ask who they are",
                 ["textRole"] = "button_label",
             },
             ["domains"] = {
@@ -1866,15 +1455,8 @@ return {
                         ["shorthand"] = true,
                         ["variants"] = {
                             {
+                                ["fallback"] = "Who are you?",
                                 ["id"] = "default",
-                                ["text"] = {
-                                    ["EN"] = {
-                                        "Who are you?",
-                                    },
-                                    ["TL"] = {
-                                        "Sino kayo?",
-                                    },
-                                },
                             },
                         },
                     },
@@ -1956,28 +1538,12 @@ return {
                 ["fallback"] = "Ask who they are",
                 ["role"] = "button_label",
                 ["templateID"] = "convo.question.trader.affordance.label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask who they are",
-                    },
-                    ["TL"] = {
-                        "Itanong kung sino sila",
-                    },
-                },
             },
             {
                 ["fallback"] = "Who are you?",
                 ["realizationKey"] = "1",
                 ["role"] = "spoken_action",
                 ["templateID"] = "convo.question.trader.say.1.default",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Who are you?",
-                    },
-                    ["TL"] = {
-                        "Sino kayo?",
-                    },
-                },
                 ["variantID"] = "default",
             },
         },
@@ -1997,14 +1563,6 @@ return {
                 ["labelFallback"] = "Ask about their travels",
                 ["labelKey"] = "convo.question.whereabouts.affordance.label",
                 ["textRole"] = "button_label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask about their travels",
-                    },
-                    ["TL"] = {
-                        "Itanong ang kanilang ruta",
-                    },
-                },
             },
             ["familyID"] = "question.whereabouts",
             ["initiatingSay"] = {
@@ -2022,14 +1580,6 @@ return {
                                 ["id"] = "default",
                                 ["templateID"] = "convo.question.whereabouts.say.1.default",
                                 ["textRole"] = "spoken_action",
-                                ["translations"] = {
-                                    ["EN"] = {
-                                        "What route are you travelling?",
-                                    },
-                                    ["TL"] = {
-                                        "Anong ruta ang tinatahak ninyo?",
-                                    },
-                                },
                             },
                         },
                     },
@@ -2057,28 +1607,12 @@ return {
                     ["fallback"] = "Ask about their travels",
                     ["role"] = "button_label",
                     ["templateID"] = "convo.question.whereabouts.affordance.label",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Ask about their travels",
-                        },
-                        ["TL"] = {
-                            "Itanong ang kanilang ruta",
-                        },
-                    },
                 },
                 {
                     ["fallback"] = "What route are you travelling?",
                     ["realizationKey"] = "1",
                     ["role"] = "spoken_action",
                     ["templateID"] = "convo.question.whereabouts.say.1.default",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "What route are you travelling?",
-                        },
-                        ["TL"] = {
-                            "Anong ruta ang tinatahak ninyo?",
-                        },
-                    },
                     ["variantID"] = "default",
                 },
             },
@@ -2112,14 +1646,7 @@ return {
                 ["groups"] = {
                     "whereabouts",
                 },
-                ["label"] = {
-                    ["EN"] = {
-                        "Ask about their travels",
-                    },
-                    ["TL"] = {
-                        "Itanong ang kanilang ruta",
-                    },
-                },
+                ["labelFallback"] = "Ask about their travels",
                 ["textRole"] = "button_label",
             },
             ["domains"] = {
@@ -2159,15 +1686,8 @@ return {
                         ["shorthand"] = true,
                         ["variants"] = {
                             {
+                                ["fallback"] = "What route are you travelling?",
                                 ["id"] = "default",
-                                ["text"] = {
-                                    ["EN"] = {
-                                        "What route are you travelling?",
-                                    },
-                                    ["TL"] = {
-                                        "Anong ruta ang tinatahak ninyo?",
-                                    },
-                                },
                             },
                         },
                     },
@@ -2241,28 +1761,12 @@ return {
                 ["fallback"] = "Ask about their travels",
                 ["role"] = "button_label",
                 ["templateID"] = "convo.question.whereabouts.affordance.label",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Ask about their travels",
-                    },
-                    ["TL"] = {
-                        "Itanong ang kanilang ruta",
-                    },
-                },
             },
             {
                 ["fallback"] = "What route are you travelling?",
                 ["realizationKey"] = "1",
                 ["role"] = "spoken_action",
                 ["templateID"] = "convo.question.whereabouts.say.1.default",
-                ["translations"] = {
-                    ["EN"] = {
-                        "What route are you travelling?",
-                    },
-                    ["TL"] = {
-                        "Anong ruta ang tinatahak ninyo?",
-                    },
-                },
                 ["variantID"] = "default",
             },
         },
@@ -2288,14 +1792,6 @@ return {
                                 ["id"] = "trade.opening",
                                 ["templateID"] = "convo.trade.conversation.opening.say.1.trade.opening",
                                 ["textRole"] = "spoken_action",
-                                ["translations"] = {
-                                    ["EN"] = {
-                                        "Let's see what we can trade.",
-                                    },
-                                    ["TL"] = {
-                                        "Tingnan natin kung ano ang maaari nating ipagpalit.",
-                                    },
-                                },
                             },
                         },
                     },
@@ -2317,14 +1813,6 @@ return {
                     ["realizationKey"] = "1",
                     ["role"] = "spoken_action",
                     ["templateID"] = "convo.trade.conversation.opening.say.1.trade.opening",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "Let's see what we can trade.",
-                        },
-                        ["TL"] = {
-                            "Tingnan natin kung ano ang maaari nating ipagpalit.",
-                        },
-                    },
                     ["variantID"] = "trade.opening",
                 },
             },
@@ -2367,32 +1855,20 @@ return {
                 },
                 ["textRows"] = {
                     {
+                        ["fallback"] = "Trade",
                         ["key"] = "category.trade",
-                        ["text"] = {
-                            ["EN"] = "Trade",
-                            ["TL"] = "Kalakalan",
-                        },
                     },
                     {
+                        ["fallback"] = "Open trading",
                         ["key"] = "choice.trade",
-                        ["text"] = {
-                            ["EN"] = "Open trading",
-                            ["TL"] = "Buksan ang kalakalan",
-                        },
                     },
                     {
+                        ["fallback"] = "What do you need?",
                         ["key"] = "opening.trade",
-                        ["text"] = {
-                            ["EN"] = "What do you need?",
-                            ["TL"] = "Ano ang kailangan mo?",
-                        },
                     },
                     {
+                        ["fallback"] = "Let's see what we can trade.",
                         ["key"] = "response.trade",
-                        ["text"] = {
-                            ["EN"] = "Let's see what we can trade.",
-                            ["TL"] = "Tingnan natin kung ano ang maaari nating ipagpalit.",
-                        },
                     },
                 },
                 ["textTarget"] = "dynamic_trading/trade/opening",
@@ -2408,18 +1884,11 @@ return {
                         ["shorthand"] = true,
                         ["variants"] = {
                             {
+                                ["fallback"] = "Let's see what we can trade.",
                                 ["id"] = "trade.opening",
                                 ["metadata"] = {
                                     ["templateID"] = "DTCommon.TradeOpening",
                                     ["textKey"] = "response.trade",
-                                },
-                                ["text"] = {
-                                    ["EN"] = {
-                                        "Let's see what we can trade.",
-                                    },
-                                    ["TL"] = {
-                                        "Tingnan natin kung ano ang maaari nating ipagpalit.",
-                                    },
                                 },
                             },
                         },
@@ -2503,14 +1972,6 @@ return {
                 ["realizationKey"] = "1",
                 ["role"] = "spoken_action",
                 ["templateID"] = "convo.trade.conversation.opening.say.1.trade.opening",
-                ["translations"] = {
-                    ["EN"] = {
-                        "Let's see what we can trade.",
-                    },
-                    ["TL"] = {
-                        "Tingnan natin kung ano ang maaari nating ipagpalit.",
-                    },
-                },
                 ["variantID"] = "trade.opening",
             },
         },
@@ -2536,14 +1997,6 @@ return {
                                 ["id"] = "trader.referral",
                                 ["templateID"] = "convo.trade.conversation.referral.say.1.trader.referral",
                                 ["textRole"] = "spoken_action",
-                                ["translations"] = {
-                                    ["EN"] = {
-                                        "I am just a mercenary. Our trader handles the deals.",
-                                    },
-                                    ["TL"] = {
-                                        "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan.",
-                                    },
-                                },
                             },
                         },
                     },
@@ -2565,14 +2018,6 @@ return {
                     ["realizationKey"] = "1",
                     ["role"] = "spoken_action",
                     ["templateID"] = "convo.trade.conversation.referral.say.1.trader.referral",
-                    ["translations"] = {
-                        ["EN"] = {
-                            "I am just a mercenary. Our trader handles the deals.",
-                        },
-                        ["TL"] = {
-                            "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan.",
-                        },
-                    },
                     ["variantID"] = "trader.referral",
                 },
             },
@@ -2621,32 +2066,20 @@ return {
                 },
                 ["textRows"] = {
                     {
+                        ["fallback"] = "Caravan",
                         ["key"] = "category.caravan_referral",
-                        ["text"] = {
-                            ["EN"] = "Caravan",
-                            ["TL"] = "Karabana",
-                        },
                     },
                     {
+                        ["fallback"] = "Who handles the trading?",
                         ["key"] = "choice.trader_referral",
-                        ["text"] = {
-                            ["EN"] = "Who handles the trading?",
-                            ["TL"] = "Sino ang namamahala sa kalakalan?",
-                        },
                     },
                     {
+                        ["fallback"] = "I am only here to keep watch. What do you need?",
                         ["key"] = "opening",
-                        ["text"] = {
-                            ["EN"] = "I am only here to keep watch. What do you need?",
-                            ["TL"] = "Narito lang ako para magbantay. Ano ang kailangan mo?",
-                        },
                     },
                     {
+                        ["fallback"] = "I am just a mercenary. Our trader handles the deals.",
                         ["key"] = "response.trader_referral",
-                        ["text"] = {
-                            ["EN"] = "I am just a mercenary. Our trader handles the deals.",
-                            ["TL"] = "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan.",
-                        },
                     },
                 },
                 ["textTarget"] = "dynamic_trading/caravan/referral/guard",
@@ -2662,18 +2095,11 @@ return {
                         ["shorthand"] = true,
                         ["variants"] = {
                             {
+                                ["fallback"] = "I am just a mercenary. Our trader handles the deals.",
                                 ["id"] = "trader.referral",
                                 ["metadata"] = {
                                     ["templateID"] = "DTCommon.TraderReferral",
                                     ["textKey"] = "response.trader_referral",
-                                },
-                                ["text"] = {
-                                    ["EN"] = {
-                                        "I am just a mercenary. Our trader handles the deals.",
-                                    },
-                                    ["TL"] = {
-                                        "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan.",
-                                    },
                                 },
                             },
                         },
@@ -2757,14 +2183,6 @@ return {
                 ["realizationKey"] = "1",
                 ["role"] = "spoken_action",
                 ["templateID"] = "convo.trade.conversation.referral.say.1.trader.referral",
-                ["translations"] = {
-                    ["EN"] = {
-                        "I am just a mercenary. Our trader handles the deals.",
-                    },
-                    ["TL"] = {
-                        "Mercenary lang ako. Ang trader namin ang namamahala sa mga kasunduan.",
-                    },
-                },
                 ["variantID"] = "trader.referral",
             },
         },

@@ -1,0 +1,9 @@
+{
+  "schema": "psychopatz.convo-engine.translation.v1",
+  "family": "question.whereabouts",
+  "locale": "EN",
+  "entries": {
+    "affordance.label": "Ask about their travels",
+    "say.variants.default": "What route are you travelling?"
+  }
+}

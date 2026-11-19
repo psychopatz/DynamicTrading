@@ -1,0 +1,12 @@
+{
+  "schema": "psychopatz.convo-engine.translation.v1",
+  "family": "trade.conversation.referral",
+  "locale": "EN",
+  "entries": {
+    "say.variants.trader.referral": "I am just a mercenary. Our trader handles the deals.",
+    "textRows.category.caravan_referral": "Caravan",
+    "textRows.choice.trader_referral": "Who handles the trading?",
+    "textRows.opening": "I am only here to keep watch. What do you need?",
+    "textRows.response.trader_referral": "I am just a mercenary. Our trader handles the deals."
+  }
+}
