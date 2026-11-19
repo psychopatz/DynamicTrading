@@ -24,7 +24,7 @@ Prove Core + DTCommon + DTAbstract without Hoomans. Remote/abstract interactions
 
 Use bounded Core social projections in existing relationship pricing context and trader conversation. Add willingness/credit/negotiation consumers only where the current product owns those policies.
 
-## DT5 — MP, scale and regression (Next)
+## DT5 — MP, scale and regression (Accepted)
 
 Prove reconnect/replay, many abstract traders, bounded storage, no broad private-state replication, deterministic CodeBuilder output and no commerce regression.
 
