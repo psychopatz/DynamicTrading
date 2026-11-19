@@ -1,9 +1,9 @@
 # Progress — DynamicTrading Portable Actor Lifecycle & GC Adoption
 
-**Status:** IN_PROGRESS (D0, D1, D2, D3, D4 ACCEPTED — next D5 scale/soak regression).
+**Status:** COMPLETE — D0–D5, D4-policy ACCEPTED (**READY FOR USER LIVE TEST**).
 **Parent:** PsychopatzCore Docs/portable_actor_lifecycle_gc/.
-**Current phase:** D4 complete; next D5 large-scale GC soak & final regression.
-**Participant completion:** 5/6 phases accepted (D0, D1, D2, D3, D4).
+**Current phase:** D5 complete — all DynamicTrading Portable Actor Lifecycle & GC phases accepted.
+**Participant completion:** 6/6 phases accepted (D0, D1, D2, D3, D4, D5).
 
 ## Verified D0 Audit Facts (Checkpoint `c5a45962`)
 
@@ -35,6 +35,12 @@
 - Enriched `DTCommon_CoreActorPolicy.lua` (`Policy.QuerySocialProjection`) with O(1) read-only Core `ProjectIdentity` lookups attaching `lifecycleStatus`, `lifecycleRevision`, `targetLifecycleStatus`, and `targetLifecycleRevision` without invoking GC, plus bounded historical projection fallback (`allowHistorical = true`) for `RETIRED` and `FORGOTTEN` (`LABEL_ONLY` `"old_trader"`) traders without retaining dead simulation state.
 - Extended `tests/dt_actor_lifecycle_gc_adoption_smoke.lua` (Phase 3 D4) and verified `python3 tests/run_tests.py` (`PASS 91/91`) + Kahlua lint (`0` errors).
 
+## D5 — Scale, GC Soak & Final Acceptance
+
+- Created `tests/dt_actor_lifecycle_gc_scale_soak_smoke.lua` stressing 200 traders across rollback `HardDelete` (20), commercial-role removal (20), superseded `PreSurvivorWorldImport` migration (20), ordinary trader deaths (100), betrayal-anchor pins (20), active obligation pins (20, settled -> purge), Kahlua `_G.next = nil` Core `Save()`/`Load()` roundtrip, and combined `DTHoomans` + `ProjectHoomans` physical death continuity under both PNC-disabled and PNC-enabled modes.
+- Verified full DynamicTrading suite (`python3 tests/run_tests.py`: `PASS 92/92`).
+- Status: **READY FOR USER LIVE TEST**.
+
 ## Next Chunk
 
-Complete **D5** large-scale multi-generation GC soak and persistence regression under Core **L9**.
+Complete — READY FOR USER LIVE TEST (no pending developer phases).
