@@ -1,8 +1,8 @@
 # Portable Social State — DynamicTrading / DTAbstract Adoption
 
-**Status:** PLANNED participant work.
+**Status:** ACCEPTED (DT0-DT6 complete under parent P0-P12; READY FOR USER LIVE TEST).
 **Parent job:** PsychopatzCore Docs/portable_social_state/.
-**Parent completion boundary:** Core P0-P9. This document does not redefine parent completion.
+**Parent completion boundary:** Core P0-P12 complete; DT0-DT6 accepted.
 
 ## Goal
 

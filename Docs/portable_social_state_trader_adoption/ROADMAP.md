@@ -29,3 +29,18 @@ Use bounded Core social projections in existing relationship pricing context and
 Prove reconnect/replay, many abstract traders, bounded storage, no broad private-state replication, deterministic CodeBuilder output and no commerce regression.
 
 Participant completion requires all relevant Core parent gates, not DT5 alone.
+
+## DT6 — Post-cleanup adopter regression (Parent P12 — Accepted)
+
+DynamicTrading production changes are not expected merely because P10 and P11 clean Core and Hoomans ownership boundaries.
+
+After those phases:
+
+- rerun Core plus DTCommon plus DTAbstract with PNC disabled;
+- rerun trader social event, replay and idempotency tests;
+- rerun relationship-aware pricing and social-aware conversation tests;
+- rerun DTAbstract to DTHoomans to DTAbstract continuity with the new Hoomans single-persistence shape;
+- prove no trader social state is duplicated into a DT-owned generic relationship store;
+- rerun CodeBuilder reconcile and determinism and the full DynamicTrading suite.
+
+**Gate:** DT remains a thin adopter of Core portable social state and all relevant tests remain green after P10-P12.
