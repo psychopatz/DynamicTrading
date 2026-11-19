@@ -18,6 +18,11 @@
 - **Core social consumers:** zero DT modules directly inspect per-relationship `memories` arrays (`DTCommon_CoreActorPolicy.lua:373` already routes through `Social.QueryCandidateProjection`).
 - **Minor verified gaps for D1-D4:** `DTHoomans_SettlementTrader.lua:243-247` calls nonexistent `Service.SetCoreActorID` (`Service.BindActor`); `DTCommon.WorldKnowledge` (`ModData["DTCommon.Traders"].worldKnowledge`) never prunes retired actors.
 
+## D4-policy — Social Policy Reference Strength Metadata
+
+- Annotated `tools/providers/dt/codebuilder/sources/social_policy/events/commerce.json` with explicit `references` (`commercial_trade` and routine `LONG`/`SHORT` events marked `target = WEAK` so normal trade contacts never pin dead tombstones; `trade.betrayal_or_hostile` marked `target = STRONG`, `source = WEAK`, `anchorMax = 16`, `degradeOnPurge = KEEP_HISTORICAL`).
+- Regenerated `DTCommon/SocialPolicy/Events/Commerce.lua` and `Registry.lua` via Core CodeBuilder `reconcile.py --apply` (`clean: true`; Kahlua lint 0 errors; `dt_trade_relationship_event_smoke.lua` and `dt_portable_social_trader_adoption_smoke.lua` PASS).
+
 ## Next Chunk
 
 Wait for Core L1-L4 acceptance, then implement **D1** (distinguish Core `HardDelete` rollback, commercial-role removal, superseded migration, and true Core `Retire` handling, and reconcile trader records cleanly on Core actor death/retirement).

@@ -26,6 +26,12 @@
         "personalityModulation": true,
         "updateState": true
       },
+      "references": {
+        "target": "WEAK",
+        "maxActorRefs": 1,
+        "maxStrongRefs": 0,
+        "degradeOnPurge": "LABEL_ONLY"
+      },
       "evidence": {
         "semantic": true,
         "classes": ["commerce", "cooperation"],
@@ -53,6 +59,13 @@
         "familiarityDelta": 2,
         "personalityModulation": true,
         "updateState": true
+      },
+      "references": {
+        "target": "WEAK",
+        "source": "WEAK",
+        "maxActorRefs": 2,
+        "maxStrongRefs": 0,
+        "degradeOnPurge": "LABEL_ONLY"
       },
       "evidence": {
         "semantic": true,
@@ -82,6 +95,13 @@
         "personalityModulation": true,
         "updateState": true
       },
+      "references": {
+        "target": "WEAK",
+        "source": "WEAK",
+        "maxActorRefs": 2,
+        "maxStrongRefs": 0,
+        "degradeOnPurge": "LABEL_ONLY"
+      },
       "evidence": {
         "semantic": true,
         "classes": ["commerce", "assistance"],
@@ -110,6 +130,13 @@
         "personalityModulation": true,
         "updateState": true
       },
+      "references": {
+        "target": "WEAK",
+        "source": "WEAK",
+        "maxActorRefs": 2,
+        "maxStrongRefs": 0,
+        "degradeOnPurge": "LABEL_ONLY"
+      },
       "evidence": {
         "semantic": true,
         "classes": ["commerce", "assistance"],
@@ -137,6 +164,12 @@
         "personalityModulation": true,
         "updateState": true
       },
+      "references": {
+        "target": "WEAK",
+        "maxActorRefs": 1,
+        "maxStrongRefs": 0,
+        "degradeOnPurge": "DROP"
+      },
       "evidence": {
         "semantic": true,
         "classes": ["commerce", "grievance"],
@@ -151,7 +184,7 @@
         "salience": 215,
         "decayPerDay": 0.0,
         "permanent": true,
-        "anchorMax": 6,
+        "anchorMax": 16,
         "shareable": true,
         "observerPolicy": { "maxObservers": 4, "allowWitnesses": true },
         "hearsayPolicy": { "allowHearsay": true, "maxHops": 2, "attenuation": 0.6 }
@@ -162,6 +195,13 @@
         "familiarityDelta": 4,
         "personalityModulation": true,
         "updateState": true
+      },
+      "references": {
+        "target": "STRONG",
+        "source": "WEAK",
+        "maxActorRefs": 2,
+        "maxStrongRefs": 1,
+        "degradeOnPurge": "KEEP_HISTORICAL"
       },
       "evidence": {
         "semantic": true,
