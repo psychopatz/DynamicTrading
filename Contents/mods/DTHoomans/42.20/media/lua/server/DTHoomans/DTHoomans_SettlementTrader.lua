@@ -241,9 +241,9 @@ function Settlement.EnsureTraderForFaction(factionID)
     if not contextOK then return false, contextReason end
     if existing and tostring(existing.p or existing.l or "") == npcID then
         if (not existing.ca or not existing.ca.actorID or existing.ca.actorID == "")
-            and type(Service.SetCoreActorID) == "function"
+            and type(Service.BindActor) == "function"
         then
-            Service.SetCoreActorID(traderID, npcID)
+            Service.BindActor(traderID, npcID)
         end
         local boundContext, boundReason = bindResidentContext(
             traderID, residentCommunity)

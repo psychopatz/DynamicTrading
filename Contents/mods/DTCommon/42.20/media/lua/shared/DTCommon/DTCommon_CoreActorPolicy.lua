@@ -194,6 +194,16 @@ function Policy.IsAvailable(record)
     if policy.available ~= true then
         return false, policy.availabilityReason or "actor_unavailable"
     end
+    local actorID = policy.actorID
+    if actorID and actorID ~= "" then
+        local actors = PsychopatzCore and PsychopatzCore.Actors or nil
+        local reg = actors and actors.DefaultRegistry or nil
+        if reg and type(reg.GetLifecycleState) == "function"
+            and reg:GetLifecycleState(actorID) == "RETIRED"
+        then
+            return false, "actor_retired"
+        end
+    end
     return true
 end
 

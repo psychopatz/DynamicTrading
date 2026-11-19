@@ -33,6 +33,7 @@ require "DTCommon/DTCommon_TraderService"
 require "DTCommon/DTCommon_TraderWorld"
 require "DTCommon/DTCommon_SettlementExchange"
 require "DTCommon/DTCommon_WorldKnowledge"
+require "DTCommon/DTCommon_ActorLifecycle"
 require "DTCommon/DTCommon_PlacePresentation"
 DTCommon.GeneratedSemanticRegistry = require
     "DTCommon/ConvoEngine/Registry"

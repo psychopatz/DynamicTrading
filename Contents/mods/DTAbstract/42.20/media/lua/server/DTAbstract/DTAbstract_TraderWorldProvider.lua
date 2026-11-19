@@ -582,6 +582,37 @@ function Provider.reconcileRecord(traderID, record)
         )
     end
 
+    local lifecycleStatus = actorRegistry and actorID
+        and type(actorRegistry.GetLifecycleState) == "function"
+        and actorRegistry:GetLifecycleState(actorID) or nil
+    if not actor and lifecycleStatus == "RETIRED" then
+        local changed = ca.available ~= false
+            or ca.availabilityReason ~= "actor_retired"
+            or ca.providerState ~= "released"
+            or ca.lifecycleState ~= "retired"
+            or record.s ~= ((DTCommon and DTCommon.STATUS_AWAY) or "AWAY")
+        local lifecycleBridge = DTCommon and DTCommon.ActorLifecycle or nil
+        if lifecycleBridge and type(lifecycleBridge.OnActorRetired) == "function" then
+            lifecycleBridge.OnActorRetired(actorID, {
+                traderID = traderID,
+                keepCommercialRecord = true,
+                now = worldAge(),
+            })
+        else
+            Policy.SetAvailable(record, false, "actor_retired")
+            ca = record.ca
+            ca.providerState = "released"
+            ca.lifecycleState = "retired"
+            ca.journeyID = nil
+            ca.journeyState = nil
+            record.s = (DTCommon and DTCommon.STATUS_AWAY) or "AWAY"
+        end
+        return true, changed and "changed" or "unchanged"
+    end
+    if not actor and ca.availabilityReason == "actor_retired" then
+        return true, "unchanged"
+    end
+
     local available = actor ~= nil and group ~= nil
     local reason = not actor and "core_actor_missing"
         or not group and "core_group_missing"

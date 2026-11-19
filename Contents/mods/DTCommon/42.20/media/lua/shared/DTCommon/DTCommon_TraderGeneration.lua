@@ -95,10 +95,19 @@ function Generation.RemoveCanonicalGroup(result)
 
     local Actors = require "PsychopatzCore/Actors/PsychopatzActors"
     local registry = Actors and Actors.DefaultRegistry or nil
-    if registry and type(registry.Remove) == "function" then
+    if registry then
         for _, actorID in ipairs(result.createdActorIDs or {}) do
-            registry:Remove(actorID)
-            removed = true
+            if type(registry.HardDelete) == "function" then
+                if registry:HardDelete(actorID, {
+                    authority = "server",
+                    reason = "rollback",
+                }) then
+                    removed = true
+                end
+            elseif type(registry.Remove) == "function" then
+                registry:Remove(actorID)
+                removed = true
+            end
         end
     end
     return removed

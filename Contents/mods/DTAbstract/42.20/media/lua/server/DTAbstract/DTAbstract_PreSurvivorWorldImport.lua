@@ -44,6 +44,136 @@ local function directoryHas(directory, settlementID)
         and directory.Get(settlementID) ~= nil
 end
 
+local function tableHasAnyEntry(tbl)
+    if type(tbl) ~= "table" then return false end
+    for _ in pairs(tbl) do return true end
+    return false
+end
+
+local function appendUniqueStrings(dst, src, limit)
+    local seen = {}
+    for index = 1, #dst do seen[dst[index]] = true end
+    for index = 1, #(src or {}) do
+        if #dst >= limit then break end
+        local val = src[index]
+        if val ~= nil and not seen[val] then
+            seen[val] = true
+            dst[#dst + 1] = val
+        end
+    end
+end
+
+local function mergeSocialOntoReplacement(registry, newActorID, oldActor, actorAPI)
+    local oldSocial = type(oldActor) == "table" and type(oldActor.social) == "table"
+        and oldActor.social or nil
+    if not oldSocial then return end
+    local hasOldData = tableHasAnyEntry(oldSocial.relationships)
+        or tableHasAnyEntry(oldSocial.memoryBank)
+        or tableHasAnyEntry(oldSocial.aliases)
+        or tableHasAnyEntry(oldSocial.recentEventIDs)
+    if not hasOldData then return end
+
+    local actors = actorAPI or (PsychopatzCore and PsychopatzCore.Actors) or nil
+    local Social = actors and actors.Social or nil
+    if not Social or type(Social.NewState) ~= "function" then return end
+
+    local latest = type(registry.Get) == "function" and registry:Get(newActorID) or nil
+    if not latest then return end
+    local baseSocial = type(latest.social) == "table" and latest.social or {}
+
+    local combined = {
+        revision = baseSocial.revision,
+        personality = tableHasAnyEntry(baseSocial.personality)
+            and baseSocial.personality or oldSocial.personality or {},
+        personalityOverrides = tableHasAnyEntry(baseSocial.personalityOverrides)
+            and baseSocial.personalityOverrides or oldSocial.personalityOverrides or {},
+        recentEventIDs = {},
+        relationships = {},
+        memoryBank = {},
+        aliases = {},
+        extensions = baseSocial.extensions or oldSocial.extensions,
+    }
+    appendUniqueStrings(combined.recentEventIDs, baseSocial.recentEventIDs, 64)
+    appendUniqueStrings(combined.recentEventIDs, oldSocial.recentEventIDs, 64)
+
+    for key, rel in pairs(oldSocial.relationships or {}) do
+        combined.relationships[key] = rel
+    end
+    for key, rel in pairs(baseSocial.relationships or {}) do
+        combined.relationships[key] = rel
+    end
+    for index = 1, #(baseSocial.memoryBank or {}) do
+        combined.memoryBank[#combined.memoryBank + 1] = baseSocial.memoryBank[index]
+    end
+    for index = 1, #(oldSocial.memoryBank or {}) do
+        combined.memoryBank[#combined.memoryBank + 1] = oldSocial.memoryBank[index]
+    end
+    for key, target in pairs(oldSocial.aliases or {}) do
+        combined.aliases[key] = target
+    end
+    for key, target in pairs(baseSocial.aliases or {}) do
+        combined.aliases[key] = target
+    end
+
+    local merged = Social.NewState(combined)
+    if merged and (type(Social.Validate) ~= "function" or Social.Validate(merged))
+        and type(registry.Commit) == "function"
+    then
+        registry:Commit(newActorID, { social = merged }, latest.revision)
+    end
+end
+
+local function migrateWorldKnowledge(oldActorID, newActorID)
+    local wkg = PsychopatzCore and PsychopatzCore.WorldKnowledge or nil
+    if type(wkg) ~= "table" or type(wkg.KnowledgeState) ~= "table"
+        or type(wkg.KnowledgeState.byActor) ~= "table"
+    then
+        return
+    end
+    local byActor = wkg.KnowledgeState.byActor
+    local oldEntry = byActor[oldActorID]
+    if type(oldEntry) ~= "table" then return end
+
+    local refs = type(oldEntry.refs) == "table" and oldEntry.refs or {}
+    local order = type(oldEntry.order) == "table" and oldEntry.order or {}
+    local maxRefs = math.max(1, math.floor(tonumber(wkg.KnowledgeState.maxRefs) or 64))
+    for index = 1, #order do
+        local factID = order[index]
+        local ref = refs[factID]
+        if type(ref) == "table" then
+            local acquired = type(wkg.Acquire) == "function" and wkg.Acquire(
+                newActorID,
+                factID,
+                {
+                    authorized = true,
+                    provenance = ref.provenance or "public",
+                    source = ref.source or "dt_migration",
+                    confidence = ref.confidence,
+                    learnedAt = ref.learnedAt,
+                }
+            ) or nil
+            if not acquired then
+                local dest = byActor[newActorID]
+                if type(dest) ~= "table" then
+                    dest = { refs = {}, order = {} }
+                    byActor[newActorID] = dest
+                end
+                if not dest.refs[factID] then
+                    while #dest.order >= maxRefs do
+                        local dropped = table.remove(dest.order, 1)
+                        if dropped then dest.refs[dropped] = nil end
+                    end
+                    local copied = {}
+                    for k, v in pairs(ref) do copied[k] = v end
+                    dest.refs[factID] = copied
+                    dest.order[#dest.order + 1] = factID
+                end
+            end
+        end
+    end
+    byActor[oldActorID] = nil
+end
+
 function Import.Rebind(traderID, record, now, deps)
     deps = type(deps) == "table" and deps or {}
     local ca = record and record.ca or nil
@@ -179,7 +309,16 @@ function Import.Rebind(traderID, record, now, deps)
     end
 
     if oldActor and not oldShared then
-        registry:Remove(oldActorID)
+        mergeSocialOntoReplacement(registry, candidate.actorID, oldActor, actorAPI)
+        migrateWorldKnowledge(oldActorID, candidate.actorID)
+        if type(registry.HardDelete) == "function" then
+            registry:HardDelete(oldActorID, {
+                authority = "server",
+                reason = "superseded_migration",
+            })
+        elseif type(registry.Remove) == "function" then
+            registry:Remove(oldActorID)
+        end
     end
 
     return candidate, "import_rebound", {
