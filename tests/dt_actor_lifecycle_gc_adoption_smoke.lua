@@ -624,4 +624,78 @@ T.equal(finalSettleRec.ca.providerState, "released",
 T.equal(finalSettleRec.ca.availabilityReason, "actor_retired",
     "physical death records actor_retired reason")
 
+-- Phase 3 (D4): Lifecycle-aware Policy.QuerySocialProjection (LIVE, RETIRED historical, FORGOTTEN)
+local liveProjActor = assert(registry:Create({
+    actorId = "actor:dt:live_projection",
+    identitySeed = "live-proj",
+    identity = { displayName = "Merchant Nora", role = "trader" },
+    social = Social.NewState({
+        relationships = {
+            ["player:user:dave"] = {
+                target = "player:user:dave",
+                approval = 30,
+                respect = 20,
+                familiarity = 25,
+                revision = 2,
+            },
+        },
+        memoryBank = {
+            {
+                id = "mem:dt:live_1",
+                aboutKey = "player:user:dave",
+                eventType = "trade.fair_high_value",
+                retentionClass = "LONG",
+                refStrength = "WEAK",
+                salience = 80,
+                createdAt = worldHours,
+            },
+        },
+    }),
+}))
+local _, liveProjDT = Service.Create({
+    traderID = "trader:dt:live_proj",
+    displayName = "Merchant Nora",
+    traderRole = "Caravan Merchant",
+    actorID = liveProjActor.actorId,
+    provider = "DTAbstract",
+    providerState = "abstract",
+    abstractAccessEnabled = true,
+})
+local mockDave = {
+    getUsername = function() return "dave" end,
+    getModData = function() return {} end,
+}
+local liveSocProj = assert(Policy.QuerySocialProjection(liveProjDT, mockDave, {
+    worldAgeHours = worldHours,
+}))
+T.equal(liveSocProj.lifecycleStatus, "LIVE", "D4 live trader projection status")
+T.equal(liveSocProj.lifecycleRevision, 1, "D4 live trader lifecycleRevision")
+
+assert(LifecycleBridge.RetireTraderActor("trader:dt:live_proj", {
+    retiredAt = worldHours,
+    graceHours = 12,
+    reason = "death",
+    keepCommercialRecord = true,
+}))
+local retiredSocProjNil = Policy.QuerySocialProjection(liveProjDT, mockDave)
+T.equal(retiredSocProjNil, nil, "retired trader has nil active social projection by default")
+local retiredHistProj = assert(Policy.QuerySocialProjection(liveProjDT, mockDave, {
+    allowHistorical = true,
+}))
+T.equal(retiredHistProj.historical, true, "D4 historical flag set")
+T.equal(retiredHistProj.lifecycleStatus, "RETIRED", "D4 retired lifecycleStatus")
+T.equal(retiredHistProj.displayName, "Merchant Nora", "D4 retired displayName preserved")
+
+worldHours = worldHours + 24
+GC.RunFull(registry, { authority = "server", now = worldHours, worldKnowledge = WKG })
+T.equal(registry:GetLifecycleState(liveProjActor.actorId), "FORGOTTEN",
+    "D4 trader purged to FORGOTTEN")
+local forgottenHistProj = assert(Policy.QuerySocialProjection(liveProjDT, mockDave, {
+    allowHistorical = true,
+    degradedLabel = "old_trader",
+}))
+T.equal(forgottenHistProj.lifecycleStatus, "FORGOTTEN", "D4 forgotten lifecycleStatus")
+T.equal(forgottenHistProj.displayName, nil, "D4 forgotten projection omits name")
+T.equal(forgottenHistProj.degradedLabel, "old_trader", "D4 forgotten projection uses role label")
+
 T.finish("dt_actor_lifecycle_gc_adoption_smoke")

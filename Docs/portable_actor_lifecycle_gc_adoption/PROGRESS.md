@@ -1,9 +1,9 @@
 # Progress — DynamicTrading Portable Actor Lifecycle & GC Adoption
 
-**Status:** IN_PROGRESS (D0, D1, D2, D3, D4-policy ACCEPTED — awaiting D4 semantic / D5 soak).
+**Status:** IN_PROGRESS (D0, D1, D2, D3, D4 ACCEPTED — next D5 scale/soak regression).
 **Parent:** PsychopatzCore Docs/portable_actor_lifecycle_gc/.
-**Current phase:** D1–D3 complete; next D4 lifecycle-aware commercial/conversation social projection.
-**Participant completion:** 4/6 phases accepted (D0, D1, D2, D3, plus D4-policy).
+**Current phase:** D4 complete; next D5 large-scale GC soak & final regression.
+**Participant completion:** 5/6 phases accepted (D0, D1, D2, D3, D4).
 
 ## Verified D0 Audit Facts (Checkpoint `c5a45962`)
 
@@ -30,6 +30,11 @@
 - Created `tests/dt_actor_lifecycle_gc_adoption_smoke.lua` covering standalone Core+DTAbstract (rollback, role removal, migration, unreferenced purge vs betrayal anchor & active obligation pinning, external death reconciliation) AND combined `DTHoomans`+`ProjectHoomans` materialize/dematerialize, settlement binding, and physical death retirement.
 - Verified full DynamicTrading test suite (`python3 tests/run_tests.py`: `PASS 91/91`) and `pz_verify.py --kahlua --severity ERROR` (`0` errors across all 7 created/modified DT Lua files).
 
+## D4 — Lifecycle-Aware Semantic & Commercial Projections
+
+- Enriched `DTCommon_CoreActorPolicy.lua` (`Policy.QuerySocialProjection`) with O(1) read-only Core `ProjectIdentity` lookups attaching `lifecycleStatus`, `lifecycleRevision`, `targetLifecycleStatus`, and `targetLifecycleRevision` without invoking GC, plus bounded historical projection fallback (`allowHistorical = true`) for `RETIRED` and `FORGOTTEN` (`LABEL_ONLY` `"old_trader"`) traders without retaining dead simulation state.
+- Extended `tests/dt_actor_lifecycle_gc_adoption_smoke.lua` (Phase 3 D4) and verified `python3 tests/run_tests.py` (`PASS 91/91`) + Kahlua lint (`0` errors).
+
 ## Next Chunk
 
-Complete **D4** (lifecycle-aware Core social projections in `DTCommon_CoreActorPolicy.lua`) and **D5** (large-scale multi-generation GC soak & persistence regression under Core L8–L9).
+Complete **D5** large-scale multi-generation GC soak and persistence regression under Core **L9**.

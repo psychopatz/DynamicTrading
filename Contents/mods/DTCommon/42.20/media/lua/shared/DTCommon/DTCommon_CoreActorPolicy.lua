@@ -358,16 +358,46 @@ function Policy.ClassifyTradeEventType(record, player, tradeDetails)
 end
 
 function Policy.QuerySocialProjection(record, player, options)
+    options = type(options) == "table" and options or {}
     local policy = Policy.Get(record)
+    local actors = PsychopatzCore and PsychopatzCore.Actors or nil
+    local reg = actors and actors.DefaultRegistry or nil
+    local actorProj = (policy.actorID and policy.actorID ~= "" and reg
+        and type(reg.ProjectIdentity) == "function")
+        and reg:ProjectIdentity(policy.actorID) or nil
+    local keys = playerKeys(player)
+    local targetProj = (keys[1] and reg and type(reg.ProjectIdentity) == "function")
+        and reg:ProjectIdentity(keys[1]) or nil
+
     local actor = Policy.ResolveActor(record)
     local social = actor and actor.social
-    local Social = PsychopatzCore and PsychopatzCore.Actors
-        and PsychopatzCore.Actors.Social or nil
+    local Social = actors and actors.Social or nil
     if not social or not Social or type(Social.Get) ~= "function" then
+        if options.allowHistorical == true and actorProj
+            and actorProj.status ~= "LIVE"
+        then
+            return {
+                schemaVersion = 1,
+                exists = false,
+                historical = true,
+                actorID = policy.actorID,
+                lifecycleStatus = actorProj.status,
+                lifecycleRevision = actorProj.lifecycleRevision,
+                targetLifecycleStatus = targetProj and targetProj.status or nil,
+                targetLifecycleRevision = targetProj and targetProj.lifecycleRevision or nil,
+                displayName = actorProj.status ~= "FORGOTTEN"
+                    and (actorProj.displayName or (type(record) == "table" and record.n) or nil)
+                    or nil,
+                degradedLabel = actorProj.status == "FORGOTTEN"
+                    and (options.degradedLabel or "old_trader") or nil,
+                role = actorProj.role or (type(record) == "table" and record.r) or nil,
+                retiredAt = actorProj.retiredAt,
+                reason = actorProj.reason,
+            }
+        end
         return nil
     end
 
-    local keys = playerKeys(player)
     local matchedKey = nil
     for _, key in ipairs(keys) do
         if Social.Get(social, key) then
@@ -382,8 +412,9 @@ function Policy.QuerySocialProjection(record, player, options)
     if type(Social.QueryCandidateProjection) == "function" then
         proj = Social.QueryCandidateProjection(social, matchedKey, {
             extensionID = "DynamicTrading",
-            worldAgeHours = options and options.worldAgeHours,
-            maxMemories = options and options.maxMemories or 6,
+            worldAgeHours = options.worldAgeHours,
+            maxMemories = options.maxMemories or 6,
+            registry = reg,
         })
     else
         local rel = Social.Get(social, matchedKey)
@@ -407,6 +438,14 @@ function Policy.QuerySocialProjection(record, player, options)
         }
     end
     if not proj then return nil end
+
+    proj.lifecycleStatus = (actorProj and actorProj.status) or "LIVE"
+    proj.lifecycleRevision = (actorProj and actorProj.lifecycleRevision)
+        or (tonumber(actor.lifecycleRevision) or 1)
+    proj.targetLifecycleStatus = (targetProj and targetProj.status)
+        or proj.targetLifecycleStatus
+    proj.targetLifecycleRevision = (targetProj and targetProj.lifecycleRevision)
+        or proj.targetLifecycleRevision
 
     local ext = type(proj.extension) == "table" and proj.extension or {}
     local reliability = tonumber(ext.commercialReliability) or 50
