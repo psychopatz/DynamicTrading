@@ -92,11 +92,13 @@ local fallbackRel = Social.Get(
     registry:Get("actor:dt:merchant:one").social,
     "player:online:12"
 )
+local lastMem = fallbackRel.memories[#fallbackRel.memories]
 T.equal(
-    fallbackRel.memories[#fallbackRel.memories].id,
+    lastMem.lastEventID or lastMem.id,
     "dt:trade:trade:0:1",
-    "request-less trade uses Kahlua-safe game-time serial"
+    "request-less trade updates consolidated lastEventID with Kahlua-safe serial"
 )
+T.equal(lastMem.count, 2, "repeated commercial_trade coalesced into single consolidated memory")
 
 -- New price context reflects the improved relationship!
 local discountedPrice = Policy.PriceContext(traderRecord, player)

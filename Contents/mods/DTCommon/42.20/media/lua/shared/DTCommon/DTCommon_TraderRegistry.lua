@@ -154,6 +154,11 @@ function Service.BindFaction(traderID, factionID, traderNPCID, memberNPCIDs)
     record.g = Support.Bounded(factionID, 192)
     record.l = Support.Bounded(traderNPCID, 128)
     record.p = record.l
+    local ca = Policy.Get(record)
+    if (not ca.actorID or ca.actorID == "") and record.l ~= "" then
+        ca.actorID = record.l
+        record.ca = ca
+    end
     for index = 1, math.min(#(memberNPCIDs or {}), 24) do
         value = Support.Bounded(memberNPCIDs[index], 128)
         if value ~= "" then members[#members + 1] = value end

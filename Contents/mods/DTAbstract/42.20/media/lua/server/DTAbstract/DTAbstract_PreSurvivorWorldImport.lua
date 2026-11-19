@@ -135,6 +135,18 @@ function Import.Rebind(traderID, record, now, deps)
 
     local policy = Policy.Get(record)
     policy.actorID = candidate.actorID
+    record.g = tostring(candidate.factionID or record.g or "")
+    record.l = candidate.actorID
+    record.p = nil
+    if type(candidate.memberActorIDs) == "table" and #candidate.memberActorIDs > 0 then
+        local nextMembers = {}
+        for index = 1, math.min(#candidate.memberActorIDs, 24) do
+            nextMembers[index] = tostring(candidate.memberActorIDs[index])
+        end
+        record.m = nextMembers
+    elseif candidate.actorID and candidate.actorID ~= "" then
+        record.m = { candidate.actorID }
+    end
     policy.homeSettlementID = directoryHas(
         deps.directory,
         policy.homeSettlementID

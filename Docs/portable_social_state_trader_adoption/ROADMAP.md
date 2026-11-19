@@ -12,19 +12,19 @@ Identify any trader-only social/reputation state that duplicates Core.
 
 Add/normalize DynamicTrading-owned canonical social event policy through the parent CodeBuilder Social Policy IR once Core P3 contracts are accepted.
 
-## DT2 — Authoritative event bridge
+## DT2 — Authoritative event bridge (Accepted)
 
 Emit Core social events only from authoritative DT outcomes. Preserve idempotency and do not let conversation/UI fabricate outcomes.
 
-## DT3 — DTAbstract continuity
+## DT3 — DTAbstract continuity (Accepted)
 
 Prove Core + DTCommon + DTAbstract without Hoomans. Remote/abstract interactions update the same social state later seen by a materialized trader.
 
-## DT4 — Immersive consumers
+## DT4 — Immersive consumers (Accepted)
 
 Use bounded Core social projections in existing relationship pricing context and trader conversation. Add willingness/credit/negotiation consumers only where the current product owns those policies.
 
-## DT5 — MP, scale and regression
+## DT5 — MP, scale and regression (Next)
 
 Prove reconnect/replay, many abstract traders, bounded storage, no broad private-state replication, deterministic CodeBuilder output and no commerce regression.
 

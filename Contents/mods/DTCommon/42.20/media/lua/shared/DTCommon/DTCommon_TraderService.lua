@@ -581,6 +581,9 @@ function Service.Snapshot(traderID, player, accessOptions)
     snapshot.settlementID = pricingContext.settlementID
     snapshot.usedWeight = usedWeight
     snapshot.maxWeight = maxWeight
+    if player and Policy and type(Policy.QuerySocialProjection) == "function" then
+        snapshot.social = Policy.QuerySocialProjection(record, player)
+    end
     return snapshot
 end
 

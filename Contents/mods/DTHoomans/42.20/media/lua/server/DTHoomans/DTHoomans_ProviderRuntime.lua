@@ -380,6 +380,16 @@ function Runtime.DematerializeTrader(traderID, options)
     end
 
     local now = tonumber(options.now) or worldAge()
+    if PNC and PNC.Registry and type(PNC.Registry.Get) == "function"
+        and PNC.Persistence and PNC.Persistence.CoreSocial
+        and type(PNC.Persistence.CoreSocial.SyncToCore) == "function"
+    then
+        local hoomansRecord = PNC.Registry.Get(actorID)
+        if hoomansRecord and type(hoomansRecord.social) == "table" then
+            PNC.Persistence.CoreSocial.SyncToCore(hoomansRecord, PsychopatzCore)
+            current = reg:Get(actorID) or current
+        end
+    end
     local liveBody = PNC and PNC.Registry and PNC.Registry.GetLiveZombie
         and PNC.Registry.GetLiveZombie(actorID) or nil
     local capturedPosition = bodyPosition(

@@ -240,6 +240,11 @@ function Settlement.EnsureTraderForFaction(factionID)
         ensureResidentMarket(factionID)
     if not contextOK then return false, contextReason end
     if existing and tostring(existing.p or existing.l or "") == npcID then
+        if (not existing.ca or not existing.ca.actorID or existing.ca.actorID == "")
+            and type(Service.SetCoreActorID) == "function"
+        then
+            Service.SetCoreActorID(traderID, npcID)
+        end
         local boundContext, boundReason = bindResidentContext(
             traderID, residentCommunity)
         if not boundContext then return false, boundReason end
@@ -250,6 +255,9 @@ function Settlement.EnsureTraderForFaction(factionID)
     end
     record, reason = Service.Create({
         traderID = traderID,
+        actorID = npcID,
+        provider = "DTHoomans",
+        providerState = "materialized",
         -- The DT record's binding label: a settlement rather than a caravan.
         caravanID = SETTLEMENT_BINDING_PREFIX .. tostring(factionID),
         -- A settlement trader is met in person. The radio shortcut stays a

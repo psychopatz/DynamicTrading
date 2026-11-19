@@ -534,21 +534,76 @@ local function hasPattern(ir, value)
     return string.find(patternID(ir), value, 1, true) ~= nil
 end
 
+local function resolveRelationshipFrom(projection, record, options)
+    local rel = projection and (projection.relationship
+        or (projection.social and projection.social.relationship))
+    if type(rel) == "table" and rel.approval ~= nil then
+        return rel
+    end
+    local policy = DTCommon and DTCommon.CoreActorPolicy
+    local player = (options and options.player)
+        or (type(getPlayer) == "function" and getPlayer() or nil)
+    if policy and type(policy.QuerySocialProjection) == "function"
+        and record and player
+    then
+        local queried = policy.QuerySocialProjection(record, player)
+        if queried and queried.exists then
+            return queried
+        end
+    end
+    if type(rel) == "table" then
+        local copyRel = {}
+        for k, v in pairs(rel) do copyRel[k] = v end
+        copyRel.approval = tonumber(copyRel.approval) or 0
+        return copyRel
+    end
+    return { approval = 0, respect = 0, familiarity = 0, state = "unknown" }
+end
+
 local function responseFor(traderID, ir, context)
     local intent = tostring(ir and ir.intent or "")
     local pattern = patternID(ir)
     local record = recordFor(traderID)
+    local rel = type(context and context.relationship) == "table"
+        and context.relationship or {}
+    local pers = type(context and context.personality) == "table"
+        and context.personality or {}
+    local approval = tonumber(rel.approval) or 0
+    local state = tostring(rel.state or "unknown")
+    local commercial = type(rel.commercial) == "table" and rel.commercial or {}
+    local totalTrades = tonumber(commercial.totalTrades) or 0
+    local greed = tonumber(pers.greed) or 0.5
+    local sociability = tonumber(pers.sociability) or 0.5
+    local trusted = approval >= 25 or totalTrades >= 3
+    local guarded = state == "enemy" or approval <= -15
+
     if intent == "TRADE" then
+        local tradeText = "Opening our trade ledger."
+        if guarded then
+            tradeText = "Keep it brief. I am watching every coin and item."
+        elseif trusted and greed >= 0.7 then
+            tradeText = "Always good doing real business with a steady buyer. Let us look at the ledger."
+        elseif trusted then
+            tradeText = "Good to trade with someone reliable. Let us see what you need."
+        elseif greed >= 0.7 then
+            tradeText = "Show me what you can pay and we will talk terms."
+        end
         return {
-            text = "Opening our trade ledger.",
+            text = tradeText,
             branch = "TRADE_REQUESTED",
             action = DTCommon.TRADE_ACTION_ID or "DT.trade",
         }
     end
     if intent == "GOSSIP" then
         if string.find(pattern, "story", 1, true) then
+            local storyText = "The road has been long, but the caravan keeps moving."
+            if guarded then
+                storyText = "Not in the mood for stories right now."
+            elseif trusted and sociability >= 0.6 then
+                storyText = "Between reliable runs like ours, the road feels a little less bleak."
+            end
             return {
-                text = "The road has been long, but the caravan keeps moving.",
+                text = storyText,
                 branch = "STORY_RECEIVED",
             }
         end
@@ -592,18 +647,32 @@ local function responseFor(traderID, ir, context)
         end
     end
     if intent == "GREETING" then
+        local fallback = "Good to see you. What can I trade for you today."
+        if guarded then
+            fallback = "State your business quickly."
+        elseif trusted then
+            fallback = "Good to see a trusted partner again. What can I trade for you?"
+        elseif sociability >= 0.7 then
+            fallback = "Welcome! Always glad for company on the road."
+        end
         return {
             text = foundationResponse(
                 "greeting",
                 traderID,
-                "Good to see you. What can I trade for you today."
+                fallback
             ),
             branch = "GREETING_RECEIVED",
         }
     end
     if intent == "FAREWELL" then
+        local byeText = "Safe travels."
+        if guarded then
+            byeText = "Move along."
+        elseif trusted then
+            byeText = "Safe travels, friend. Come back when you need supplies."
+        end
         return {
-            text = "Safe travels.",
+            text = byeText,
             branch = "FAREWELL_RECEIVED",
         }
     end
@@ -613,10 +682,26 @@ local function responseFor(traderID, ir, context)
     }
 end
 
-local function policyFor(traderID)
+local function policyFor(traderID, defaultContext)
     return {
         Decide = function(ir, state, context)
-            local response = responseFor(traderID, ir, context)
+            local effectiveContext = type(context) == "table" and context or defaultContext
+            if type(defaultContext) == "table" and type(effectiveContext) == "table" and effectiveContext ~= defaultContext then
+                if effectiveContext.relationship == nil then
+                    effectiveContext.relationship = defaultContext.relationship
+                end
+                if effectiveContext.personality == nil then
+                    effectiveContext.personality = defaultContext.personality
+                        or (effectiveContext.actor and effectiveContext.actor.personality)
+                end
+                if effectiveContext.knowledge == nil then
+                    effectiveContext.knowledge = defaultContext.knowledge
+                end
+                if effectiveContext.npcName == nil then
+                    effectiveContext.npcName = defaultContext.npcName
+                end
+            end
+            local response = responseFor(traderID, ir, effectiveContext)
             return {
                 schemaVersion = 1,
                 kind = "dynamictrading_trader_decision",
@@ -675,6 +760,10 @@ local function contextFor(
     if canTrade(projection, role) then
         capabilities[DTCommon.TRADE_CAPABILITY or "DT.trade"] = true
     end
+    local relationship = resolveRelationshipFrom(projection, record, options)
+    local personality = (projection and (projection.personality
+        or (projection.social and projection.social.personality)))
+        or (relationship and relationship.personality)
     return {
         actorID = actorID,
         traderID = traderID,
@@ -695,6 +784,8 @@ local function contextFor(
         factionPresentation = faction.factionPresentation,
         communityID = faction.communityID,
         conversationMode = options.mode or "radio",
+        relationship = relationship,
+        personality = personality,
         identity = identity,
         knownNickname = knowledge and knowledge.knownNickname,
         knownSurname = knowledge and knowledge.knownSurname,
@@ -726,7 +817,7 @@ local function createService(
     local session = view and view.session
     local service, reason = Service.New({
         actor = actorFor(projection, actorID, name),
-        policy = policyFor(traderID),
+        policy = policyFor(traderID, context),
         context = context,
         authority = "client",
         conversationID = session and session.conversationID,
@@ -906,20 +997,10 @@ function Conversation.BuildSpec(traderID, actorID, options)
             or ca.providerState,
         mode = options.mode or "radio",
         role = role,
+        player = options.player,
     }
 
-    local relationship = projection.relationship
-        or projection.social and projection.social.relationship
-    if type(relationship) ~= "table" then
-        relationship = { approval = 0 }
-    elseif relationship.approval == nil then
-        local relationshipCopy = {}
-        for key, value in pairs(relationship) do
-            relationshipCopy[key] = value
-        end
-        relationshipCopy.approval = 0
-        relationship = relationshipCopy
-    end
+    local relationship = resolveRelationshipFrom(projection, record, options)
 
     local conversationContext = {
         actorID = actorID,

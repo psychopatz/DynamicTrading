@@ -238,10 +238,15 @@ end
 
 function Pricing.ContextRevision(context)
     context = type(context) == "table" and context or {}
-    return tostring(context.marketRevision or "none") .. ":"
+    local base = tostring(context.marketRevision or "none") .. ":"
         .. tostring(context.eventRevision or "none") .. ":"
         .. tostring(context.marketSenseCatalogRevision or 0) .. ":"
         .. tostring(context.marketSensePricingRevision or 0)
+    local relRev = tonumber(context.relationshipRevision) or 0
+    if relRev > 0 then
+        return base .. ":" .. tostring(math.floor(relRev))
+    end
+    return base
 end
 
 function Pricing.IsCurrent(context)

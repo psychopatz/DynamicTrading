@@ -306,26 +306,138 @@ function Policy.ResolveActor(record)
     return actors.Get(actorID)
 end
 
+local function resolveCompiledSocialPolicy(eventType)
+    if type(eventType) ~= "string" or eventType == "" then return nil end
+    local dtReg = DTCommon and DTCommon.SocialPolicy and DTCommon.SocialPolicy.Registry
+    if not dtReg and type(require) == "function" then
+        local ok, loaded = pcall(require, "DTCommon/SocialPolicy/Registry")
+        if ok and type(loaded) == "table" then dtReg = loaded end
+    end
+    if type(dtReg) == "table" and type(dtReg.Resolve) == "function" then
+        local spec = dtReg.Resolve(eventType)
+        if spec then return spec end
+    end
+    local corePolicy = PsychopatzCore and PsychopatzCore.SocialPolicy
+    if corePolicy and type(corePolicy.Resolve) == "function" then
+        return corePolicy.Resolve(eventType)
+    end
+    return nil
+end
+
+function Policy.ClassifyTradeEventType(record, player, tradeDetails)
+    tradeDetails = type(tradeDetails) == "table" and tradeDetails or {}
+    if type(tradeDetails.eventType) == "string" and tradeDetails.eventType ~= "" then
+        return tradeDetails.eventType
+    end
+    if tradeDetails.scarceRelief == true then
+        return "trade.help_scarce_supply"
+    end
+    if tradeDetails.giftOrFavor == true then
+        return "trade.gift_or_favor"
+    end
+    if tradeDetails.grievance == true then
+        return "trade.price_grievance"
+    end
+    if tradeDetails.betrayal == true then
+        return "trade.betrayal_or_hostile"
+    end
+    if (tonumber(tradeDetails.totalValue) or 0) >= 250 then
+        return "trade.fair_high_value"
+    end
+    return "commercial_trade"
+end
+
+function Policy.QuerySocialProjection(record, player, options)
+    local policy = Policy.Get(record)
+    local actor = Policy.ResolveActor(record)
+    local social = actor and actor.social
+    local Social = PsychopatzCore and PsychopatzCore.Actors
+        and PsychopatzCore.Actors.Social or nil
+    if not social or not Social or type(Social.Get) ~= "function" then
+        return nil
+    end
+
+    local keys = playerKeys(player)
+    local matchedKey = nil
+    for _, key in ipairs(keys) do
+        if Social.Get(social, key) then
+            matchedKey = key
+            break
+        end
+    end
+    matchedKey = matchedKey or keys[1]
+    if not matchedKey then return nil end
+
+    local proj
+    if type(Social.QueryCandidateProjection) == "function" then
+        proj = Social.QueryCandidateProjection(social, matchedKey, {
+            extensionID = "DynamicTrading",
+            worldAgeHours = options and options.worldAgeHours,
+            maxMemories = options and options.maxMemories or 6,
+        })
+    else
+        local rel = Social.Get(social, matchedKey)
+        if not rel then return nil end
+        proj = {
+            schemaVersion = 1,
+            exists = true,
+            targetKey = rel.targetKey or matchedKey,
+            approval = tonumber(rel.approval) or 0,
+            respect = tonumber(rel.respect) or 0,
+            familiarity = tonumber(rel.familiarity) or 0,
+            state = rel.state or "neutral",
+            previousState = rel.previousState or "unknown",
+            attitude = "neutral",
+            revision = tonumber(rel.revision) or 0,
+            socialRevision = tonumber(social.revision) or 0,
+            grievanceScore = 0,
+            assistanceScore = 0,
+            memories = {},
+            extension = rel.extensions and rel.extensions.DynamicTrading or nil,
+        }
+    end
+    if not proj then return nil end
+
+    local ext = type(proj.extension) == "table" and proj.extension or {}
+    local reliability = tonumber(ext.commercialReliability) or 50
+    local totalTrades = tonumber(ext.totalTrades) or 0
+    local willingnessTier = "standard"
+    if proj.state == "enemy" or proj.approval <= -15 or (proj.grievanceScore or 0) > 10 then
+        willingnessTier = "guarded"
+    elseif proj.approval >= 25 or (reliability >= 65 and totalTrades >= 3) then
+        willingnessTier = "high"
+    end
+
+    proj.actorID = policy.actorID
+    proj.commercial = {
+        totalTrades = totalTrades,
+        lastTradeValue = tonumber(ext.lastTradeValue) or 0,
+        cumulativeTradeValue = tonumber(ext.cumulativeTradeValue) or 0,
+        commercialReliability = reliability,
+        lastTradeAt = ext.lastTradeAt,
+    }
+    proj.willingnessTier = willingnessTier
+    if type(social.personality) == "table" then
+        proj.personality = {
+            greed = social.personality.greed,
+            sociability = social.personality.sociability,
+            forgiveness = social.personality.forgiveness,
+            aggression = social.personality.aggression,
+        }
+    end
+    return proj
+end
+
 function Policy.PriceContext(record, player)
     local policy = Policy.Get(record)
     local modifier = policy.priceBias
-    if policy.relationshipPricing then
-        local actor = Policy.ResolveActor(record)
-        local social = actor and actor.social
-        local Social = PsychopatzCore and PsychopatzCore.Actors
-            and PsychopatzCore.Actors.Social or nil
-        if social and Social and type(Social.Get) == "function" then
-            for _, key in ipairs(playerKeys(player)) do
-                local relationship = Social.Get(social, key)
-                if relationship then
-                    modifier = modifier
-                        + bounded(relationship.approval, -100, 100) * 0.0015
-                        + bounded(relationship.respect, -100, 100) * 0.00075
-                        + bounded(relationship.familiarity, 0, 100) * 0.00025
-                    break
-                end
-            end
-        end
+    local projection = policy.relationshipPricing
+        and Policy.QuerySocialProjection(record, player) or nil
+    if policy.relationshipPricing and projection and projection.exists then
+        modifier = modifier
+            + bounded(projection.approval, -100, 100) * 0.0015
+            + bounded(projection.respect, -100, 100) * 0.00075
+            + bounded(projection.familiarity, 0, 100) * 0.00025
     end
     modifier = bounded(modifier, -Policy.MAX_PRICE_MODIFIER,
         Policy.MAX_PRICE_MODIFIER)
@@ -333,6 +445,15 @@ function Policy.PriceContext(record, player)
         relationshipModifier = modifier,
         actorID = policy.actorID,
         policySchemaVersion = policy.schemaVersion,
+        socialRevision = projection and projection.socialRevision or 0,
+        relationshipRevision = projection and projection.revision or 0,
+        relationshipState = projection and projection.state or "unknown",
+        familiarity = projection and projection.familiarity or 0,
+        commercialReliability = projection and projection.commercial
+            and projection.commercial.commercialReliability or 50,
+        totalTrades = projection and projection.commercial
+            and projection.commercial.totalTrades or 0,
+        willingnessTier = projection and projection.willingnessTier or "standard",
     }
 end
 
@@ -399,21 +520,47 @@ function Policy.RecordTradeEvent(record, player, tradeDetails)
     requestID = tostring(requestID)
     local eventID = "dt:trade:" .. requestID
 
-    local approvalDelta = tonumber(tradeDetails.approvalDelta) or 1
-    local respectDelta = tonumber(tradeDetails.respectDelta) or 0
-    local familiarityDelta = tonumber(tradeDetails.familiarityDelta) or 1
+    local eventType = Policy.ClassifyTradeEventType(record, player, tradeDetails)
+    local compiled = resolveCompiledSocialPolicy(eventType)
+
+    local approvalDelta = tradeDetails.approvalDelta ~= nil
+        and tonumber(tradeDetails.approvalDelta)
+        or (compiled and tonumber(compiled.approvalDelta)) or 1
+    local respectDelta = tradeDetails.respectDelta ~= nil
+        and tonumber(tradeDetails.respectDelta)
+        or (compiled and tonumber(compiled.respectDelta)) or 0
+    local familiarityDelta = tradeDetails.familiarityDelta ~= nil
+        and tonumber(tradeDetails.familiarityDelta)
+        or (compiled and tonumber(compiled.familiarityDelta)) or 1
+    local createdAt = tradeDetails.createdAt
+        or (getGameTime and getGameTime():getWorldAgeHours() or 0)
+
+    local tags = { trade = true, dynamic_trading = true }
+    if tradeDetails.scarceRelief == true then tags.scarce_relief = true end
+    if eventType == "trade.fair_high_value" then tags.fair_deal = true end
 
     local event = {
         targetKey = primaryKey,
         eventID = eventID,
-        type = "commercial_trade",
+        type = eventType,
         approvalDelta = approvalDelta,
         respectDelta = respectDelta,
         familiarityDelta = familiarityDelta,
         authority = "server",
         authorized = true,
-        createdAt = tradeDetails.createdAt or (getGameTime and getGameTime():getWorldAgeHours() or 0),
-        tags = { trade = true, dynamic_trading = true },
+        createdAt = createdAt,
+        worldAgeHours = createdAt,
+        policy = compiled,
+        retentionClass = tradeDetails.retentionClass
+            or (compiled and compiled.retentionClass) or "LONG",
+        salience = tradeDetails.salience or (compiled and compiled.salience),
+        consolidationFamily = tradeDetails.consolidationFamily
+            or (compiled and compiled.consolidationFamily),
+        maxConsolidatedApproval = compiled and compiled.maxConsolidatedApproval,
+        maxConsolidatedRespect = compiled and compiled.maxConsolidatedRespect,
+        maxConsolidatedFamiliarity = compiled and compiled.maxConsolidatedFamiliarity,
+        sourceMode = tradeDetails.sourceMode or "direct",
+        tags = tags,
     }
     local updatedActor, reason = Authority.RecordAuthorizedEvent(
         actorID,
@@ -426,9 +573,27 @@ function Policy.RecordTradeEvent(record, player, tradeDetails)
 
     -- Update commercial metadata extension in relationship
     local ext = Social.GetExtension and Social.GetExtension(updatedSocial, primaryKey, "DynamicTrading") or {}
+    local tradeVal = tonumber(tradeDetails.totalValue) or 0
+    local relDelta = tonumber(tradeDetails.reliabilityDelta)
+    if not relDelta then
+        if eventType == "trade.price_grievance" then
+            relDelta = -4
+        elseif eventType == "trade.betrayal_or_hostile" then
+            relDelta = -25
+        elseif eventType == "trade.fair_high_value"
+            or eventType == "trade.help_scarce_supply"
+            or eventType == "trade.gift_or_favor"
+        then
+            relDelta = 5
+        else
+            relDelta = 2
+        end
+    end
     ext.totalTrades = (tonumber(ext.totalTrades) or 0) + 1
-    ext.lastTradeValue = tonumber(tradeDetails.totalValue) or 0
-    ext.commercialReliability = math.min(100, (tonumber(ext.commercialReliability) or 50) + 1)
+    ext.lastTradeValue = tradeVal
+    ext.cumulativeTradeValue = (tonumber(ext.cumulativeTradeValue) or 0) + math.abs(tradeVal)
+    ext.commercialReliability = bounded((tonumber(ext.commercialReliability) or 50) + relDelta, 0, 100)
+    ext.lastTradeAt = createdAt
     local committedActor, extensionReason = Authority.SetExtension(
         actorID,
         primaryKey,
@@ -438,6 +603,9 @@ function Policy.RecordTradeEvent(record, player, tradeDetails)
         updatedActor.revision
     )
     if not committedActor then return nil, extensionReason end
+    if actors.RuntimeStore and type(actors.RuntimeStore.MarkDirty) == "function" then
+        actors.RuntimeStore.MarkDirty("dt_trade_social_event")
+    end
     return committedActor.social
 end
 
