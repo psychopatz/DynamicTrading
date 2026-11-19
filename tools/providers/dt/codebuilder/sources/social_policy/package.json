@@ -1,0 +1,25 @@
+{
+  "schema": "psychopatz.social-policy.package.v1",
+  "version": 1,
+  "package": "dynamic_trading.social_policy",
+  "owner": "DTCommon",
+  "imports": [
+    "psychopatz.core.social_policy"
+  ],
+  "shards": [
+    "events/commerce.json"
+  ],
+  "extensions": {
+    "DynamicTrading": {
+      "scope": "relationship",
+      "fields": [
+        "totalTrades",
+        "lastTradeValue",
+        "cumulativeTradeValue",
+        "commercialReliability",
+        "grievanceCount",
+        "lastTradeAt"
+      ]
+    }
+  }
+}

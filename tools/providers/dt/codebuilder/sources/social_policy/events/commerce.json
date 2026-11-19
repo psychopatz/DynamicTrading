@@ -1,0 +1,174 @@
+{
+  "schema": "psychopatz.social-policy.v1",
+  "version": 1,
+  "owner": "DTCommon",
+  "domain": "Commerce",
+  "events": [
+    {
+      "id": "commercial_trade",
+      "aliases": ["trade.completed"],
+      "memory": {
+        "retentionClass": "LONG",
+        "salience": 105,
+        "decayPerDay": 0.05,
+        "consolidationFamily": "dt:trade:routine",
+        "maxConsolidatedApproval": 15,
+        "maxConsolidatedRespect": 5,
+        "maxConsolidatedFamiliarity": 25,
+        "shareable": false,
+        "observerPolicy": { "maxObservers": 1, "allowWitnesses": false },
+        "hearsayPolicy": { "allowHearsay": false, "maxHops": 0 }
+      },
+      "relationship": {
+        "approvalDelta": 1,
+        "respectDelta": 0,
+        "familiarityDelta": 1,
+        "personalityModulation": true,
+        "updateState": true
+      },
+      "evidence": {
+        "semantic": true,
+        "classes": ["commerce", "cooperation"],
+        "relations": { "explains": ["trust", "commercial_reliability"] }
+      },
+      "extensions": ["DynamicTrading"]
+    },
+    {
+      "id": "trade.fair_high_value",
+      "memory": {
+        "retentionClass": "LONG",
+        "salience": 145,
+        "decayPerDay": 0.03,
+        "consolidationFamily": "dt:trade:high_value",
+        "maxConsolidatedApproval": 25,
+        "maxConsolidatedRespect": 15,
+        "maxConsolidatedFamiliarity": 25,
+        "shareable": true,
+        "observerPolicy": { "maxObservers": 2, "allowWitnesses": true },
+        "hearsayPolicy": { "allowHearsay": true, "maxHops": 1, "attenuation": 0.7 }
+      },
+      "relationship": {
+        "approvalDelta": 2,
+        "respectDelta": 1,
+        "familiarityDelta": 2,
+        "personalityModulation": true,
+        "updateState": true
+      },
+      "evidence": {
+        "semantic": true,
+        "classes": ["commerce", "fair_dealing"],
+        "relations": { "explains": ["trust", "commercial_reliability"] }
+      },
+      "extensions": ["DynamicTrading"]
+    },
+    {
+      "id": "trade.help_scarce_supply",
+      "memory": {
+        "retentionClass": "LONG",
+        "salience": 165,
+        "decayPerDay": 0.02,
+        "consolidationFamily": "dt:trade:scarce_help",
+        "maxConsolidatedApproval": 30,
+        "maxConsolidatedRespect": 20,
+        "maxConsolidatedFamiliarity": 20,
+        "shareable": true,
+        "observerPolicy": { "maxObservers": 2, "allowWitnesses": true },
+        "hearsayPolicy": { "allowHearsay": true, "maxHops": 1, "attenuation": 0.7 }
+      },
+      "relationship": {
+        "approvalDelta": 3,
+        "respectDelta": 2,
+        "familiarityDelta": 2,
+        "personalityModulation": true,
+        "updateState": true
+      },
+      "evidence": {
+        "semantic": true,
+        "classes": ["commerce", "assistance"],
+        "relations": { "opens": ["gratitude"] }
+      },
+      "extensions": ["DynamicTrading"]
+    },
+    {
+      "id": "trade.gift_or_favor",
+      "memory": {
+        "retentionClass": "LONG",
+        "salience": 170,
+        "decayPerDay": 0.02,
+        "consolidationFamily": "dt:trade:favor",
+        "maxConsolidatedApproval": 35,
+        "maxConsolidatedRespect": 20,
+        "maxConsolidatedFamiliarity": 20,
+        "shareable": true,
+        "observerPolicy": { "maxObservers": 2, "allowWitnesses": true },
+        "hearsayPolicy": { "allowHearsay": true, "maxHops": 1, "attenuation": 0.7 }
+      },
+      "relationship": {
+        "approvalDelta": 4,
+        "respectDelta": 2,
+        "familiarityDelta": 2,
+        "personalityModulation": true,
+        "updateState": true
+      },
+      "evidence": {
+        "semantic": true,
+        "classes": ["commerce", "assistance"],
+        "relations": { "opens": ["gratitude"] }
+      },
+      "extensions": ["DynamicTrading"]
+    },
+    {
+      "id": "trade.price_grievance",
+      "memory": {
+        "retentionClass": "SHORT",
+        "salience": 120,
+        "decayPerDay": 0.5,
+        "consolidationFamily": "dt:trade:grievance",
+        "maxConsolidatedApproval": 20,
+        "maxConsolidatedRespect": 15,
+        "shareable": false,
+        "observerPolicy": { "maxObservers": 1, "allowWitnesses": false },
+        "hearsayPolicy": { "allowHearsay": false, "maxHops": 0 }
+      },
+      "relationship": {
+        "approvalDelta": -2,
+        "respectDelta": -1,
+        "familiarityDelta": 1,
+        "personalityModulation": true,
+        "updateState": true
+      },
+      "evidence": {
+        "semantic": true,
+        "classes": ["commerce", "grievance"],
+        "relations": { "opens": ["repair"] }
+      },
+      "extensions": ["DynamicTrading"]
+    },
+    {
+      "id": "trade.betrayal_or_hostile",
+      "memory": {
+        "retentionClass": "ANCHOR",
+        "salience": 215,
+        "decayPerDay": 0.0,
+        "permanent": true,
+        "anchorMax": 6,
+        "shareable": true,
+        "observerPolicy": { "maxObservers": 4, "allowWitnesses": true },
+        "hearsayPolicy": { "allowHearsay": true, "maxHops": 2, "attenuation": 0.6 }
+      },
+      "relationship": {
+        "approvalDelta": -40,
+        "respectDelta": -25,
+        "familiarityDelta": 4,
+        "personalityModulation": true,
+        "updateState": true
+      },
+      "evidence": {
+        "semantic": true,
+        "classes": ["commerce", "grievance", "betrayal", "hostility"],
+        "relations": { "opens": ["repair"] }
+      },
+      "extensions": ["DynamicTrading"]
+    }
+  ]
+}
