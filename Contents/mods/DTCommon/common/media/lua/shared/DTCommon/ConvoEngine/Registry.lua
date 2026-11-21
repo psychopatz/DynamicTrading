@@ -17,6 +17,7 @@ Registry.RESPONSE_POOLS = {}
 Registry.FLOWS = {}
 Registry.BEHAVIORS = {}
 Registry.BEATS = {}
+Registry.DIRECTOR_INDEX = {}
 Registry.PACKS = {}
 Registry.CONVO_PLANS = {}
 Registry.CONVO_RESPONSE_TEMPLATES = {}
@@ -41,14 +42,6 @@ end
 local function appendFlows(loaded)
     if type(loaded) ~= "table" then return end
     for _, value in ipairs(loaded) do Registry.FLOWS[#Registry.FLOWS + 1] = value end
-end
-local function appendBehaviors(loaded)
-    if type(loaded) ~= "table" then return end
-    for _, value in ipairs(loaded) do Registry.BEHAVIORS[#Registry.BEHAVIORS + 1] = value end
-end
-local function appendBeats(loaded)
-    if type(loaded) ~= "table" then return end
-    for _, value in ipairs(loaded) do Registry.BEATS[#Registry.BEATS + 1] = value end
 end
 local function appendPacks(loaded)
     if type(loaded) ~= "table" then return end
@@ -86,6 +79,29 @@ local function appendConvoPlans(loaded)
                     if type(outputTemplate) == "string" and outputTemplate ~= "" then
                         Registry.CONVO_RESPONSE_TEMPLATES[outputTemplate] = true
                     end
+                end
+            end
+            if value.kind == "behavior" or value.kind == "beat" then
+                local view = {}
+                if type(payload) == "table" then
+                    for pk, pv in pairs(payload) do view[pk] = pv end
+                end
+                view.id = value.id
+                if value.owner ~= nil then view.owner = value.owner end
+                if value.domain ~= nil then view.domain = value.domain end
+                if value.domainPath ~= nil then view.domainPath = value.domainPath end
+                if value.when ~= nil then view.when = value.when end
+                if value.kind == "behavior" then
+                    if view.version == nil then view.version = 1 end
+                    if view.mode == nil then view.mode = "beat" end
+                    if view.baseRelevance == nil then view.baseRelevance = 0.5 end
+                    Registry.BEHAVIORS[#Registry.BEHAVIORS + 1] = view
+                else
+                    if view.version == nil then view.version = 1 end
+                    if view.baseRelevance == nil then view.baseRelevance = 0.5 end
+                    if view.cooldownTurns == nil then view.cooldownTurns = 0 end
+                    if view.maxTurns == nil then view.maxTurns = 6 end
+                    Registry.BEATS[#Registry.BEATS + 1] = view
                 end
             end
         end
