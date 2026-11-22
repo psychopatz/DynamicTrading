@@ -91,6 +91,9 @@ local function isIgnoredEvent(event)
     if string.sub(eventID, 1, #Projection.EVENT_PREFIX) == Projection.EVENT_PREFIX then
         return true
     end
+    if string.sub(eventID, 1, 17) == "core-world-event:" then
+        return true
+    end
     local source = tostring(event.source or "")
     if source == Projection.EXCLUDE_SOURCE
         or source == "dynamictrading:market-events"
@@ -98,7 +101,18 @@ local function isIgnoredEvent(event)
     then
         return true
     end
+    local coreProj = DTCommon and DTCommon.CoreWorldEventProjection or nil
+    if coreProj and type(coreProj.IsSubscribed) == "function"
+        and coreProj.IsSubscribed() == true
+        and source ~= "hoomans-world-event"
+    then
+        return true
+    end
     return false
+end
+
+function Projection.IsSubscribed()
+    return _subscribedRegistry ~= nil and _tokens.registered ~= nil
 end
 
 local function makeLocalProjectedID(coreID, settlementID)

@@ -97,6 +97,49 @@ local function addTrace(entry)
     while #Adapter.Trace > MAX_TRACE do table.remove(Adapter.Trace, 1) end
 end
 
+local function renderWorldKind(fact, provenance)
+    local payload = type(fact) == "table" and fact.payload or {}
+    local loc = type(fact) == "table" and fact.location or {}
+    local locLabel = text(loc.label or payload.locationLabel or loc.region or loc.name, nil, 96)
+    local placeText = locLabel and (" around " .. locLabel) or " nearby"
+    local sem = text(payload.semanticType or fact.kind, "world event", 96)
+    local label = text(payload.storyLabel or payload.headline or sem, sem, 96)
+
+    if fact.kind == "utility.electricity_cutoff" or sem == "utility.electricity_cutoff" then
+        if provenance == "told" or provenance == "radio" then
+            return "Word is the power grid finally went dark."
+        end
+        return "Notice the lights and freezer are dead — grid's out."
+    elseif fact.kind == "utility.water_cutoff" or sem == "utility.water_cutoff" then
+        if provenance == "told" or provenance == "radio" then
+            return "Word is the water mains ran dry."
+        end
+        return "Tap lines are dry — folks will need bottled water."
+    elseif fact.kind == "world.helicopter_overflight" or sem == "world.helicopter_overflight" then
+        if provenance == "environmental" then
+            return "Heard a chopper rattling the roof" .. placeText .. ", though I didn't see its path."
+        elseif provenance == "told" or provenance == "radio" then
+            return "Heard chatter about a helicopter sweep" .. placeText .. "."
+        end
+        return "Spotted that helicopter sweeping overhead" .. placeText .. "."
+    elseif string.sub(tostring(sem), 1, 10) == "discovery." or string.sub(tostring(fact.kind), 1, 10) == "discovery." then
+        if provenance == "told" or provenance == "radio" then
+            return "Folks mentioned a " .. tostring(label) .. placeText .. "."
+        end
+        return "Came across a " .. tostring(label) .. placeText .. "."
+    elseif string.sub(tostring(fact.kind), 1, 6) == "world."
+        or string.sub(tostring(fact.kind), 1, 8) == "ambient."
+        or string.sub(tostring(fact.kind), 1, 8) == "weather."
+        or string.sub(tostring(fact.kind), 1, 8) == "utility."
+    then
+        if provenance == "told" or provenance == "radio" then
+            return "Heard report of " .. tostring(label) .. placeText .. "."
+        end
+        return "Saw signs of " .. tostring(label) .. placeText .. "."
+    end
+    return nil
+end
+
 local function defaultRender(fact, reference)
     local provenance = reference and reference.provenance or "unknown"
     local payload = type(fact) == "table" and fact.payload or nil
@@ -115,6 +158,10 @@ local function defaultRender(fact, reference)
         and DTCommon.T(headlineKey, headlineKey) or nil
     local label = route or market or subjectID or "the trade route"
     if type(fact) ~= "table" then return nil end
+    local worldRendered = renderWorldKind(fact, provenance)
+    if worldRendered ~= nil then
+        return worldRendered
+    end
     if fact.kind ~= "market.route" and fact.kind ~= "market.availability"
         and fact.kind ~= "trader.route" and fact.kind ~= "market.event"
     then
