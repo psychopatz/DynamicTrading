@@ -29,6 +29,12 @@ local function descriptor(community)
     then
         return nil
     end
+    local regionID = community.regionID or community.regionId or community.region
+    if regionID ~= nil and tostring(regionID) ~= "" then
+        regionID = tostring(regionID)
+    else
+        regionID = nil
+    end
     return {
         settlementID = id,
         name = tostring(community.name or id),
@@ -41,6 +47,7 @@ local function descriptor(community)
         profileID = tostring(
             community.profile or "survivor_world"
         ),
+        regionID = regionID,
         enabled = community.status == nil
             or community.status == "active",
     }
