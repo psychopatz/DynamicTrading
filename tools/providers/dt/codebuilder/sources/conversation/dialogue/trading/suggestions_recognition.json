@@ -230,6 +230,9 @@
       {
         "id": "pattern.trade.concept_farewell",
         "priority": 90,
+        "capabilitiesRequired": [
+          "DT.trade"
+        ],
         "match": [
           {
             "concept": "concept.social.farewell"
@@ -243,6 +246,9 @@
       {
         "id": "pattern.trade.concept_greeting",
         "priority": 90,
+        "capabilitiesRequired": [
+          "DT.trade"
+        ],
         "match": [
           {
             "concept": "concept.social.greeting"
@@ -256,6 +262,9 @@
       {
         "id": "pattern.trade.concept_who",
         "priority": 85,
+        "capabilitiesRequired": [
+          "DT.trade"
+        ],
         "match": [
           {
             "concept": "concept.trade.who"
@@ -345,6 +354,9 @@
       {
         "id": "pattern.trade.concept_rumors",
         "priority": 75,
+        "capabilitiesRequired": [
+          "DT.trade"
+        ],
         "match": [
           {
             "concept": "concept.trade.rumors"
@@ -360,6 +372,9 @@
       {
         "id": "pattern.trade.concept_story",
         "priority": 82,
+        "capabilitiesRequired": [
+          "DT.trade"
+        ],
         "match": [
           {
             "concept": "concept.trade.story"
@@ -443,6 +458,9 @@
       {
         "id": "pattern.trade.rumors",
         "priority": 80,
+        "capabilitiesRequired": [
+          "DT.trade"
+        ],
         "match": [
           {
             "kind": "literal",
@@ -458,6 +476,9 @@
       {
         "id": "pattern.trade.greeting_hello",
         "priority": 50,
+        "capabilitiesRequired": [
+          "DT.trade"
+        ],
         "match": [
           {
             "kind": "literal",
@@ -472,6 +493,9 @@
       {
         "id": "pattern.trade.greeting_hi",
         "priority": 50,
+        "capabilitiesRequired": [
+          "DT.trade"
+        ],
         "match": [
           {
             "kind": "literal",
@@ -486,6 +510,9 @@
       {
         "id": "pattern.trade.farewell",
         "priority": 50,
+        "capabilitiesRequired": [
+          "DT.trade"
+        ],
         "match": [
           {
             "kind": "literal",
@@ -500,6 +527,9 @@
       {
         "id": "pattern.trade.farewell_goodbye",
         "priority": 55,
+        "capabilitiesRequired": [
+          "DT.trade"
+        ],
         "match": [
           {
             "kind": "literal",

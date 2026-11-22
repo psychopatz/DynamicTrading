@@ -175,6 +175,9 @@ return {
         ["ownerModID"] = "DynamicTrading",
         ["patterns"] = {
             {
+                ["capabilitiesRequired"] = {
+                    "DT.trade",
+                },
                 ["emit"] = {
                     ["intent"] = "FAREWELL",
                     ["speechAct"] = "act.trade.farewell",
@@ -188,6 +191,9 @@ return {
                 ["priority"] = 90,
             },
             {
+                ["capabilitiesRequired"] = {
+                    "DT.trade",
+                },
                 ["emit"] = {
                     ["intent"] = "GREETING",
                     ["speechAct"] = "act.trade.greeting",
@@ -201,6 +207,9 @@ return {
                 ["priority"] = 90,
             },
             {
+                ["capabilitiesRequired"] = {
+                    "DT.trade",
+                },
                 ["emit"] = {
                     ["intent"] = "QUESTION",
                     ["speechAct"] = "act.trade.ask_who",
@@ -290,6 +299,9 @@ return {
                 ["priority"] = 80,
             },
             {
+                ["capabilitiesRequired"] = {
+                    "DT.trade",
+                },
                 ["emit"] = {
                     ["factClass"] = "road_news",
                     ["intent"] = "GOSSIP",
@@ -305,6 +317,9 @@ return {
                 ["priority"] = 75,
             },
             {
+                ["capabilitiesRequired"] = {
+                    "DT.trade",
+                },
                 ["emit"] = {
                     ["factClass"] = "caravan_story",
                     ["intent"] = "GOSSIP",
@@ -388,6 +403,9 @@ return {
                 ["priority"] = 90,
             },
             {
+                ["capabilitiesRequired"] = {
+                    "DT.trade",
+                },
                 ["emit"] = {
                     ["factClass"] = "road_news",
                     ["intent"] = "GOSSIP",
@@ -403,6 +421,9 @@ return {
                 ["priority"] = 80,
             },
             {
+                ["capabilitiesRequired"] = {
+                    "DT.trade",
+                },
                 ["emit"] = {
                     ["intent"] = "GREETING",
                     ["speechAct"] = "act.trade.greeting",
@@ -417,6 +438,9 @@ return {
                 ["priority"] = 50,
             },
             {
+                ["capabilitiesRequired"] = {
+                    "DT.trade",
+                },
                 ["emit"] = {
                     ["intent"] = "GREETING",
                     ["speechAct"] = "act.trade.greeting",
@@ -431,6 +455,9 @@ return {
                 ["priority"] = 50,
             },
             {
+                ["capabilitiesRequired"] = {
+                    "DT.trade",
+                },
                 ["emit"] = {
                     ["intent"] = "FAREWELL",
                     ["speechAct"] = "act.trade.farewell",
@@ -445,6 +472,9 @@ return {
                 ["priority"] = 50,
             },
             {
+                ["capabilitiesRequired"] = {
+                    "DT.trade",
+                },
                 ["emit"] = {
                     ["intent"] = "FAREWELL",
                     ["speechAct"] = "act.trade.farewell",

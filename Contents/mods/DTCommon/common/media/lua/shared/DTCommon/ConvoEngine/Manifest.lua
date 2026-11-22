@@ -6,7 +6,7 @@ return {
     ["schema"] = "pnc.conversation.runtime-manifest.v1",
     ["shards"] = {
         {
-            ["bytes"] = 17505,
+            ["bytes"] = 18465,
             ["domain"] = "trading",
             ["kind"] = "Packs",
             ["module"] = "DTCommon/ConvoEngine/Packs/Dialogue/Trading",
@@ -23,7 +23,7 @@ return {
             ["sourceShard"] = "dialogue/trading/suggestions_recognition.json",
         },
         {
-            ["bytes"] = 100599,
+            ["bytes"] = 101799,
             ["domain"] = "trading",
             ["kind"] = "ConvoEngine",
             ["module"] = "DTCommon/ConvoEngine/Dialogue/Trading",
@@ -74,5 +74,5 @@ return {
             ["sourceShard"] = "dialogue/trading/question_trader.json",
         },
     },
-    ["wholeModelFingerprint"] = "14ac5419b71399a5efcba109ec53c54c69638b44f8c3c05e6c96ba66b160cf7b",
+    ["wholeModelFingerprint"] = "94cc1041ecbbe63180e87f081707b0e55ac6cf12325887d8fdc5374157fc64f8",
 }
