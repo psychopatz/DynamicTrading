@@ -15,6 +15,8 @@ local CATEGORY_ORDER = { "Food", "Medical", "Resource", "Tool", "Weapon" }
 local MAX_CATEGORY_READS = 5
 local MAX_SCORE = 25
 local MAX_CARAVAN_MIGRATIONS = 8
+local RISK_PENALTY_SCALE = 10
+local MAX_RISK_PENALTY = 12
 
 local function clamp(value, low, high)
     value = tonumber(value) or 0
@@ -28,6 +30,68 @@ local function marketFor(target)
     local markets = DTCommon and DTCommon.SettlementMarket or nil
     if not markets or type(markets.Get) ~= "function" then return nil end
     return markets.Get(target and target.communityID)
+end
+
+local function modifierRiskSignal(modifier)
+    if type(modifier) ~= "table" then return 0 end
+    local tag = tostring(modifier.marketTag or "")
+    if tag ~= "CaravanRisk" and tag ~= "TravelRisk" then
+        return 0
+    end
+    local fromDemand = math.max(0, tonumber(modifier.demandDelta) or 0)
+    local fromPrice = math.max(0, (tonumber(modifier.priceMultiplier) or 1) - 1)
+    return math.max(fromDemand, fromPrice)
+end
+
+local function extractMarketEventRisk(events, eventContext)
+    local risk = 0
+    local modifiers = type(eventContext) == "table" and eventContext.modifiers or nil
+    if type(modifiers) == "table" then
+        for index = 1, math.min(#modifiers, 16) do
+            risk = math.max(risk, modifierRiskSignal(modifiers[index]))
+        end
+    end
+    if type(events) == "table" then
+        for index = 1, math.min(#events, 16) do
+            local ev = events[index]
+            if type(ev) == "table" then
+                risk = math.max(risk, math.max(0, tonumber(ev.caravanRisk) or 0))
+                risk = math.max(risk, math.max(0, tonumber(ev.travelRisk) or 0))
+                if type(ev.modifiers) == "table" then
+                    for mIndex = 1, math.min(#ev.modifiers, 16) do
+                        risk = math.max(risk, modifierRiskSignal(ev.modifiers[mIndex]))
+                    end
+                end
+            end
+        end
+    end
+    return risk
+end
+
+local function extractScopedEventRisk(faction, target, eventContext, context)
+    local scoped = PsychopatzCore and PsychopatzCore.ScopedWorldEvents or nil
+    if not scoped or type(scoped.AggregateEffects) ~= "function" then
+        return 0
+    end
+    local communityID = target and target.communityID or nil
+    local regionID = (type(eventContext) == "table" and eventContext.regionID)
+        or (target and (target.regionID or target.regionId))
+    local factionID = faction and (faction.id or faction.factionID or faction.g) or nil
+    if not communityID and not regionID and not factionID then
+        return 0
+    end
+    local agg = scoped.AggregateEffects({
+        settlementID = communityID,
+        regionID = regionID,
+        factionID = factionID,
+    }, context and context.at)
+    if type(agg) ~= "table" or type(agg.effects) ~= "table" then
+        return 0
+    end
+    local caravanRisk = math.max(0, tonumber(agg.effects.caravanRisk) or 0)
+    local travelRisk = math.max(0, tonumber(agg.effects.travelRisk) or 0)
+    local hostilityDelta = math.max(0, (tonumber(agg.effects.hostileActivityMultiplier) or 1) - 1)
+    return math.max(0, math.max(caravanRisk, travelRisk) + hostilityDelta * 0.5)
 end
 
 function Mobility.OpportunityScore(faction, target, context)
@@ -54,7 +118,10 @@ function Mobility.OpportunityScore(faction, target, context)
         events, eventContext = eventRegistry.ListActive(
             target and target.communityID,
             faction,
-            { now = context and context.at }
+            {
+                now = context and context.at,
+                regionID = target and (target.regionID or target.regionId),
+            }
         )
         if eventContext and eventContext.activeEventCount then
             score = score + math.min(4,
@@ -62,6 +129,12 @@ function Mobility.OpportunityScore(faction, target, context)
         else
             score = score + math.min(4, #(events or {})) * 2
         end
+    end
+    local marketRisk = extractMarketEventRisk(events, eventContext)
+    local scopedRisk = extractScopedEventRisk(faction, target, eventContext, context)
+    local effectiveRisk = math.max(marketRisk, scopedRisk)
+    if effectiveRisk > 0 then
+        score = score - clamp(effectiveRisk * RISK_PENALTY_SCALE, 0, MAX_RISK_PENALTY)
     end
     -- A bound trader is a commercial specialist. This small bounded bonus is
     -- intentionally independent of any item registry or carried inventory.

@@ -16,6 +16,7 @@ DTHoomans.SPAWN_COMMAND = "SpawnTrader"
 -- use the same caravan-role contract.
 require "DTHoomans/DTHoomans_Conversation"
 require "DTHoomans/DTHoomans_CoreProvider"
+require "DTHoomans/DTHoomans_WorldEventProjection"
 
 if DTCommon and DTCommon.TraderProviders
     and type(DTCommon.TraderProviders.Register) == "function"
