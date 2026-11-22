@@ -5,20 +5,6 @@
 DTCommon = DTCommon or {}
 local Policy = DTCommon.CoreActorPolicy or {}
 DTCommon.CoreActorPolicy = Policy
-local PreSurvivorWorldImport =
-    DTCommon.PreSurvivorWorldImport
-if not PreSurvivorWorldImport then
-    local ok, imported = pcall(
-        require,
-        "DTCommon/DTCommon_PreSurvivorWorldImport"
-    )
-    if ok then PreSurvivorWorldImport = imported end
-end
-PreSurvivorWorldImport = PreSurvivorWorldImport or {
-    NormalizePolicySpec = function(spec)
-        return type(spec) == "table" and spec or {}, false
-    end,
-}
 
 Policy.SCHEMA_VERSION = 1
 Policy.MAX_PRICE_MODIFIER = 0.25
@@ -48,7 +34,6 @@ local function bounded(value, low, high)
 end
 
 local function playerKeys(player)
-    local output = {}
     local canonical = nil
     if PsychopatzCore and PsychopatzCore.Actors and PsychopatzCore.Actors.PlayerIdentity
         and type(PsychopatzCore.Actors.PlayerIdentity.GetTargetKey) == "function"
@@ -56,37 +41,25 @@ local function playerKeys(player)
         canonical = PsychopatzCore.Actors.PlayerIdentity.GetTargetKey(player)
     end
     if canonical then
-        output[#output + 1] = canonical
+        return { canonical }
     end
-
-    if PsychopatzCore and PsychopatzCore.Actors and PsychopatzCore.Actors.PlayerIdentity
-        and type(PsychopatzCore.Actors.PlayerIdentity.GetLegacyKeys) == "function"
-    then
-        local legacy = PsychopatzCore.Actors.PlayerIdentity.GetLegacyKeys(player)
-        for _, k in ipairs(legacy) do
-            if k ~= canonical then output[#output + 1] = k end
-        end
-    else
-        if player and type(player.getUsername) == "function" then
-            local username = player:getUsername()
-            if username ~= nil and tostring(username) ~= "" then
-                local k = "player:user:" .. tostring(username)
-                if k ~= canonical then output[#output + 1] = k end
-            end
-        end
-        if player and type(player.getOnlineID) == "function" then
-            local id = player:getOnlineID()
-            if id ~= nil then
-                local k = "player:online:" .. tostring(id)
-                if k ~= canonical then output[#output + 1] = k end
-            end
+    if player and type(player.getUsername) == "function" then
+        local username = player:getUsername()
+        if username ~= nil and tostring(username) ~= "" then
+            return { "player:user:" .. tostring(username) }
         end
     end
-    return output
+    if player and type(player.getOnlineID) == "function" then
+        local id = player:getOnlineID()
+        if id ~= nil then
+            return { "player:online:" .. tostring(id) }
+        end
+    end
+    return {}
 end
 
 function Policy.New(spec)
-    spec = PreSurvivorWorldImport.NormalizePolicySpec(spec)
+    spec = type(spec) == "table" and spec or {}
     local restockItems = {}
     local recentVisitIDs = {}
     local configuredItems = spec.restockItems
@@ -524,7 +497,6 @@ function Policy.RecordTradeEvent(record, player, tradeDetails)
     end
     if not Authority
         or type(Authority.Get) ~= "function"
-        or type(Authority.MigrateAliases) ~= "function"
         or type(Authority.RecordAuthorizedEvent) ~= "function"
         or type(Authority.SetExtension) ~= "function"
     then
@@ -537,18 +509,6 @@ function Policy.RecordTradeEvent(record, player, tradeDetails)
     local actor, actorReason = Authority.Get(actorID, PsychopatzCore)
     if not actor or not actor.social then
         return nil, actorReason or "actor_social_unavailable"
-    end
-
-    if #keys > 1 then
-        local migrated, migrateReason = Authority.MigrateAliases(
-            actorID,
-            primaryKey,
-            keys,
-            PsychopatzCore,
-            actor.revision
-        )
-        if not migrated then return nil, migrateReason end
-        actor = migrated
     end
 
     tradeDetails = type(tradeDetails) == "table" and tradeDetails or {}

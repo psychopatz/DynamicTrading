@@ -21,8 +21,6 @@ local Runtime = DTAbstract.SurvivorWorldRuntime
     or require "DTAbstract/DTAbstract_SurvivorWorldRuntime"
 local Travel = (PsychopatzCore and PsychopatzCore.Travel)
     or require "PsychopatzCore/Travel/PsychopatzTravel"
-local PreSurvivorWorldImport = require
-    "DTAbstract/DTAbstract_PreSurvivorWorldImport"
 local TraderGeneration = require
     "DTCommon/DTCommon_TraderGeneration"
 
@@ -543,44 +541,6 @@ function Provider.reconcileRecord(traderID, record)
     if not Policy then return false, "trader_policy_unavailable" end
 
     local group = actor and Runtime.FindGroupForActor(actorID) or nil
-
-    -- Pre-SurvivorWorld standalone actors are handled by one bounded import
-    -- module; active provider code never interprets their old world model.
-    if (not actor or not group)
-        and PreSurvivorWorldImport.IsRetiredActorID(actorID)
-    then
-        local rebound, reboundReason, importDetails =
-            PreSurvivorWorldImport.Rebind(
-                traderID,
-                record,
-                worldAge(),
-                {
-                    registry = registry,
-                    actors = actors,
-                    runtime = Runtime,
-                    directory = Directory,
-                    service = Service,
-                    acquire = acquire,
-                    releaseAcquired = releaseAcquired,
-                }
-            )
-        if rebound then
-            Provider.LastPreSurvivorWorldImport = importDetails
-            ca = record.ca
-            actorID = ca and ca.actorID or nil
-            actor = actorRegistry and actorID
-                and actorRegistry:Get(actorID) or nil
-            group = actor
-                and Runtime.FindGroupForActor(actorID)
-                or nil
-            Policy.SetAvailable(record, true, nil)
-            Provider.LastPreSurvivorWorldImportError = nil
-            return true, "changed"
-        end
-        Provider.LastPreSurvivorWorldImportError = tostring(
-            reboundReason or "world_import_failed"
-        )
-    end
 
     local lifecycleStatus = actorRegistry and actorID
         and type(actorRegistry.GetLifecycleState) == "function"

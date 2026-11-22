@@ -133,54 +133,21 @@ for idx = 21, 40 do
 end
 T.equal(#registry:ListTombstones(), 0, "commercial-role removals create zero tombstones")
 
--- 41..60: superseded migration (HardDelete)
-local Import = require "DTAbstract/DTAbstract_PreSurvivorWorldImport"
+-- 41..60: direct HardDelete zero-tombstone soak
 for idx = 41, 60 do
     local oldID = string.format("actor:dt:world:soak_%04d", idx)
-    local newID = string.format("actor:dt_soak:canon:%04d", idx)
     assert(registry:Create({
         actorId = oldID,
         identitySeed = oldID,
-        social = Social.NewState({
-            relationships = {
-                ["player:user:alice"] = { target = "player:user:alice", approval = 25 },
-            },
-        }),
     }))
-    WKG.Acquire(oldID, soakFact.factID, {
-        authorized = true,
-        provenance = "public",
-        source = "soak",
-        confidence = 1,
-        learnedAt = worldHours,
+    local deleted, delErr = registry:HardDelete(oldID, {
+        authority = "server",
+        reason = "test_cleanup",
     })
-    assert(registry:Create({ actorId = newID, identitySeed = newID }))
-    local rec = {
-        b = 1000,
-        ca = Policy.New({ actorID = oldID, provider = "DTAbstract", providerState = "abstract" }),
-    }
-    local cand = {
-        actorID = newID,
-        groupID = "grp_" .. tostring(idx),
-        factionID = "fac_" .. tostring(idx),
-        communityID = "comm:soak",
-        memberActorIDs = { newID },
-    }
-    local rebound = assert(Import.Rebind("trader:mig:" .. tostring(idx), rec, worldHours, {
-        registry = function() return registry end,
-        actors = function() return CoreActors end,
-        runtime = { SelectTraderCandidate = function() return cand end },
-        directory = { Get = function() return { settlementID = "comm:soak" } end },
-        service = Service,
-        acquire = function() return { providerLease = { provider = "DTAbstract", state = "abstract", revision = 2 } } end,
-        releaseAcquired = function() return true end,
-    }))
-    T.truthy(rebound)
-    T.equal(registry:Get(oldID), nil, "superseded actor removed")
-    T.truthy(Social.Get(registry:Get(newID).social, "player:user:alice"), "social migrated")
-    T.equal(WKG.KnowledgeState.byActor[oldID], nil, "old knowledge bucket cleaned")
+    T.truthy(deleted, delErr)
+    T.equal(registry:Get(oldID), nil, "direct deleted actor removed")
 end
-T.equal(#registry:ListTombstones(), 0, "migrations create zero tombstones")
+T.equal(#registry:ListTombstones(), 0, "hard deletes create zero tombstones")
 
 -- 61..160: ordinary deaths (100 traders, kept briefly to test OnBeforePurge)
 -- 161..180: betrayal-pinned deaths (20 traders)

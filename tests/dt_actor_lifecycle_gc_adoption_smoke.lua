@@ -150,7 +150,7 @@ T.equal(#registry:ListTombstones(), 0,
 T.truthy(Social.Get(registry:Get(roleActor.actorId).social, "player:user:bob"),
     "commercial-role removal preserves Core social history")
 
--- Verify 3: PreSurvivorWorldImport merges social + WorldKnowledge & HardDeletes old actor
+-- Prepare canonical actor and WorldKnowledge fact for unreferenced retirement check
 WKG.Reset()
 local migratedFact = assert(WKG.Publish({
     factID = "fact:mig:1",
@@ -158,111 +158,15 @@ local migratedFact = assert(WKG.Publish({
     topic = "market",
     text = "Westpoint needs canned food.",
 }, { now = worldHours }))
-local oldStandalone = assert(registry:Create({
-    actorId = "actor:dt:world:legacy_1",
-    identitySeed = "legacy-1",
-    social = Social.NewState({
-        relationships = {
-            ["player:user:alice"] = {
-                target = "player:user:alice",
-                familiarity = 40,
-                approval = 20,
-            },
-        },
-        memoryBank = {
-            {
-                id = "mem:mig:legacy_trade",
-                aboutKey = "player:user:alice",
-                eventType = "trade_fair",
-                retentionClass = "ANCHOR",
-                refStrength = "STRONG",
-                salience = 10,
-                createdAt = worldHours,
-            },
-        },
-    }),
-    world = { position = { x = 300, y = 400, z = 0 } },
-}))
-WKG.Acquire(oldStandalone.actorId, migratedFact.factID, {
-    authorized = true,
-    provenance = "public",
-    source = "test",
-    confidence = 1,
-    learnedAt = worldHours,
-})
 local canonicalMig = assert(registry:Create({
     actorId = "npc_core_mig_target",
     identitySeed = "canonical-mig",
     world = { position = { x = 500, y = 600, z = 0 } },
 }))
-
-local migCommunity = "community:mig_canonical"
-DTCommon.SettlementDirectory = {
-    Get = function(id)
-        if id == migCommunity then
-            return {
-                settlementID = id,
-                name = "Mig Camp",
-                position = { x = 500, y = 600, z = 0 },
-                provider = "PsychopatzCore",
-                enabled = true,
-            }
-        end
-    end,
-    ResolvePosition = function(id)
-        local entry = DTCommon.SettlementDirectory.Get(id)
-        return entry and entry.position or nil
-    end,
-}
-DTAbstract.SurvivorWorldRuntime.SelectTraderCandidate = function()
-    return {
-        actorID = canonicalMig.actorId,
-        groupID = "agroup_mig",
-        factionID = "faction_mig",
-        communityID = migCommunity,
-        position = { x = 500, y = 600, z = 0 },
-    }
-end
-DTAbstract.SurvivorWorldRuntime.FindGroupForActor = function(actorID)
-    if actorID == canonicalMig.actorId then
-        return { id = "agroup_mig", memberActorIDs = { canonicalMig.actorId } }
-    end
-    return nil, "actor_group_not_found"
-end
-
 local AbstractProvider = T.load(
     "DTAbstract", "server", "DTAbstract/DTAbstract_TraderWorldProvider.lua"
 )
 AbstractProvider.SetActorRegistry(registry)
-
-local _, legacyDT = Service.Create({
-    traderID = "trader:legacy_import",
-    displayName = "Legacy Migrator",
-    actorID = oldStandalone.actorId,
-    provider = "DTAbstract",
-    providerState = "abstract",
-    abstractAccessEnabled = true,
-})
-local importedOK, importedReason = AbstractProvider.reconcileRecord(
-    "trader:legacy_import", legacyDT
-)
-T.truthy(importedOK, importedReason)
-T.equal(registry:Get(oldStandalone.actorId), nil, "superseded actor deleted")
-T.equal(#registry:ListTombstones(), 0,
-    "superseded PreSurvivorWorldImport migration creates ZERO fake tombstones")
-T.equal(registry:GetLifecycleState(oldStandalone.actorId), "FORGOTTEN",
-    "superseded actor is FORGOTTEN without tombstone")
-local updatedCanon = assert(registry:Get(canonicalMig.actorId))
-T.equal(updatedCanon.providerLease.provider, "DTAbstract",
-    "canonical replacement preserved acquired DTAbstract lease after social merge")
-T.truthy(Social.Get(updatedCanon.social, "player:user:alice"),
-    "migration preserved oldActor social relationships on replacement")
-T.equal(#Social.GetMemoriesForTarget(updatedCanon.social, "player:user:alice"), 1,
-    "migration preserved oldActor memoryBank entries on replacement")
-T.equal(WKG.KnowledgeState.byActor[oldStandalone.actorId], nil,
-    "oldActor WorldKnowledge bucket cleaned after migration")
-T.truthy(WKG.ActorKnowledge.Get(WKG.KnowledgeState, canonicalMig.actorId, migratedFact.factID),
-    "oldActor WorldKnowledge transferred to canonical replacement")
 
 -- Verify 4: Unreferenced trader retirement + WorldKnowledge clearing + GC purge + member scrub
 local unrefActor = assert(registry:Create({

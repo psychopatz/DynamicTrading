@@ -36,14 +36,7 @@ local player = {
 
 local keys = Policy.PlayerKeys(player)
 T.equal(keys[1], "player:alice:char_alice_1", "canonical player key is primary")
-local hasLegacyUser = false
-local hasLegacyOnline = false
-for _, k in ipairs(keys) do
-    if k == "player:user:alice" then hasLegacyUser = true end
-    if k == "player:online:12" then hasLegacyOnline = true end
-end
-T.truthy(hasLegacyUser, "legacy user key preserved as alias")
-T.truthy(hasLegacyOnline, "legacy online key preserved as alias")
+T.equal(#keys, 1, "legacy aliases must not be emitted when canonical key exists")
 
 local traderRecord = {
     s = "READY",
@@ -69,15 +62,15 @@ local updatedSocial, tradeErr = Policy.RecordTradeEvent(traderRecord, player, {
 })
 T.truthy(updatedSocial, tradeErr)
 
--- Verify Core actor was updated in registry
+-- Verify Core actor was updated in registry under canonical key
 local fetchedActor = registry:Get("actor:dt:merchant:one")
-local rel = Social.Get(fetchedActor.social, "player:online:12")
+local rel = Social.Get(fetchedActor.social, "player:alice:char_alice_1")
 T.truthy(rel, "relationship found")
 T.equal(rel.approval, 10, "approval delta recorded in Core Social")
 T.equal(rel.familiarity, 5, "familiarity delta recorded in Core Social")
 T.equal(rel.memories[1].id, "dt:trade:req-1001", "trade memory recorded")
 
-local ext = Social.GetExtension(fetchedActor.social, "player:online:12", "DynamicTrading")
+local ext = Social.GetExtension(fetchedActor.social, "player:alice:char_alice_1", "DynamicTrading")
 T.truthy(ext, "DT commercial extension present")
 T.equal(ext.totalTrades, 1, "first trade recorded in extension")
 T.equal(ext.lastTradeValue, 150, "last trade value recorded")
@@ -90,7 +83,7 @@ local fallbackSocial, fallbackErr = Policy.RecordTradeEvent(
 T.truthy(fallbackSocial, fallbackErr)
 local fallbackRel = Social.Get(
     registry:Get("actor:dt:merchant:one").social,
-    "player:online:12"
+    "player:alice:char_alice_1"
 )
 local lastMem = fallbackRel.memories[#fallbackRel.memories]
 T.equal(
