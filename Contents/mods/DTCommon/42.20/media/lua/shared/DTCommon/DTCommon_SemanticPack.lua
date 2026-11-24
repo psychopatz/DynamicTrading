@@ -330,13 +330,15 @@ local function registerPack()
             },
         },
 
-        -- 5. Dialogue Blocks (relationship-aware conversation content)
+        -- 5. Dialogue Blocks (strictly scoped to active DT.trade capability)
         dialogueBlocks = {
             ["dt_block_greeting_friend"] = {
                 category = "greeting",
                 priority = 200,
                 weight = 100,
+                capabilitiesRequired = { TRADE_CAPABILITY },
                 gates = {
+                    { field = "capabilities." .. TRADE_CAPABILITY, op = "==", value = true },
                     { field = "relationship.approval", op = ">=", value = 25 },
                 },
                 entryNode = "opening",
@@ -370,7 +372,9 @@ local function registerPack()
                 category = "greeting",
                 priority = 100,
                 weight = 100,
+                capabilitiesRequired = { TRADE_CAPABILITY },
                 gates = {
+                    { field = "capabilities." .. TRADE_CAPABILITY, op = "==", value = true },
                     { field = "relationship.approval", op = ">=", value = -15 },
                 },
                 entryNode = "opening",
@@ -396,7 +400,10 @@ local function registerPack()
                 category = "greeting",
                 priority = 50,
                 weight = 100,
-                gates = {},
+                capabilitiesRequired = { TRADE_CAPABILITY },
+                gates = {
+                    { field = "capabilities." .. TRADE_CAPABILITY, op = "==", value = true },
+                },
                 entryNode = "opening",
                 nodes = {
                     opening = {
@@ -419,7 +426,9 @@ local function registerPack()
             ["dt_block_rumors_friend"] = {
                 category = "rumor",
                 priority = 200,
+                capabilitiesRequired = { TRADE_CAPABILITY },
                 gates = {
+                    { field = "capabilities." .. TRADE_CAPABILITY, op = "==", value = true },
                     { field = "relationship.approval", op = ">=", value = 20 },
                 },
                 entryNode = "opening",
@@ -433,7 +442,10 @@ local function registerPack()
             ["dt_block_rumors_neutral"] = {
                 category = "rumor",
                 priority = 100,
-                gates = {},
+                capabilitiesRequired = { TRADE_CAPABILITY },
+                gates = {
+                    { field = "capabilities." .. TRADE_CAPABILITY, op = "==", value = true },
+                },
                 entryNode = "opening",
                 nodes = {
                     opening = {
@@ -445,7 +457,9 @@ local function registerPack()
             ["dt_block_farewell_friend"] = {
                 category = "farewell",
                 priority = 200,
+                capabilitiesRequired = { TRADE_CAPABILITY },
                 gates = {
+                    { field = "capabilities." .. TRADE_CAPABILITY, op = "==", value = true },
                     { field = "relationship.approval", op = ">=", value = 20 },
                 },
                 entryNode = "opening",
@@ -459,7 +473,10 @@ local function registerPack()
             ["dt_block_farewell_neutral"] = {
                 category = "farewell",
                 priority = 100,
-                gates = {},
+                capabilitiesRequired = { TRADE_CAPABILITY },
+                gates = {
+                    { field = "capabilities." .. TRADE_CAPABILITY, op = "==", value = true },
+                },
                 entryNode = "opening",
                 nodes = {
                     opening = {

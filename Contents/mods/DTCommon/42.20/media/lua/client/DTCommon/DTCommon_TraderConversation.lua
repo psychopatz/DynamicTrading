@@ -392,6 +392,25 @@ local function newsResponse(traderID)
             return tostring(statements[1])
         end
     end
+    local WKG = PsychopatzCore and PsychopatzCore.WorldKnowledge or nil
+    if WKG and type(WKG.QueryConversationTopics) == "function" then
+        local worldHour = getGameTime and getGameTime() and getGameTime().getWorldAgeHours
+            and tonumber(getGameTime():getWorldAgeHours()) or 0
+        local topics = WKG.QueryConversationTopics(traderID, {
+            actorID = traderID,
+            worldHour = worldHour,
+            worldDay = math.floor(worldHour / 24),
+        }, { limit = 1, includeBanter = false })
+        local top = type(topics) == "table" and topics[1] or nil
+        if top and type(top.subjectLabel) == "string" and top.subjectLabel ~= "" then
+            if top.topic == "threat_pattern_7d" then
+                return "We've been hearing about raids non-stop this past week—stay sharp on the road."
+            end
+            return "Word on the road from " .. tostring(top.timeLabel or "earlier")
+                .. " (" .. tostring(top.locationLabel or "nearby") .. "): "
+                .. tostring(top.headline ~= "" and top.headline or top.subjectLabel) .. "."
+        end
+    end
     return foundationPhrase(
         "gossip.unknown",
         "neutral",
@@ -1115,7 +1134,47 @@ function Conversation.OpenForNPC(entry, player)
     )
 end
 
+local NON_TRADER_ROLES = {
+    colonist = true,
+    companion = true,
+    survivor = true,
+    looter = true,
+    bandit = true,
+    raider = true,
+    hostile = true,
+    family = true,
+}
+
+local function isNonTraderEntry(entry)
+    if type(entry) ~= "table" then return false end
+    if entry.isCompanion == true or entry.isPlayerCompanion == true or entry.colonist == true then
+        return true
+    end
+    if (entry.ownerKey ~= nil and tostring(entry.ownerKey) ~= "")
+        or (entry.playerOwner ~= nil and tostring(entry.playerOwner) ~= "")
+    then
+        return true
+    end
+    local snap = type(entry.snapshot) == "table" and entry.snapshot or nil
+    if snap and (snap.isCompanion == true or snap.colonist == true or snap.isPlayerCompanion == true) then
+        return true
+    end
+    local role = string.lower(tostring(
+        entry.npcType or entry.role or (snap and (snap.npcType or snap.role)) or ""
+    ))
+    if role ~= "" and NON_TRADER_ROLES[role] == true then
+        return true
+    end
+    local facID = entry.factionID or (snap and snap.factionID)
+    if facID ~= nil and PNC and PNC.Factions and type(PNC.Factions.IsPlayerFaction) == "function" then
+        local ok, isPlayerFac = pcall(PNC.Factions.IsPlayerFaction, facID)
+        if ok and isPlayerFac == true then return true end
+    end
+    return false
+end
+
 function Conversation.CanOpenNPC(entry)
+    if isNonTraderEntry(entry) then return false end
     local npcID = tostring(entry and entry.id or "")
     local traderID, record = traderForNPC(npcID)
     if not traderID then return false end
@@ -1348,42 +1407,6 @@ function Conversation.BuildSpec(traderID, actorID, options)
                 order = 60,
             }
             choices[#choices + 1] = {
-                    id = "next_person",
-                    text = "Talk to the next person.",
-                    visible = #roster > 1,
-                    response = "Let's see who else is with us.",
-                    action = function(_, _, session)
-                        local nextIndex = rosterIndex + 1
-                        if nextIndex > #roster then nextIndex = 1 end
-                        local nextActorID = roster[nextIndex]
-                        local nextSpec, nextReason =
-                            Conversation.BuildSpec(
-                                traderID,
-                                nextActorID,
-                                {
-                                    mode = options.mode,
-                                    provider = semanticOptions.provider,
-                                    providerState = semanticOptions.providerState,
-                                    roster = roster,
-                                    rosterIndex = nextIndex,
-                                }
-                            )
-                        if not nextSpec then
-                            return false, nextReason
-                        end
-                        local view = session and session.view
-                        if not view
-                            or type(view.refreshConversationSpec)
-                                ~= "function"
-                        then
-                            return false, "conversation_view_unavailable"
-                        end
-                        view:refreshConversationSpec(nextSpec)
-                        return true
-                    end,
-                    order = 70,
-                }
-            choices[#choices + 1] = {
                     id = "destination",
                     text = "Where are you heading?",
                     response = function()
@@ -1401,6 +1424,8 @@ function Conversation.BuildSpec(traderID, actorID, options)
                 }
             choices[#choices + 1] = {
                     id = "goodbye",
+                semanticRole = "farewell",
+                isFarewell = true,
                 text = localizedText(
                     GOODBYE_TEXT_SOURCE,
                     "choice.goodbye",
