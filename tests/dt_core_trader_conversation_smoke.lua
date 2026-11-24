@@ -136,20 +136,32 @@ local function choiceByID(id)
     end
     return nil
 end
-T.equal(#landing.choices, 10,
-    "Core trader conversation exposes expected landing choices")
+T.equal(spec.context.npcName, "Stranger",
+    "unknown Core trader does not leak canonical displayName")
+T.equal(spec.context.factionName, nil,
+    "unknown Core trader does not leak canonical factionName")
+T.equal(#landing.choices, 8,
+    "Core trader conversation exposes clean landing choices with ask-name")
+T.truthy(choiceByID("core.question.identity"),
+    "unknown Core trader exposes ask-name choice")
 T.equal(choiceByID("core.small_talk.weather").text,
     "Some weather we're having.",
     "Core trader conversation uses the shared small-talk catalog")
-local nicknameChoice = choiceByID("core.question.identity_nickname")
+local function aboutChoiceByID(id)
+    for _, choice in ipairs(spec.nodes.about_you and spec.nodes.about_you.choices or {}) do
+        if choice.id == id then return choice end
+    end
+    return nil
+end
+local nicknameChoice = aboutChoiceByID("core.question.identity_nickname")
 T.truthy(nicknameChoice,
-    "Core trader conversation exposes the generated nickname identity choice")
+    "Core trader about_you submenu exposes the generated nickname identity choice")
 T.equal(nicknameChoice.response(),
-    "I don't really use a nickname.",
-    "nickname response uses the Core identity knowledge state")
-local surnameChoice = choiceByID("core.question.identity_surname")
+    "Most people call me Core.",
+    "nickname response discloses the actor nickname")
+local surnameChoice = aboutChoiceByID("core.question.identity_surname")
 T.truthy(surnameChoice,
-    "Core trader conversation exposes the generated surname identity choice")
+    "Core trader about_you submenu exposes the generated surname identity choice")
 T.equal(choiceByID("destination").response(),
     "I'm heading toward Rosewood Outpost.",
     "destination response uses human-facing place presentation")

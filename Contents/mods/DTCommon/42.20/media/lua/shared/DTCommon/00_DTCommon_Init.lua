@@ -9,6 +9,20 @@ require "DTCommon/DTCommon_Translation"
 require "DTCommon/DTCommon_Constants"
 require "DTCommon/DTCommon_ModActivationPolicy"
 require "DTCommon/DTCommon_TraderFactionProfile"
+local TradingFactionNames = require "DTCommon/Definitions/Factions/Trader"
+DTCommon.TradingFactionNames = TradingFactionNames
+local okProfiles, coreProfiles = pcall(
+    require,
+    "PsychopatzCore/World/SurvivorWorld/Generation/PsychopatzSurvivorWorldGenerationProfiles"
+)
+if okProfiles and type(coreProfiles) == "table"
+    and type(coreProfiles.RegisterNamePool) == "function"
+then
+    coreProfiles.RegisterNamePool(
+        TradingFactionNames.id or DTCommon.TRADER_PROFILE_ID or "DT.trader",
+        TradingFactionNames
+    )
+end
 require "DTCommon/DTCommon_MarketSchema"
 require "DTCommon/DTCommon_Storage"
 require "DTCommon/DTCommon_TraderSupport"

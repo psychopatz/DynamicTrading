@@ -227,6 +227,16 @@ local function placeName(id)
 end
 
 local function displayName(projection, record, fallback)
+    local isFemale = projection and projection.isFemale
+    if isFemale == nil and record then
+        if type(record.isFemale) == "boolean" then
+            isFemale = record.isFemale
+        elseif record.g == "Female" then
+            isFemale = true
+        elseif record.g == "Male" then
+            isFemale = false
+        end
+    end
     local source = {
         identity = projection and projection.identity
             or record and record.identity,
@@ -235,6 +245,7 @@ local function displayName(projection, record, fallback)
         ) or record and record.n,
         identitySeed = projection and projection.identitySeed
             or record and record.identitySeed,
+        isFemale = isFemale,
     }
     local parts = ActorNames.ResolveParts(source, {
         resolveNickname = true,
@@ -253,6 +264,16 @@ local function displayName(projection, record, fallback)
 end
 
 local function identityParts(projection, record, fallback)
+    local isFemale = projection and projection.isFemale
+    if isFemale == nil and record then
+        if type(record.isFemale) == "boolean" then
+            isFemale = record.isFemale
+        elseif record.g == "Female" then
+            isFemale = true
+        elseif record.g == "Male" then
+            isFemale = false
+        end
+    end
     local source = {
         identity = projection and projection.identity
             or record and record.identity,
@@ -261,6 +282,7 @@ local function identityParts(projection, record, fallback)
         ) or record and record.n or fallback,
         identitySeed = projection and projection.identitySeed
             or record and record.identitySeed,
+        isFemale = isFemale,
     }
     return ActorNames.ResolveParts(source, {
         resolveNickname = true,
@@ -318,22 +340,21 @@ local function actorKnowledge(actorID, projection, options, record)
         end
         return knowledge
     end
-    local parts = identityParts(projection, record)
     return {
         actorID = actorID,
         provider = provider,
-        state = "known",
-        identity = parts,
-        knownIdentity = parts,
-        nameKnown = parts.displayName ~= nil,
-        knownName = parts.displayName or displayName(projection, record),
+        state = "unknown",
+        identity = nil,
+        knownIdentity = nil,
+        nameKnown = false,
+        knownName = nil,
         nicknameKnown = false,
         knownNickname = nil,
         surnameKnown = false,
         knownSurname = nil,
-        factionKnown = projection and projection.factionID ~= nil,
-        factionID = projection and projection.factionID,
-        factionName = projection and projection.factionName,
+        factionKnown = false,
+        factionID = nil,
+        factionName = nil,
         revision = projection and projection.revision or 0,
     }
 end
@@ -389,53 +410,227 @@ local function identityResponse(knowledge, fallbackName)
     ) .. "."
 end
 
-local function identityFacetResponse(knowledge, subject, fallbackName)
+local function traderFamiliarity(context)
+    local rel = type(context) == "table" and type(context.relationship) == "table"
+        and context.relationship or nil
+    return math.max(0, rel and (tonumber(rel.familiarity) or tonumber(rel.trust) or tonumber(rel.affinity)) or 0)
+end
+
+local function repeatAskReply(context, facetKey, value)
+    context.knownFacetAskCounts = type(context.knownFacetAskCounts) == "table"
+        and context.knownFacetAskCounts or {}
+    local count = (tonumber(context.knownFacetAskCounts[facetKey]) or 0) + 1
+    context.knownFacetAskCounts[facetKey] = count
+    if count == 1 then
+        if facetKey == "identity" then
+            return "I already told you — it's " .. value .. ". Everything alright?"
+        elseif facetKey == "faction" then
+            return "I told you before, I'm with " .. value .. "."
+        elseif facetKey == "surname" then
+            return "Already told you — my surname is " .. value .. "."
+        end
+        return "I already said most people call me " .. value .. "."
+    elseif count == 2 then
+        if facetKey == "identity" then
+            return "Seriously? It's " .. value .. ". You already asked me that."
+        elseif facetKey == "faction" then
+            return "You've asked me twice now — " .. value .. ". Are you even listening?"
+        elseif facetKey == "surname" then
+            return "Again? It's " .. value .. ". Try to keep up."
+        end
+        return "Still " .. value .. ". You just asked me that."
+    end
+    if facetKey == "identity" then
+        return "You don't even remember my name, do you? It's " .. value .. ". Stop asking."
+    elseif facetKey == "faction" then
+        return "How many times are you going to ask? " .. value .. ". Drop it already."
+    elseif facetKey == "surname" then
+        return "Do you remember anything I tell you? It's " .. value .. ". I'm not saying it again."
+    end
+    return "Forget it — if you can't remember " .. value .. " by now, stop asking."
+end
+
+local function discloseIdentityFacet(
+    context,
+    knowledge,
+    subject,
+    canonicalName,
+    canonicalParts,
+    canonicalFaction
+)
     knowledge = type(knowledge) == "table" and knowledge or {}
-    local identity = knowledge.identity or {}
-    local value
-    if subject == "IDENTITY_NICKNAME" then
-        value = knowledge.knownNickname
-        if value then
-            return "Most people call me " .. tostring(value) .. "."
+    canonicalParts = type(canonicalParts) == "table" and canonicalParts or {}
+    canonicalFaction = type(canonicalFaction) == "table" and canonicalFaction or {}
+    local familiarity = traderFamiliarity(context)
+    if subject == "IDENTITY" then
+        if knowledge.nameKnown == true and knowledge.knownName then
+            return repeatAskReply(context, "identity", knowledge.knownName)
+        end
+        local disclosed = knowledge.knownName or canonicalParts.displayName or canonicalName
+        if disclosed and tostring(disclosed) ~= "" then
+            knowledge.state = "known"
+            knowledge.nameKnown = true
+            knowledge.knownName = tostring(disclosed)
+            knowledge.identity = knowledge.identity or canonicalParts
+            knowledge.knownIdentity = knowledge.knownIdentity or canonicalParts
+            if type(context) == "table" then
+                context.npcName = knowledge.knownName
+                context.knownName = knowledge.knownName
+                context.identityState = "known"
+                context.identityNameKnown = true
+                context.identity = knowledge.identity
+            end
+            return "I'm " .. knowledge.knownName .. "."
+        end
+        return "I'm the caravan trader."
+    elseif subject == "IDENTITY_NICKNAME" then
+        if knowledge.nicknameKnown == true and knowledge.knownNickname then
+            return repeatAskReply(context, "nickname", knowledge.knownNickname)
+        end
+        local nick = knowledge.knownNickname or canonicalParts.nickname
+        if nick and tostring(nick) ~= "" then
+            knowledge.nicknameKnown = true
+            knowledge.knownNickname = tostring(nick)
+            if type(context) == "table" then
+                context.nicknameKnown = true
+                context.knownNickname = knowledge.knownNickname
+            end
+            return "Most people call me " .. knowledge.knownNickname .. "."
         end
         return "I don't really use a nickname."
     elseif subject == "IDENTITY_SURNAME" then
-        value = knowledge.knownSurname
-        if value then
-            return "My surname is " .. tostring(value) .. "."
+        if knowledge.surnameKnown == true and knowledge.knownSurname then
+            return repeatAskReply(context, "surname", knowledge.knownSurname)
         end
-        return identityResponse(knowledge, fallbackName)
+        if familiarity < 20 then
+            return "Let's stick to first names until we know each other a bit better."
+        end
+        local surname = knowledge.knownSurname or canonicalParts.surname
+        if surname and tostring(surname) ~= "" then
+            knowledge.surnameKnown = true
+            knowledge.knownSurname = tostring(surname)
+            if type(context) == "table" then
+                context.surnameKnown = true
+                context.knownSurname = knowledge.knownSurname
+            end
+            return "My surname is " .. knowledge.knownSurname .. "."
+        end
+        return identityResponse(knowledge, canonicalName)
     elseif subject == "IDENTITY_FACTION" then
-        value = knowledge.factionName or identity.factionName
-        if value then
-            return "I'm with " .. tostring(value) .. "."
+        if knowledge.factionKnown == true and knowledge.factionName then
+            return repeatAskReply(context, "faction", knowledge.factionName)
+        end
+        if familiarity < 10 then
+            return "We haven't known each other long enough for me to get into who I'm with."
+        end
+        local fname = knowledge.factionName or canonicalFaction.factionName
+        local fid = knowledge.factionID or canonicalFaction.factionID
+        if fname and tostring(fname) ~= "" then
+            knowledge.factionKnown = true
+            knowledge.factionID = fid
+            knowledge.factionName = tostring(fname)
+            if type(context) == "table" then
+                context.factionKnown = true
+                context.factionID = fid
+                context.factionName = knowledge.factionName
+                context.factionArchetypeID = canonicalFaction.factionArchetypeID
+                context.factionPresentation = canonicalFaction.factionPresentation
+                context.communityID = canonicalFaction.communityID
+            end
+            return "I'm with " .. knowledge.factionName .. "."
         end
         return "I don't belong to any group I can name."
     end
-    return identityResponse(knowledge, fallbackName)
+    return identityResponse(knowledge, canonicalName)
 end
 
-local function foundationIdentityChoices(context, knowledge, fallbackName)
+local ABOUT_YOU_SUBMENU_ORDER = {
+    IDENTITY_NICKNAME = 10,
+    IDENTITY_FACTION = 15,
+    IDENTITY_SURNAME = 20,
+}
+
+local function aboutYouPrompt(context)
+    local familiarity = traderFamiliarity(context)
+    if familiarity >= 45 then
+        return "Sure thing — what do you want to know about me?"
+    elseif familiarity < 15 then
+        return "Depends on what you're asking. What about me?"
+    end
+    return "What do you want to know about me?"
+end
+
+local function buildAboutYouSubmenuChoices(
+    context,
+    knowledge,
+    canonicalName,
+    canonicalParts,
+    canonicalFaction
+)
     local choices = {}
     local definitions = SemanticFoundation.GetStaticSuggestions(context)
-    local supported = {
-        IDENTITY = true,
-        IDENTITY_NICKNAME = true,
-        IDENTITY_SURNAME = true,
-        IDENTITY_FACTION = true,
-    }
     for _, definition in ipairs(definitions or {}) do
         local subject = tostring(definition.subject or "")
-        if supported[subject] then
+        local order = ABOUT_YOU_SUBMENU_ORDER[subject]
+        if order then
             choices[#choices + 1] = {
                 id = "core." .. tostring(definition.id),
                 text = definition.labelFallback or definition.id,
                 response = function()
-                    return identityFacetResponse(knowledge, subject, fallbackName)
+                    return discloseIdentityFacet(
+                        context,
+                        knowledge,
+                        subject,
+                        canonicalName,
+                        canonicalParts,
+                        canonicalFaction
+                    )
                 end,
-                order = tonumber(definition.order) or 60,
+                order = order,
             }
         end
+    end
+    choices[#choices + 1] = {
+        id = "about_you_back",
+        text = "Back",
+        next = "landing",
+        order = 99,
+    }
+    return choices
+end
+
+local function foundationIdentityChoices(
+    context,
+    knowledge,
+    canonicalName,
+    canonicalParts,
+    canonicalFaction,
+    hasAboutYouFacets
+)
+    local choices = {}
+    if knowledge.nameKnown ~= true then
+        choices[#choices + 1] = {
+            id = "core.question.identity",
+            text = "What's your name?",
+            response = function()
+                return discloseIdentityFacet(
+                    context,
+                    knowledge,
+                    "IDENTITY",
+                    canonicalName,
+                    canonicalParts,
+                    canonicalFaction
+                )
+            end,
+            order = 15,
+        }
+    elseif hasAboutYouFacets then
+        choices[#choices + 1] = {
+            id = "about_you",
+            text = "Tell me about yourself.",
+            next = "about_you",
+            order = 15,
+        }
     end
     return choices
 end
@@ -455,6 +650,16 @@ local function factionContext(projection, record)
         communityID = projection and projection.communityID
             or ca.communityID,
     }
+end
+
+local function visibleFaction(projection, record, knowledge)
+    if type(knowledge) ~= "table" or knowledge.factionKnown ~= true then
+        return {}
+    end
+    local faction = factionContext(projection, record)
+    faction.factionID = knowledge.factionID or faction.factionID
+    faction.factionName = knowledge.factionName or faction.factionName
+    return faction
 end
 
 local function appendRosterID(roster, seen, value)
@@ -749,7 +954,7 @@ local function contextFor(
     options,
     knowledge
 )
-    local faction = factionContext(projection, record)
+    local faction = visibleFaction(projection, record, knowledge)
     local identity = knowledge and knowledge.identity
     if not identity and (not knowledge or knowledge.nameKnown ~= false) then
         identity = identityParts(projection, record, name)
@@ -977,11 +1182,9 @@ function Conversation.BuildSpec(traderID, actorID, options)
     local name = knowledge.nameKnown == false
         and "Stranger"
         or knowledge.knownName or canonicalName
-    local faction = factionContext(projection, record)
-    if knowledge.factionKnown == true then
-        faction.factionID = knowledge.factionID or faction.factionID
-        faction.factionName = knowledge.factionName or faction.factionName
-    end
+    local canonicalParts = identityParts(projection, record, canonicalName)
+    local canonicalFaction = factionContext(projection, record)
+    local faction = visibleFaction(projection, record, knowledge)
     local roster, rosterIndex = rosterFor(
         record, actorID, options.roster)
     local role = roleFor(projection, options)
@@ -1034,6 +1237,15 @@ function Conversation.BuildSpec(traderID, actorID, options)
         knowledgeRevision = knowledge.revision,
         knowledge = knowledge,
     }
+
+    local aboutYouChoices = buildAboutYouSubmenuChoices(
+        conversationContext,
+        knowledge,
+        canonicalName,
+        canonicalParts,
+        canonicalFaction
+    )
+    local hasAboutYouFacets = #aboutYouChoices > 1
 
     local landing = Landing.Build({
         context = conversationContext,
@@ -1116,7 +1328,10 @@ function Conversation.BuildSpec(traderID, actorID, options)
             local choices = foundationIdentityChoices(
                 conversationContext,
                 knowledge,
-                name
+                canonicalName,
+                canonicalParts,
+                canonicalFaction,
+                hasAboutYouFacets
             )
             choices[#choices + 1] = {
                 id = "core.small_talk.weather",
@@ -1202,6 +1417,11 @@ function Conversation.BuildSpec(traderID, actorID, options)
             return choices
         end,
     })
+
+    landing.nodes.about_you = {
+        npc = aboutYouPrompt(conversationContext),
+        choices = aboutYouChoices,
+    }
 
     local spec = {
         namespace = DTCommon.TRADER_NAMESPACE or "DT.trader",

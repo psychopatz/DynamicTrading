@@ -114,10 +114,6 @@ local DEFINITIONS = {
         archetypeID = "General",
         visualProfile = "dt_trader_caravan",
         gender = "female",
-        identities = {
-            { forename = "Mara", surname = "Voss", displayName = "Mara Voss" },
-            { forename = "Elias", surname = "Voss", displayName = "Elias Voss", gender = "male" },
-        },
         skinTone = "tan",
         skinTexture = "FemaleBody01",
         skinColor = { r = 0.72, g = 0.50, b = 0.36 },
@@ -126,15 +122,15 @@ local DEFINITIONS = {
         beardModel = "",
         clothing = {
             { type = "Base.Hat_Cowboy", wornSlot = "Hat" },
-            { type = "Base.Shirt_FormalWhite", wornSlot = "Torso_Upper" },
-            { type = "Base.Trousers_Suit", wornSlot = "Legs" },
+            { type = "Base.Shirt_FormalWhite", wornSlot = "Shirt" },
+            { type = "Base.Trousers_Suit", wornSlot = "Pants" },
             { type = "Base.Shoes_Black", wornSlot = "Shoes" },
             { type = "Base.Bag_DuffelBag", wornSlot = "Back" },
         },
         items = {
             item("Base.Hat_Cowboy", "Hat"),
-            item("Base.Shirt_FormalWhite", "Torso_Upper"),
-            item("Base.Trousers_Suit", "Legs"),
+            item("Base.Shirt_FormalWhite", "Shirt"),
+            item("Base.Trousers_Suit", "Pants"),
             item("Base.Shoes_Black", "Shoes"),
             item("Base.Bag_DuffelBag", "Back"),
         },
@@ -145,10 +141,6 @@ local DEFINITIONS = {
         archetypeID = "General",
         visualProfile = "dt_guard_shotgun",
         gender = "male",
-        identities = {
-            { forename = "Cal", surname = "Mercer", displayName = "Cal Mercer" },
-            { forename = "Dane", surname = "Holt", displayName = "Dane Holt" },
-        },
         skinTone = "olive",
         skinTexture = "MaleBody02",
         skinColor = { r = 0.58, g = 0.38, b = 0.25 },
@@ -156,15 +148,15 @@ local DEFINITIONS = {
         hairColor = { r = 0.08, g = 0.05, b = 0.03 },
         beardModel = "ShortBoxedBeard",
         clothing = {
-            { type = "Base.Hat_BalaclavaFace", wornSlot = "Hat" },
+            { type = "Base.Hat_BalaclavaFace", wornSlot = "Mask" },
             { type = "Base.Jacket_PaddedDOWN", wornSlot = "Jacket" },
-            { type = "Base.Trousers_Padded", wornSlot = "Legs" },
+            { type = "Base.Trousers_Padded", wornSlot = "Pants" },
             { type = "Base.Shoes_BlackBoots", wornSlot = "Shoes" },
         },
         items = {
-            item("Base.Hat_BalaclavaFace", "Hat"),
+            item("Base.Hat_BalaclavaFace", "Mask"),
             item("Base.Jacket_PaddedDOWN", "Jacket"),
-            item("Base.Trousers_Padded", "Legs"),
+            item("Base.Trousers_Padded", "Pants"),
             item("Base.Shoes_BlackBoots", "Shoes"),
             item("Base.DoubleBarrelShotgun", nil, {
                 equipSlot = "primary",
@@ -181,10 +173,6 @@ local DEFINITIONS = {
         archetypeID = "General",
         visualProfile = "dt_guard_sidearm",
         gender = "female",
-        identities = {
-            { forename = "Nina", surname = "Cole", displayName = "Nina Cole" },
-            { forename = "Tess", surname = "Ward", displayName = "Tess Ward" },
-        },
         skinTone = "light",
         skinTexture = "FemaleBody03",
         skinColor = { r = 0.86, g = 0.68, b = 0.53 },
@@ -193,14 +181,14 @@ local DEFINITIONS = {
         beardModel = "",
         clothing = {
             { type = "Base.Hat_HardHat", wornSlot = "Hat" },
-            { type = "Base.Vest_HighViz", wornSlot = "Torso_Upper" },
-            { type = "Base.Trousers_Denim", wornSlot = "Legs" },
+            { type = "Base.Vest_HighViz", wornSlot = "TorsoExtraVest" },
+            { type = "Base.Trousers_Denim", wornSlot = "Pants" },
             { type = "Base.Shoes_WorkBoots", wornSlot = "Shoes" },
         },
         items = {
             item("Base.Hat_HardHat", "Hat"),
-            item("Base.Vest_HighViz", "Torso_Upper"),
-            item("Base.Trousers_Denim", "Legs"),
+            item("Base.Vest_HighViz", "TorsoExtraVest"),
+            item("Base.Trousers_Denim", "Pants"),
             item("Base.Shoes_WorkBoots", "Shoes"),
             item("Base.Pistol", nil, {
                 equipSlot = "primary",
@@ -238,7 +226,6 @@ function Presets.RegisterCoreArchetypes()
             visualProfile = definition.visualProfile,
             identity = {
                 gender = definition.gender,
-                profiles = copy(definition.identities),
             },
             appearance = appearanceFor(definition),
             inventory = {
@@ -268,8 +255,81 @@ function Presets.RegisterCoreArchetypes()
     return true, "registered"
 end
 
+local function hashText(value)
+    value = tostring(value or "")
+    local hash = 2166136261
+    local index
+    for index = 1, #value do
+        hash = ((hash * 16777619) + string.byte(value, index)) % 2147483647
+    end
+    return hash
+end
+
+local FALLBACK_FEMALE = {
+    "Clara", "Elena", "Hannah", "Maya", "Nora", "Rachel", "Tessa", "Valerie",
+}
+local FALLBACK_MALE = {
+    "Arthur", "Caleb", "Evan", "Gideon", "Jonah", "Marcus", "Owen", "Victor",
+}
+local FALLBACK_SURNAMES = {
+    "Bennett", "Brooks", "Carter", "Dawson", "Ellis", "Foster",
+    "Grant", "Hayes", "Keller", "Mercer", "Parker", "Sutton",
+}
+
+local function deterministicContent()
+    local content = PsychopatzCore and PsychopatzCore.Content or nil
+    if content and type(content.GenerateName) == "function" then
+        return content
+    end
+    local ok, loaded = pcall(
+        require,
+        "PsychopatzCore/Content/PsychopatzDeterministicContent"
+    )
+    if ok and type(loaded) == "table"
+        and type(loaded.GenerateName) == "function"
+    then
+        return loaded
+    end
+    return nil
+end
+
+local function generateIdentity(definition, presetID, identitySeed, actorID)
+    local seedKey = tostring(identitySeed or "") .. "|" .. tostring(actorID or "")
+    local genderHash = hashText(seedKey .. ":gender")
+    local gender = (genderHash % 2 == 0) and "female" or "male"
+    local isFemale = gender == "female"
+    local fullName
+    local content = deterministicContent()
+    if content then
+        fullName = content.GenerateName({
+            saveSeed = tostring(identitySeed or presetID),
+            identitySeed = tostring(actorID or identitySeed or presetID),
+            isFemale = isFemale,
+            gender = gender,
+            archetypeID = tostring(presetID or definition.archetypeID or "General"),
+            namespace = "dt.trader",
+        })
+    else
+        local firstPool = isFemale and FALLBACK_FEMALE or FALLBACK_MALE
+        local first = firstPool[(hashText(seedKey .. ":first") % #firstPool) + 1]
+        local last = FALLBACK_SURNAMES[
+            (hashText(seedKey .. ":last") % #FALLBACK_SURNAMES) + 1
+        ]
+        fullName = first .. " " .. last
+    end
+    local forename, surname = string.match(tostring(fullName or ""), "^(%S+)%s+(.+)$")
+    forename = forename or "Alex"
+    surname = surname or "Reed"
+    return {
+        forename = forename,
+        surname = surname,
+        displayName = forename .. " " .. surname,
+        gender = gender,
+    }
+end
+
 local function resolveCorePlan(
-    presetID, identitySeed, actorID, identity, identityIndex
+    presetID, identitySeed, actorID, identity
 )
     local actors = PsychopatzCore and PsychopatzCore.Actors or nil
     local archetypes = actors and actors.Archetypes or nil
@@ -280,21 +340,7 @@ local function resolveCorePlan(
         actorId = actorID,
         identitySeed = identitySeed,
         identity = identity,
-        identityIndex = identityIndex,
     })
-end
-
-local function chooseIdentity(definition, memberIndex)
-    local identities = definition.identities or {}
-    if #identities <= 0 then
-        return {
-            forename = "Trader",
-            surname = "Guard",
-            displayName = "Trader Guard",
-            gender = definition.gender,
-        }
-    end
-    return copy(identities[((memberIndex - 1) % #identities) + 1])
 end
 
 local function safePrefix(value)
@@ -361,8 +407,11 @@ function Presets.Resolve(presetID, memberIndex, identitySeed, actorID)
     local requestedID = tostring(presetID or "")
     local definition = DEFINITIONS[requestedID]
     memberIndex = math.max(1, math.floor(tonumber(memberIndex) or 1))
+    local generatedIdentity = definition
+        and generateIdentity(definition, requestedID, identitySeed, actorID)
+        or nil
     local corePlan = resolveCorePlan(
-        requestedID, identitySeed, actorID, nil, memberIndex
+        requestedID, identitySeed, actorID, generatedIdentity
     )
     if not definition and not corePlan then
         return nil, "trader_preset_not_found"
@@ -402,7 +451,8 @@ function Presets.Resolve(presetID, memberIndex, identitySeed, actorID)
         }
     end
 
-    local identityDefinition = chooseIdentity(definition, memberIndex)
+    local identityDefinition = generatedIdentity
+        or generateIdentity(definition, requestedID, identitySeed, actorID)
     local gender = identityDefinition.gender or definition.gender
     local identity = {
         schemaVersion = 1,
