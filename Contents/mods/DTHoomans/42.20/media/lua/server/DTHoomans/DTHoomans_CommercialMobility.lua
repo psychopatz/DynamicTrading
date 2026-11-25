@@ -17,6 +17,10 @@ local MAX_SCORE = 25
 local MAX_CARAVAN_MIGRATIONS = 8
 local RISK_PENALTY_SCALE = 10
 local MAX_RISK_PENALTY = 12
+local MAX_DISTANCE_PENALTY = 10
+local DISTANCE_PENALTY_DIVISOR = 600
+local LOW_STOCK_THRESHOLD = 0.35
+local LOW_STOCK_RESTOCK_BONUS = 10
 
 local function clamp(value, low, high)
     value = tonumber(value) or 0
@@ -113,28 +117,86 @@ function Mobility.OpportunityScore(faction, target, context)
             reads = reads + 1
         end
     end
-    local eventRegistry = DTCommon and DTCommon.MarketEvents or nil
-    if eventRegistry and type(eventRegistry.ListActive) == "function" then
-        events, eventContext = eventRegistry.ListActive(
-            target and target.communityID,
-            faction,
-            {
-                now = context and context.at,
-                regionID = target and (target.regionID or target.regionId),
+    local cache = type(context) == "table" and context._mobilityCache or nil
+    if type(context) == "table" and not cache then
+        cache = {}
+        context._mobilityCache = cache
+    end
+    local cacheKey = tostring(target and target.communityID or "")
+    local cached = cache and cache[cacheKey] or nil
+    local marketRisk = 0
+    local scopedRisk = 0
+    if cached then
+        score = score + cached.eventBonus
+        marketRisk = cached.marketRisk
+        scopedRisk = cached.scopedRisk
+    else
+        local eventBonus = 0
+        local eventRegistry = DTCommon and DTCommon.MarketEvents or nil
+        if eventRegistry and type(eventRegistry.ListActive) == "function" then
+            events, eventContext = eventRegistry.ListActive(
+                target and target.communityID,
+                faction,
+                {
+                    now = context and context.at,
+                    regionID = target and (target.regionID or target.regionId),
+                }
+            )
+            if eventContext and eventContext.activeEventCount then
+                eventBonus = math.min(4,
+                    tonumber(eventContext.activeEventCount) or 0) * 2
+            else
+                eventBonus = math.min(4, #(events or {})) * 2
+            end
+        end
+        marketRisk = extractMarketEventRisk(events, eventContext)
+        scopedRisk = extractScopedEventRisk(faction, target, eventContext, context)
+        score = score + eventBonus
+        if cache and cacheKey ~= "" then
+            cache[cacheKey] = {
+                eventBonus = eventBonus,
+                marketRisk = marketRisk,
+                scopedRisk = scopedRisk,
             }
-        )
-        if eventContext and eventContext.activeEventCount then
-            score = score + math.min(4,
-                tonumber(eventContext.activeEventCount) or 0) * 2
-        else
-            score = score + math.min(4, #(events or {})) * 2
         end
     end
-    local marketRisk = extractMarketEventRisk(events, eventContext)
-    local scopedRisk = extractScopedEventRisk(faction, target, eventContext, context)
     local effectiveRisk = math.max(marketRisk, scopedRisk)
     if effectiveRisk > 0 then
         score = score - clamp(effectiveRisk * RISK_PENALTY_SCALE, 0, MAX_RISK_PENALTY)
+    end
+    -- Distance decay keeps caravans forming realistic regional trade loops.
+    local fx = faction and faction.mobile and tonumber(faction.mobile.x)
+        or (type(context) == "table" and tonumber(context.originX)) or nil
+    local fy = faction and faction.mobile and tonumber(faction.mobile.y)
+        or (type(context) == "table" and tonumber(context.originY)) or nil
+    local tx = target and tonumber(target.x or (target.home and target.home.x)) or nil
+    local ty = target and tonumber(target.y or (target.home and target.home.y)) or nil
+    if fx and fy and tx and ty then
+        local dx, dy = tx - fx, ty - fy
+        local dist = math.sqrt(dx * dx + dy * dy)
+        score = score - clamp(dist / DISTANCE_PENALTY_DIVISOR, 0, MAX_DISTANCE_PENALTY)
+    end
+    -- Revisit cooldown penalty prevents A<->B settlement ping-ponging.
+    local recent = (type(context) == "table" and context.recentSettlements)
+        or (faction and faction.mobile and faction.mobile.recentSettlements) or nil
+    if type(recent) == "table" and target and target.communityID then
+        local cid = tostring(target.communityID)
+        if tostring(recent[1] or "") == cid then
+            score = score - 8
+        elseif tostring(recent[2] or "") == cid then
+            score = score - 4
+        end
+    end
+    -- Low-stock caravans prioritize non-player NPC settlements to replenish.
+    local stockRatio = type(context) == "table" and tonumber(context.stockRatio) or nil
+    if stockRatio ~= nil and stockRatio < LOW_STOCK_THRESHOLD then
+        local settlementMod = DTHoomans and DTHoomans.Settlement or nil
+        local isPlayerBase = target and target.playerOwned == true
+            or (settlementMod and type(settlementMod.IsPlayerOwnedSettlement) == "function"
+                and settlementMod.IsPlayerOwnedSettlement(target) == true)
+        if not isPlayerBase then
+            score = score + LOW_STOCK_RESTOCK_BONUS
+        end
     end
     -- A bound trader is a commercial specialist. This small bounded bonus is
     -- intentionally independent of any item registry or carried inventory.

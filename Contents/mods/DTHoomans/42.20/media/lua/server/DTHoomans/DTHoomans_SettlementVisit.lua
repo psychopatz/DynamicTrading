@@ -337,6 +337,32 @@ local function arrivalVisitID(details, traderID, settlementID)
         .. ":" .. tostring(settlementID) .. ":" .. tostring(key), 128)
 end
 
+local function isPlayerOwnedSettlement(community)
+    if type(community) ~= "table" then return false end
+    if community.playerOwned == true or community.ownerType == "player" then
+        return true
+    end
+    local factions = PNC and PNC.Factions or nil
+    if factions and community.factionID then
+        local faction = type(factions.Get) == "function"
+            and factions.Get(community.factionID) or nil
+        if type(factions.IsPlayerFaction) == "function" and faction
+            and factions.IsPlayerFaction(faction) == true
+        then
+            return true
+        end
+        if type(faction) == "table" and (
+            faction.isPlayerFaction == true
+            or (type(faction.tags) == "table" and faction.tags.playerOwned == true)
+        ) then
+            return true
+        end
+    end
+    return false
+end
+
+Settlement.IsPlayerOwnedSettlement = isPlayerOwnedSettlement
+
 local function handleHoomansSettlementArrival(details)
     local faction = details and details.faction or nil
     local community = details and details.community or nil
@@ -358,6 +384,9 @@ local function handleHoomansSettlementArrival(details)
     if not traderID then return false, reason end
     visitID = arrivalVisitID(details, traderID, settlementID.id)
     if not visitID then return false, "arrival_identity_missing" end
+    -- Caravans replenish stock when visiting non-player NPC settlements;
+    -- player-owned settlements only perform trade exchange.
+    local allowRestock = not isPlayerOwnedSettlement(settlementID)
     result, reason = Settlement.MarkTraderVisit(
         traderID,
         settlementID.id,
@@ -365,6 +394,7 @@ local function handleHoomansSettlementArrival(details)
             visitID = visitID,
             now = details.at or worldAge(),
             exchange = true,
+            restock = allowRestock,
         }
     )
     if reason == "duplicate_visit" then

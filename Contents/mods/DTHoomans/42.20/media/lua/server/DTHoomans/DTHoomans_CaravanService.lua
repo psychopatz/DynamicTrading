@@ -60,14 +60,23 @@ local function caravanMemberCount()
     return math.max(MEMBER_COUNT_MIN, math.min(MEMBER_COUNT_MAX, value))
 end
 
+local MEDIC_ROLE = "medic"
+
 -- The roaming role order for a caravan of `count` members: one trader followed
--- by guards. Project Hoomans validates every token against the faction
--- archetype before a single NPC is created.
+-- by guards, with a dedicated medic on 4+ member caravans so downed escorts
+-- are reliably stabilized.
 local function caravanRoleOrder(count)
     local order = {}
+    local total = math.max(1, tonumber(count) or MEMBER_COUNT_DEFAULT)
     local index
-    for index = 1, math.max(1, tonumber(count) or MEMBER_COUNT_DEFAULT) do
-        order[index] = index == 1 and MERCHANT_ROLE or GUARD_ROLE
+    for index = 1, total do
+        if index == 1 then
+            order[index] = MERCHANT_ROLE
+        elseif index == 3 and total >= 4 then
+            order[index] = MEDIC_ROLE
+        else
+            order[index] = GUARD_ROLE
+        end
     end
     return order
 end
@@ -249,15 +258,27 @@ function Caravan.GetCapacity(record)
     end
     for index = 1, #ids do
         member = liveNPC(ids[index])
-        if member then
+        if member and member.alive ~= false then
             state = PNC.Inventory.GetWeightState(member)
             if state then
                 usedWeight = usedWeight + (tonumber(state.usedWeight) or 0)
                 maxWeight = maxWeight + (tonumber(state.maxWeight) or 0)
             end
             for _, item in pairs(member.inventory and member.inventory.items or {}) do
-                bagCapacity = tonumber(item.maxWeight) or 0
-                if bagCapacity > 0 then maxWeight = maxWeight + bagCapacity end
+                -- Count ONLY equipped/worn backpacks (factoring weightReduction)
+                -- so equipping better backpacks on traders or guards expands
+                -- effective caravan carry capacity.
+                if type(item) == "table" and item.wornSlot ~= nil
+                    and item.bagContainer ~= nil
+                then
+                    bagCapacity = tonumber(item.maxWeight) or 0
+                    local red = tonumber(item.weightReduction) or 0
+                    if red > 1 then red = red / 100 end
+                    red = math.max(0, math.min(0.95, red))
+                    if bagCapacity > 0 then
+                        maxWeight = maxWeight + (bagCapacity * (1 + red))
+                    end
+                end
             end
         end
     end
