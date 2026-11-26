@@ -1,0 +1,139 @@
+# Interactive branching trader social & haggle story for Dynamic Trading.
+# Actor-agnostic: players choose via UI; NPCs/traders score choices via `ai_bias` + personality.
+# Asymmetric reactions emit persistent approval, respect, familiarity, morale, and trade modifiers
+# through PsychopatzCore's shared ActorSocialAuthority.
+language EN
+namespace dtcommon
+
+story convo.trader.social_exchange
+  trigger intent=GREET, subject=TRADE
+  guard safe_to_talk
+
+  say [actor.social_style=warm|friendly]:
+    "Good to see a friendly face on the road. Looking to trade or just catching your breath?"
+  say [actor.social_style=guarded|withdrawn|hostile]:
+    "Keep your hands where I can see them. You here to trade or waste my daylight?"
+  say [personality.materialism=high]:
+    "Stock's moving fast this week—hope you brought something worth bartering."
+  say [default]:
+    "Road's been rough, but I've still got gear to move. What do you need?"
+
+    choice fair_deal (intent=AGREE, subject=TRADE, utility=compassion, ai_bias=compassion+|sociability+|warm+|friend+, tone=warm):
+      label: "Respect their work — offer fair barter"
+      say: "Long as the gear's solid, I'm happy to pay a fair price. Rough roads out there."
+
+      reply [actor.social_style=warm|friendly|protective]:
+        "Appreciate a straight shooter. Tell you what—I'll knock a little off the top for you."
+        do relationship.approval +3
+        do relationship.respect +2
+        do relationship.familiarity +2
+        do trade.discount +5
+        do trade
+        end
+
+      reply [personality.materialism=high]:
+        "Fair pay's my favorite kind of talk. Let's see what you're carrying."
+        do relationship.approval +2
+        do relationship.respect +2
+        do relationship.familiarity +1
+        do trade
+        end
+
+      reply [default]:
+        "Good to hear. Take a look at what I've got."
+        do relationship.approval +1
+        do relationship.familiarity +1
+        do trade
+        end
+
+    choice haggle_firm (intent=SUGGEST, subject=TRADE, utility=materialism, ai_bias=materialism+|bravery+|tactical+, tone=neutral):
+      label: "Haggle firmly — drive a sharp bargain"
+      say: "I know what supplies are worth out here. Cut the padding and give me your real numbers."
+
+      reply [personality.materialism=high]:
+        "Hah—sharp eye. I respect someone who knows the market. Let's talk numbers."
+        do relationship.respect +3
+        do relationship.familiarity +1
+        do trade.discount +3
+        do trade
+        end
+
+      reply [actor.style=tactical|cold]:
+        "No fluff, no wasted time. I can work with that."
+        do relationship.respect +2
+        do relationship.familiarity +1
+        do trade
+        end
+
+      reply [actor.social_style=warm|friendly]:
+        "Easy—I'm not trying to fleece you, just trying to stay fed like everybody else."
+        do relationship.approval -1
+        do relationship.respect +1
+        do trade
+        end
+
+      reply [default]:
+        "Alright, alright—let's see if we can meet in the middle."
+        do relationship.respect +1
+        do trade
+        end
+
+    choice road_intel (intent=INFORM, subject=GOSSIP, utility=openness, ai_bias=tactical+|loyalty+|sociability+, tone=tactical):
+      label: "Swap road intel first"
+      say: "Before we open bags—anything nasty on the roads you came through?"
+
+      reply [actor.style=tactical|brave]:
+        "Smart to ask first. Keep off the main strip—dead are thicker there since yesterday."
+        do relationship.respect +2
+        do relationship.approval +1
+        do relationship.familiarity +2
+        do trade
+        end
+
+      reply [default]:
+        "Quiet enough if you stick to the back lanes. Anyway, want to see my stock?"
+        do relationship.familiarity +2
+        do trade
+        end
+
+    choice accuse_gouging (intent=DISAGREE, subject=TRADE, utility=assertive, ai_bias=aggression+|bravery+|compassion-|stressed+|rival+, tone=guarded):
+      label: "Call out their prices as a rip-off"
+      say: "Half the traders on these roads are vultures charging double for scrap."
+
+      reply [actor.style=aggressive|hostile]:
+        "You don't like my prices, walk your own road and scavenge it yourself."
+        do relationship.approval -4
+        do relationship.respect -1
+        do morale -2
+        do trade.markup +5
+
+        choice apologize_trader (intent=APOLOGIZE, subject=SOCIAL, utility=forgiveness, ai_bias=forgiveness+|compassion+):
+          label: "Walk it back — keep trade open"
+          say: "Alright, that was out of line. Been a long week—let's just trade."
+          reply [default]:
+            "Fine. Keep it civil and we've got no problem."
+            do relationship.approval +2
+            do relationship.respect +1
+            do trade
+            end
+
+        choice walk_away_clash (intent=INSULT, subject=CONFLICT, utility=assertive, ai_bias=aggression+|bravery+|forgiveness-|rival+):
+          label: "Double down and walk off"
+          say: "Keep your overpriced junk. Plenty of other folks willing to deal."
+          reply [default]:
+            "Get moving then. Don't bother flagging me down next time."
+            do relationship.approval -5
+            do morale -3
+            end
+
+      reply [personality.materialism=high]:
+        "Risking my neck to haul this across county lines ain't free. Take it or leave it."
+        do relationship.approval -3
+        do trade.markup +5
+        end
+
+      reply [default]:
+        "Nobody's forcing you to buy. Look or move along."
+        do relationship.approval -2
+        do trade.markup +3
+        end

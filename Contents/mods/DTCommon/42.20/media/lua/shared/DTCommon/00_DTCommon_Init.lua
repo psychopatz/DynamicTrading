@@ -53,6 +53,7 @@ require "DTCommon/DTCommon_PlacePresentation"
 DTCommon.GeneratedSemanticRegistry = require
     "DTCommon/ConvoEngine/Registry"
 require "DTCommon/DTCommon_SemanticPack"
+require "DTCommon/ConvoEngine/DTCommon_ConvoDSLAdapter"
 require "DTCommon/DTCommon_TradeAudit"
 require "DTCommon/DTCommon_TradeAuditPrice"
 require "DTCommon/DTCommon_TradeAuditProfiler"
