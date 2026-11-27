@@ -84,4 +84,15 @@ assert(Conversation.Open(
 T.equal(opened.context.provider, "DTHoomans",
     "shared open path lost physical provider context")
 
+-- Regression: trader conversation recognizes player self-introductions ("im psycho")
+-- instead of falling back to "Tell me what you need from the road."
+local service = assert(physical.actorConversation.createService({}))
+local introResult = assert(service:Submit("im psycho", physical.actorConversation.buildContext(), {}))
+local introPart = introResult and introResult.parts and introResult.parts[1]
+T.truthy(introPart and introPart.decision, "self-intro produces a trader decision")
+T.equal(introPart.decision.branch, "PLAYER_INTRODUCED",
+    "self-intro routes to PLAYER_INTRODUCED instead of TRADER_UNHANDLED")
+T.truthy(string.find(tostring(introPart.decision.response and introPart.decision.response.text or ""), "Psycho", 1, true),
+    "self-intro reply addresses player by introduced name")
+
 print("dt_shared_trader_conversation_parity_smoke: PASS")

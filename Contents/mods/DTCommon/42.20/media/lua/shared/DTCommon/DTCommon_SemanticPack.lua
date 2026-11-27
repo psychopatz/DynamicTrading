@@ -423,6 +423,21 @@ local function registerPack()
                     },
                 },
             },
+            ["dt_block_greeting_guard"] = {
+                category = "greeting",
+                priority = 40,
+                weight = 100,
+                gates = {
+                    { field = "traderRole", op = "==", value = "guard" },
+                },
+                entryNode = "opening",
+                nodes = {
+                    opening = {
+                        textKey = "DTCommon_Talk_Greeting_Guard",
+                        fallback = "I am only here to keep watch. What do you need?",
+                    },
+                },
+            },
             ["dt_block_rumors_friend"] = {
                 category = "rumor",
                 priority = 200,

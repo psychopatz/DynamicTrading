@@ -406,9 +406,14 @@ local function newsResponse(traderID)
             if top.topic == "threat_pattern_7d" then
                 return "We've been hearing about raids non-stop this past week—stay sharp on the road."
             end
+            local headline = type(top.headline) == "string" and top.headline or ""
+            local summary = headline ~= "" and headline or tostring(top.subjectLabel or "")
+            if string.find(summary, "^[%w_]+%.[%w_.]+$") or string.find(summary, "^[%l%d]+_[%l%d_]+$") then
+                summary = string.gsub(summary, "[%._]+", " ")
+            end
             return "Word on the road from " .. tostring(top.timeLabel or "earlier")
                 .. " (" .. tostring(top.locationLabel or "nearby") .. "): "
-                .. tostring(top.headline ~= "" and top.headline or top.subjectLabel) .. "."
+                .. summary .. "."
         end
     end
     return foundationPhrase(
@@ -469,6 +474,117 @@ local function repeatAskReply(context, facetKey, value)
     return "Forget it — if you can't remember " .. value .. " by now, stop asking."
 end
 
+local FACET_TO_DISCLOSURE_TOPIC = {
+    IDENTITY_NICKNAME = "identity_nickname",
+    IDENTITY_SURNAME = "identity_full_name",
+    IDENTITY_FACTION = "faction",
+}
+
+local function firstNameFrom(canonicalParts, canonicalName)
+    local fore = type(canonicalParts) == "table"
+        and (canonicalParts.forename or canonicalParts.firstName) or nil
+    if type(fore) == "string" and fore ~= "" then return fore end
+    local text = tostring(canonicalName or "")
+    local first = string.match(text, "^(%S+)")
+    return first and first ~= "" and first or text
+end
+
+local function resolveLocalPlayerName(context)
+    local player = (type(context) == "table" and context.player)
+        or (type(getPlayer) == "function" and getPlayer() or nil)
+    if player then
+        if type(player.getDescriptor) == "function" then
+            local ok, desc = pcall(player.getDescriptor, player)
+            if ok and desc then
+                local okF, fore = pcall(desc.getForename, desc)
+                local okS, sur = pcall(desc.getSurname, desc)
+                local f = okF and tostring(fore or "") or ""
+                local s = okS and tostring(sur or "") or ""
+                f = (f:gsub("^%s+", ""):gsub("%s+$", ""))
+                s = (s:gsub("^%s+", ""):gsub("%s+$", ""))
+                if f ~= "" and s ~= "" then return f .. " " .. s end
+                if f ~= "" then return f end
+            end
+        end
+        if type(player.getDisplayName) == "function" then
+            local ok, display = pcall(player.getDisplayName, player)
+            if ok and type(display) == "string" and display ~= "" then
+                return display
+            end
+        end
+        if type(player.getUsername) == "function" then
+            local ok, uname = pcall(player.getUsername, player)
+            if ok and type(uname) == "string" and uname ~= "" then
+                return uname
+            end
+        end
+    end
+    local fallback = type(context) == "table"
+        and (context.playerName or context.playerFullName) or ""
+    return tostring(fallback or "")
+end
+
+local function submitIdentityExchange(
+    context,
+    knowledge,
+    canonicalName,
+    canonicalParts,
+    options
+)
+    options = type(options) == "table" and options or {}
+    local actorID = tostring(context and context.actorID or "")
+    if CoreClient and type(CoreClient.SubmitActorIdentityClaim) == "function"
+        and actorID ~= ""
+    then
+        local accepted = CoreClient.SubmitActorIdentityClaim(actorID, {
+            provider = context and context.provider,
+            sourceActorID = context and context.sourceActorID,
+            kind = options.kind,
+            claimMode = options.claimMode,
+            claimedName = options.claimedName,
+            responseStyle = options.responseStyle,
+            origin = options.origin or "trader_conversation",
+        })
+        if accepted == true then
+            return nil, true
+        end
+    end
+    -- Standalone fallback (e.g. DTAbstract without Project Hoomans):
+    -- only truthful introductions reveal the trader's first name.
+    if options.kind == "identity_evasion" then
+        return "Fair enough. Then I'll keep mine to myself too.", false
+    end
+    if options.claimMode == "generated" then
+        local alias = tostring(options.claimedName or "stranger")
+        return "Alright, " .. alias .. "... if you say so.", false
+    end
+    local disclosed = firstNameFrom(canonicalParts, canonicalName)
+    if disclosed and disclosed ~= "" then
+        knowledge.state = "known"
+        knowledge.nameKnown = true
+        knowledge.knownName = disclosed
+        knowledge.identity = knowledge.identity or {
+            forename = disclosed,
+            firstName = disclosed,
+            displayName = disclosed,
+        }
+        knowledge.knownIdentity = knowledge.knownIdentity or knowledge.identity
+        if type(context) == "table" then
+            context.npcName = disclosed
+            context.knownName = disclosed
+            context.identityState = "known"
+            context.identityNameKnown = true
+            context.identity = knowledge.identity
+        end
+        local claimed = tostring(options.claimedName or "")
+        if claimed ~= "" then
+            return "Good to meet you, " .. claimed .. ". I'm " .. disclosed .. ".", false
+        end
+        return "I'm " .. disclosed .. ".", false
+    end
+    return "I'm the caravan trader.", false
+end
+
 local function discloseIdentityFacet(
     context,
     knowledge,
@@ -481,17 +597,41 @@ local function discloseIdentityFacet(
     canonicalParts = type(canonicalParts) == "table" and canonicalParts or {}
     canonicalFaction = type(canonicalFaction) == "table" and canonicalFaction or {}
     local familiarity = traderFamiliarity(context)
+    local topicID = FACET_TO_DISCLOSURE_TOPIC[subject]
+    if topicID and CoreClient
+        and type(CoreClient.RequestActorKnowledgeTopic) == "function"
+    then
+        local actorID = tostring(context and context.actorID or "")
+        if actorID ~= "" then
+            local accepted = CoreClient.RequestActorKnowledgeTopic(
+                actorID,
+                topicID,
+                {
+                    provider = context and context.provider,
+                    sourceActorID = context and context.sourceActorID,
+                    origin = "trader_conversation",
+                }
+            )
+            if accepted == true then
+                return nil
+            end
+        end
+    end
     if subject == "IDENTITY" then
         if knowledge.nameKnown == true and knowledge.knownName then
             return repeatAskReply(context, "identity", knowledge.knownName)
         end
-        local disclosed = knowledge.knownName or canonicalParts.displayName or canonicalName
+        local disclosed = knowledge.knownName or firstNameFrom(canonicalParts, canonicalName)
         if disclosed and tostring(disclosed) ~= "" then
             knowledge.state = "known"
             knowledge.nameKnown = true
             knowledge.knownName = tostring(disclosed)
-            knowledge.identity = knowledge.identity or canonicalParts
-            knowledge.knownIdentity = knowledge.knownIdentity or canonicalParts
+            knowledge.identity = knowledge.identity or {
+                forename = disclosed,
+                firstName = disclosed,
+                displayName = disclosed,
+            }
+            knowledge.knownIdentity = knowledge.knownIdentity or knowledge.identity
             if type(context) == "table" then
                 context.npcName = knowledge.knownName
                 context.knownName = knowledge.knownName
@@ -584,8 +724,10 @@ local function buildAboutYouSubmenuChoices(
     knowledge,
     canonicalName,
     canonicalParts,
-    canonicalFaction
+    canonicalFaction,
+    options
 )
+    options = type(options) == "table" and options or {}
     local choices = {}
     local definitions = SemanticFoundation.GetStaticSuggestions(context)
     for _, definition in ipairs(definitions or {}) do
@@ -609,12 +751,89 @@ local function buildAboutYouSubmenuChoices(
             }
         end
     end
-    choices[#choices + 1] = {
-        id = "about_you_back",
-        text = "Back",
-        next = "landing",
-        order = 99,
+    if options.hideBackout ~= true and options.allowBackout ~= false then
+        choices[#choices + 1] = {
+            id = "about_you_back",
+            text = "Let's talk about something else.",
+            isBackout = true,
+            next = "landing",
+            suppressNextPrompt = true,
+            order = 99,
+        }
+    end
+    return choices
+end
+
+local function identityExchangePrompt(context)
+    local familiarity = traderFamiliarity(context)
+    if familiarity >= 25 then
+        return "Tell me your name first, and I'll give you mine."
+    end
+    return "Who's asking? Tell me your name first."
+end
+
+local function buildIdentityExchangeChoices(
+    context,
+    knowledge,
+    canonicalName,
+    canonicalParts,
+    options
+)
+    options = type(options) == "table" and options or {}
+    local playerName = resolveLocalPlayerName(context)
+    local realLabel = playerName ~= ""
+        and ("Say your real name (" .. playerName .. ")")
+        or "Say your real name"
+    local realUtterance = playerName ~= "" and ("I'm " .. playerName) or nil
+    -- Lie button intentionally omitted per design: players who want to lie can
+    -- type a false name in the input box, which still triggers the lie guard.
+    local choices = {
+        {
+            id = "identity.choice.real_name",
+            text = realLabel,
+            utterance = realUtterance,
+            response = function()
+                local reply = submitIdentityExchange(
+                    context, knowledge, canonicalName, canonicalParts, {
+                        kind = "identity_claim",
+                        claimMode = "canonical",
+                        claimedName = playerName ~= "" and playerName or nil,
+                    }
+                )
+                return reply
+            end,
+            next = "landing",
+            suppressNextPrompt = true,
+            order = 10,
+        },
+        {
+            id = "identity.choice.refuse_name",
+            text = "Don't tell your name",
+            utterance = "I'd rather not say.",
+            response = function()
+                local reply = submitIdentityExchange(
+                    context, knowledge, canonicalName, canonicalParts, {
+                        kind = "identity_evasion",
+                        responseStyle = "rude",
+                    }
+                )
+                return reply
+            end,
+            next = "landing",
+            suppressNextPrompt = true,
+            order = 20,
+        },
     }
+    if options.hideBackout ~= true and options.allowBackout ~= false then
+        choices[#choices + 1] = {
+            id = "identity_exchange_back",
+            text = "Let's talk about something else.",
+            isBackout = true,
+            next = "landing",
+            suppressNextPrompt = true,
+            order = 99,
+        }
+    end
     return choices
 end
 
@@ -631,16 +850,7 @@ local function foundationIdentityChoices(
         choices[#choices + 1] = {
             id = "core.question.identity",
             text = "What's your name?",
-            response = function()
-                return discloseIdentityFacet(
-                    context,
-                    knowledge,
-                    "IDENTITY",
-                    canonicalName,
-                    canonicalParts,
-                    canonicalFaction
-                )
-            end,
+            next = "identity_exchange",
             order = 15,
         }
     elseif hasAboutYouFacets then
@@ -784,6 +994,60 @@ local function resolveRelationshipFrom(projection, record, options)
     return { approval = 0, respect = 0, familiarity = 0, state = "unknown" }
 end
 
+local NON_INTRO_WORDS = {
+    looking = true, here = true, ["not"] = true, hungry = true, thirsty = true,
+    tired = true, hurt = true, injured = true, bleeding = true, sick = true,
+    bitten = true, fine = true, good = true, ok = true, okay = true,
+    ready = true, sorry = true, trying = true, going = true, leaving = true,
+    done = true, back = true, new = true, lost = true, busy = true,
+    friendly = true, armed = true, alone = true, trading = true, buying = true,
+    selling = true, asking = true, just = true, only = true, very = true,
+    really = true, pretty = true, kind = true, sort = true, out = true,
+    ["in"] = true, on = true, at = true, from = true, with = true, a = true,
+    an = true, the = true,
+}
+
+local function extractPlayerSelfIntro(ir)
+    local raw = tostring(ir and (ir.rawText or ir.normalizedText) or "")
+    local trimmed = (raw:gsub("^%s+", ""):gsub("[%s%.%!%?]+$", ""))
+    if trimmed == "" then return nil end
+    local lower = string.lower(trimmed)
+    local patterns = {
+        "^my%s+name%s+is%s+(.+)$",
+        "^my%s+name'?s%s+(.+)$",
+        "^name'?s%s+(.+)$",
+        "^they%s+call%s+me%s+(.+)$",
+        "^call%s+me%s+(.+)$",
+        "^i%s+am%s+(.+)$",
+        "^i'?m%s+(.+)$",
+    }
+    local captured = nil
+    for index = 1, #patterns do
+        local match = string.match(lower, patterns[index])
+        if match then
+            captured = match
+            break
+        end
+    end
+    if not captured then return nil end
+    local words = {}
+    for word in string.gmatch(captured, "%S+") do
+        words[#words + 1] = word
+    end
+    if #words == 0 or #words > 2 then return nil end
+    if NON_INTRO_WORDS[words[1]] then return nil end
+    local formatted = {}
+    for index = 1, #words do
+        local word = words[index]
+        if not string.find(word, "^[%a][%a'%-]*$") or #word < 2 or #word > 18 then
+            return nil
+        end
+        formatted[#formatted + 1] = string.upper(string.sub(word, 1, 1))
+            .. string.sub(word, 2)
+    end
+    return table.concat(formatted, " ")
+end
+
 local function responseFor(traderID, ir, context)
     local intent = tostring(ir and ir.intent or "")
     local pattern = patternID(ir)
@@ -898,6 +1162,44 @@ local function responseFor(traderID, ir, context)
         return {
             text = byeText,
             branch = "FAREWELL_RECEIVED",
+        }
+    end
+    local introducedName = extractPlayerSelfIntro(ir)
+    if introducedName then
+        local knowledge = type(context and context.knowledge) == "table"
+            and context.knowledge or nil
+        if knowledge and knowledge.nameKnown ~= true
+            and CoreClient
+            and type(CoreClient.SubmitActorIdentityClaim) == "function"
+        then
+            local actorID = tostring(context and context.actorID or "")
+            if actorID ~= "" then
+                local accepted = CoreClient.SubmitActorIdentityClaim(actorID, {
+                    provider = context and context.provider,
+                    sourceActorID = context and context.sourceActorID,
+                    kind = "identity_claim",
+                    claimedName = introducedName,
+                    origin = "trader_conversation",
+                })
+                if accepted == true then
+                    return {
+                        text = nil,
+                        branch = "PLAYER_INTRODUCED",
+                    }
+                end
+            end
+        end
+        local introText = "Good to meet you, " .. introducedName .. ". What are you looking for?"
+        if guarded then
+            introText = "Noted, " .. introducedName .. ". Keep it business."
+        elseif trusted then
+            introText = "Good to put a name to a reliable face, " .. introducedName .. ". What can I trade for you?"
+        elseif sociability >= 0.7 then
+            introText = "Good to meet you, " .. introducedName .. "! Always nice putting a name to a friendly face on the road."
+        end
+        return {
+            text = introText,
+            branch = "PLAYER_INTRODUCED",
         }
     end
     return {
@@ -1165,10 +1467,8 @@ local function isNonTraderEntry(entry)
     if role ~= "" and NON_TRADER_ROLES[role] == true then
         return true
     end
-    local facID = entry.factionID or (snap and snap.factionID)
-    if facID ~= nil and PNC and PNC.Factions and type(PNC.Factions.IsPlayerFaction) == "function" then
-        local ok, isPlayerFac = pcall(PNC.Factions.IsPlayerFaction, facID)
-        if ok and isPlayerFac == true then return true end
+    if entry.isPlayerFaction == true or (snap and snap.isPlayerFaction == true) then
+        return true
     end
     return false
 end
@@ -1302,7 +1602,8 @@ function Conversation.BuildSpec(traderID, actorID, options)
         knowledge,
         canonicalName,
         canonicalParts,
-        canonicalFaction
+        canonicalFaction,
+        options
     )
     local hasAboutYouFacets = #aboutYouChoices > 1
 
@@ -1446,6 +1747,16 @@ function Conversation.BuildSpec(traderID, actorID, options)
     landing.nodes.about_you = {
         npc = aboutYouPrompt(conversationContext),
         choices = aboutYouChoices,
+    }
+    landing.nodes.identity_exchange = {
+        npc = identityExchangePrompt(conversationContext),
+        choices = buildIdentityExchangeChoices(
+            conversationContext,
+            knowledge,
+            canonicalName,
+            canonicalParts,
+            options
+        ),
     }
 
     local spec = {

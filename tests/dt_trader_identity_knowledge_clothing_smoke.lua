@@ -151,19 +151,42 @@ T.truthy(askName, "ask-name choice is present on landing for unknown trader")
 T.falsy(findChoice(spec.nodes.landing.choices, "about_you"),
     "about_you hub is hidden until name is known")
 T.truthy((askName.order or 99) <= 20, "ask-name choice is ordered near top")
+T.equal(askName.next, "identity_exchange",
+    "asking name enters mutual identity_exchange node instead of instant reveal")
 
-local nameReply = askName.response()
-T.contains(nameReply, "Elena Parker", "asking name discloses canonical name")
-T.equal(spec.context.npcName, "Elena Parker", "context npcName updates after disclosure")
+local exchangeNode = spec.nodes.identity_exchange
+T.truthy(exchangeNode and type(exchangeNode.npc) == "string",
+    "identity_exchange node prompts player for their name first")
+local realChoice = findChoice(exchangeNode.choices, "identity.choice.real_name")
+local lieChoice = findChoice(exchangeNode.choices, "identity.choice.lie_name")
+local refuseChoice = findChoice(exchangeNode.choices, "identity.choice.refuse_name")
+T.truthy(realChoice, "identity_exchange offers real_name option")
+T.falsy(lieChoice, "identity_exchange omits lie_name button (typed false names act as lie guard)")
+T.truthy(refuseChoice, "identity_exchange offers refuse_name option")
+T.equal(exchangeNode.choices[#exchangeNode.choices].id, "identity_exchange_back",
+    "backout choice sits below the beat suggestions")
+T.equal(exchangeNode.choices[#exchangeNode.choices].text, "Let's talk about something else.",
+    "backout choice uses standard backout wording")
+
+-- Optional hideBackout flag suppresses the backout button for mandatory branches
+local lockedSpec = assert(Conversation.BuildSpec(
+    "trader:test:1", projection.actorID, { mode = "face", hideBackout = true }))
+T.falsy(findChoice(lockedSpec.nodes.identity_exchange.choices, "identity_exchange_back"),
+    "hideBackout=true suppresses identity_exchange backout button")
+T.falsy(findChoice(lockedSpec.nodes.about_you.choices, "about_you_back"),
+    "hideBackout=true suppresses about_you backout button")
+
+-- Refusing in standalone mode must NOT expose trader name
+local refuseReply = refuseChoice.response()
+T.truthy(type(refuseReply) == "string" and refuseReply ~= "", "refusing returns guarded reply")
+T.equal(spec.context.npcName, "Stranger", "refusing does not reveal trader name")
+
+-- Truthful self-introduction in standalone mode reveals first name only (respecting surname gate)
+local nameReply = realChoice.response()
+T.contains(nameReply, "Elena", "truthful exchange discloses first name")
+T.falsy(string.find(nameReply, "Parker", 1, true), "initial exchange does not leak surname")
+T.equal(spec.context.npcName, "Elena", "context npcName updates to first name after exchange")
 T.equal(spec.context.factionName, nil, "asking name does not prematurely leak faction")
-
--- Repeat-ask escalation on already-known name
-local repeat1 = askName.response()
-local repeat2 = askName.response()
-local repeat3 = askName.response()
-T.contains(repeat1, "already told you", "1st repeat reminds player")
-T.contains(repeat2, "already asked", "2nd repeat is pointed")
-T.contains(repeat3, "Stop asking", "3rd repeat is annoyed")
 
 -- Rebuild after name is known: root now shows about_you subcategory instead of ask-name
 local spec2, err2 = Conversation.BuildSpec("trader:test:1", projection.actorID, { mode = "face" })
@@ -187,5 +210,33 @@ spec2.context.relationship = { familiarity = 25 }
 local factionReply = askFaction.response()
 T.contains(factionReply, "Maple Enclave", "asking faction discloses canonical faction at fam>=10")
 T.equal(spec2.context.factionName, "Maple Enclave", "context factionName updates after disclosure")
+
+-- Authoritative provider bridge: when CoreClient exposes SubmitActorIdentityClaim
+-- and RequestActorKnowledgeTopic, both identity claims and facet disclosures delegate
+-- to the server-authoritative provider instead of mutating local client state.
+local submittedClaims, requestedTopics = {}, {}
+local CoreClient = package.loaded["PsychopatzCore/World/SurvivorWorld/PsychopatzSurvivorWorldClient"]
+CoreClient.SubmitActorIdentityClaim = function(aID, opts)
+    submittedClaims[#submittedClaims + 1] = { actorID = aID, opts = opts }
+    return true, "dispatched"
+end
+CoreClient.RequestActorKnowledgeTopic = function(aID, topicID, opts)
+    requestedTopics[#requestedTopics + 1] = { actorID = aID, topicID = topicID, opts = opts }
+    return true, "dispatched"
+end
+local bridgedRealReply = realChoice.response()
+T.equal(bridgedRealReply, nil, "authoritative identity claim awaits server response")
+T.equal(#submittedClaims, 1, "identity claim routed to CoreClient.SubmitActorIdentityClaim")
+T.equal(submittedClaims[1].opts.claimMode, "canonical", "real_name sends canonical claimMode")
+
+local bridgedRefuseReply = refuseChoice.response()
+T.equal(bridgedRefuseReply, nil, "authoritative evasion awaits server response")
+T.equal(#submittedClaims, 2, "evasion routed to CoreClient.SubmitActorIdentityClaim")
+T.equal(submittedClaims[2].opts.kind, "identity_evasion", "refuse_name sends identity_evasion")
+
+local bridgedFactionReply = askFaction.response()
+T.equal(bridgedFactionReply, nil, "authoritative faction request awaits server response")
+T.equal(#requestedTopics, 1, "faction request routed to CoreClient.RequestActorKnowledgeTopic")
+T.equal(requestedTopics[1].topicID, "faction", "faction facet maps to 'faction' topicID")
 
 print("dt_trader_identity_knowledge_clothing_smoke: PASS")

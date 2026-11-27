@@ -367,6 +367,26 @@ local function cleanupFaction(factionID, npcIDs, at, reason)
         PNC.Factions.Destroy(
             factionID, reason or "caravan_rollback", at)
     end
+    if PNC and PNC.AbstractGroups
+        and type(PNC.AbstractGroups.FindByFactionID) == "function"
+    then
+        local orphanGroup = PNC.AbstractGroups.FindByFactionID(factionID)
+        if orphanGroup then
+            if PNC.AbstractLocations and type(PNC.AbstractLocations.Depart) == "function" then
+                pcall(PNC.AbstractLocations.Depart, orphanGroup, at)
+            end
+            if type(PNC.AbstractGroups.Remove) == "function" then
+                pcall(PNC.AbstractGroups.Remove, orphanGroup.id, reason or "caravan_rollback")
+            elseif PNC.HoomansWorldView and PNC.HoomansWorldView.Registry
+                and type(PNC.HoomansWorldView.Registry.groupsByID) == "table"
+            then
+                PNC.HoomansWorldView.Registry.groupsByID[orphanGroup.id] = nil
+                if type(PNC.HoomansWorldView.Touch) == "function" then
+                    PNC.HoomansWorldView.Touch("caravan_rollback_group_removed")
+                end
+            end
+        end
+    end
 end
 
 local function nativeSpec(state)
@@ -687,7 +707,9 @@ local function finalize(state, generated)
         finish(state, false, reason or "role_setup_failed")
         return false, reason or "role_setup_failed"
     end
-    merchant = physicalNPC(merchantID)
+    local requireLiveBody = tostring(state.presenceMode or "live") == "live"
+        and state.worldManaged ~= true
+    merchant = requireLiveBody and physicalNPC(merchantID) or liveNPC(merchantID)
     if not merchant then
         cleanupCanonicalActors()
         cleanupFaction(

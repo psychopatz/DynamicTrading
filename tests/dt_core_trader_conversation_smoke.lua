@@ -140,7 +140,7 @@ T.equal(spec.context.npcName, "Stranger",
     "unknown Core trader does not leak canonical displayName")
 T.equal(spec.context.factionName, nil,
     "unknown Core trader does not leak canonical factionName")
-T.equal(#landing.choices, 8,
+T.equal(#landing.choices, 7,
     "Core trader conversation exposes clean landing choices with ask-name")
 T.truthy(choiceByID("core.question.identity"),
     "unknown Core trader exposes ask-name choice")
